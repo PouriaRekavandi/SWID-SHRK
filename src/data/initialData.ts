@@ -1,4 +1,4 @@
-import { Publication, StudentRecord, VideoTutorial, TeamMember } from '../types';
+import { Publication, StudentRecord, VideoTutorial, TutorialSeries, TeamMember } from '../types';
 
 export const INITIAL_STUDENTS: StudentRecord[] = [
   {
@@ -255,32 +255,130 @@ export const PUBLICATIONS: Publication[] = [
   }
 ];
 
-export const GOOGLE_DRIVE_VIDEOS_FOLDER = 'https://drive.google.com/drive/folders/199sypG2Nt8LKnrE8BtUrJG_fl7FqeIe-?usp=sharing';
+export const GOOGLE_DRIVE_PLATE_FOLDER = 'https://drive.google.com/drive/folders/199sypG2Nt8LKnrE8BtUrJG_fl7FqeIe-?usp=sharing';
+export const GOOGLE_DRIVE_ORIGAMI_FOLDER = GOOGLE_DRIVE_PLATE_FOLDER;
+export const GOOGLE_DRIVE_STRUT_FOLDER = 'https://drive.google.com/drive/folders/1MC6Nr6kH6i4mspvWFXUC22qdluSqrzln?usp=sharing';
+export const GOOGLE_DRIVE_VIDEOS_FOLDER = GOOGLE_DRIVE_STRUT_FOLDER;
 
-export const ANTIPRISM_VIDEOS: VideoTutorial[] = [
+export const PLATE_ANTIPRISM_VIDEOS: VideoTutorial[] = [
   {
-    id: 'vid-1',
-    title: 'AntiPrism Tutorial — Part 1',
+    id: 'vid-plate-1',
+    title: 'Plate Antiprism Modeling — Part 1',
     part: 1,
     url: 'https://drive.google.com/file/d/1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4/view?usp=sharing',
     embedUrl: 'https://drive.google.com/file/d/1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4/preview',
     driveId: '1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4',
     downloadUrl: 'https://drive.google.com/uc?export=download&id=1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4',
-    description: 'Geometry definition, parametric unit cell synthesis, and boundary conditions in Abaqus/CAE.',
-    duration: 'Part 1 • 240 MB'
+    description: 'Geometry definition, parametric folded facet unit cell synthesis, shell thickness, and boundary conditions in Abaqus/CAE.',
+    duration: 'Part 1 • 240 MB',
+    seriesId: 'plate',
+    seriesName: 'Plate Antiprism Modeling',
+    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER
   },
   {
-    id: 'vid-2',
-    title: 'AntiPrism Tutorial — Part 2',
+    id: 'vid-plate-2',
+    title: 'Plate Antiprism Modeling — Part 2',
     part: 2,
     url: 'https://drive.google.com/file/d/1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu/view?usp=sharing',
     embedUrl: 'https://drive.google.com/file/d/1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu/preview',
     driveId: '1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu',
     downloadUrl: 'https://drive.google.com/uc?export=download&id=1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu',
-    description: 'Meshing, dynamic explicit crush solver settings, contact penalty formulations, and energy extraction.',
-    duration: 'Part 2 • 252 MB'
+    description: 'Meshing, dynamic explicit crush solver settings, fold hinge contact penalty formulations, and energy extraction.',
+    duration: 'Part 2 • 252 MB',
+    seriesId: 'plate',
+    seriesName: 'Plate Antiprism Modeling',
+    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER
   }
 ];
+
+export const ORIGAMI_ANTIPRISM_VIDEOS = PLATE_ANTIPRISM_VIDEOS;
+
+export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = [
+  {
+    id: 'vid-strut-1',
+    title: 'Strut Antiprism Modeling — Part 1',
+    part: 1,
+    url: 'https://drive.google.com/file/d/1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL/view?usp=sharing',
+    embedUrl: 'https://drive.google.com/file/d/1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL/preview',
+    driveId: '1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL',
+    downloadUrl: 'https://drive.google.com/uc?export=download&id=1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL',
+    description: 'Unit cell geometric wireframe layout, 3D coordinate kinematics, reference nodes, and truss alignment in Abaqus/CAE.',
+    duration: 'Part 1 • 1080p',
+    seriesId: 'strut',
+    seriesName: 'Strut Antiprism Modeling',
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+  },
+  {
+    id: 'vid-strut-2',
+    title: 'Strut Antiprism Modeling — Part 2',
+    part: 2,
+    url: 'https://drive.google.com/file/d/1aOFgJmleefouFqo9G5p4_7CjkDerHZK1/view?usp=sharing',
+    embedUrl: 'https://drive.google.com/file/d/1aOFgJmleefouFqo9G5p4_7CjkDerHZK1/preview',
+    driveId: '1aOFgJmleefouFqo9G5p4_7CjkDerHZK1',
+    downloadUrl: 'https://drive.google.com/uc?export=download&id=1aOFgJmleefouFqo9G5p4_7CjkDerHZK1',
+    description: 'Constitutive material plasticity calibration, circular beam & solid profiles, cross-sectional inertia, and section assignments.',
+    duration: 'Part 2 • 1080p',
+    seriesId: 'strut',
+    seriesName: 'Strut Antiprism Modeling',
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+  },
+  {
+    id: 'vid-strut-3',
+    title: 'Strut Antiprism Modeling — Part 3',
+    part: 3,
+    url: 'https://drive.google.com/file/d/1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU/view?usp=sharing',
+    embedUrl: 'https://drive.google.com/file/d/1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU/preview',
+    driveId: '1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU',
+    downloadUrl: 'https://drive.google.com/uc?export=download&id=1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU',
+    description: 'Finite element mesh discretization, C3D8R hex element formulation, enhanced hourglass control, and general self-contact interaction.',
+    duration: 'Part 3 • 1080p',
+    seriesId: 'strut',
+    seriesName: 'Strut Antiprism Modeling',
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+  },
+  {
+    id: 'vid-strut-4',
+    title: 'Strut Antiprism Modeling — Part 4',
+    part: 4,
+    url: 'https://drive.google.com/file/d/1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ/view?usp=sharing',
+    embedUrl: 'https://drive.google.com/file/d/1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ/preview',
+    driveId: '1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ',
+    downloadUrl: 'https://drive.google.com/uc?export=download&id=1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ',
+    description: 'Dynamic explicit crush execution, boundary conditions, history output extraction (ALLIE, ALLKE, RF2), and Specific Energy Absorption (SEA) evaluation.',
+    duration: 'Part 4 • 1080p',
+    seriesId: 'strut',
+    seriesName: 'Strut Antiprism Modeling',
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+  }
+];
+
+export const ANTIPRISM_TUTORIAL_SERIES: TutorialSeries[] = [
+  {
+    id: 'plate',
+    title: 'Plate Antiprism Modeling',
+    shortTitle: 'Plate Antiprism',
+    subtitle: '2-Part Video Guide: Parametric Fold Geometry & Hinge Contact',
+    badge: '2 Parts • 492 MB',
+    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER,
+    videos: PLATE_ANTIPRISM_VIDEOS
+  },
+  {
+    id: 'strut',
+    title: 'Strut Antiprism Modeling',
+    shortTitle: 'Strut Antiprism',
+    subtitle: '4-Part Complete Video Guide & Lattice Modeling in Abaqus',
+    badge: '4 Parts • 1080p HD',
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
+    videos: STRUT_ANTIPRISM_VIDEOS
+  }
+];
+
+// Unified playlist for backward compatibility
+export const ANTIPRISM_VIDEOS: VideoTutorial[] = [
+  ...PLATE_ANTIPRISM_VIDEOS,
+  ...STRUT_ANTIPRISM_VIDEOS
+];
+
 
 export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
   {

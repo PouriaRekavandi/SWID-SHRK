@@ -1,5 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ANTIPRISM_VIDEOS, GOOGLE_DRIVE_VIDEOS_FOLDER } from '../data/initialData';
+import {
+  ANTIPRISM_VIDEOS,
+  PLATE_ANTIPRISM_VIDEOS,
+  STRUT_ANTIPRISM_VIDEOS,
+  ANTIPRISM_TUTORIAL_SERIES,
+  GOOGLE_DRIVE_PLATE_FOLDER,
+  GOOGLE_DRIVE_STRUT_FOLDER
+} from '../data/initialData';
+import { VideoTutorial } from '../types';
 import {
   ChevronDown,
   Play,
@@ -30,8 +38,12 @@ import {
   Crosshair,
   TrendingUp,
   Gauge,
-  Zap
+  Zap,
+  Boxes,
+  Link2,
+  GraduationCap
 } from 'lucide-react';
+import { StrutAntiprismTutorialPage } from './StrutAntiprismTutorialPage';
 
 interface ResearchItem {
   id: string;
@@ -76,7 +88,7 @@ const RESEARCH_ITEMS: ResearchItem[] = [
     shortTitle: 'Energy Absorption & Metamaterials',
     desc: 'Investigation into mechanical energy dissipation, cellular metamaterials, AntiPrism unit cells, and dynamic impact mitigation.',
     tags: ['Metamaterials', 'FEA'],
-    highlight: 'Interactive AntiPrism Video Tutorials (Parts 1 & 2)',
+    highlight: 'Strut & Origami AntiPrism Video Tutorials (3-Part Strut + 2-Part Origami)',
     order: 3,
   },
   {
@@ -170,6 +182,7 @@ export interface ResearchSectionProps {
 }
 
 export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) => {
+  const [activeViewMode, setActiveViewMode] = useState<'overview' | 'plate-tutorial' | 'strut-tutorial'>('overview');
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -184,16 +197,78 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
     'mod-4': false,
   });
 
-  const [currentVideo, setCurrentVideo] = useState(ANTIPRISM_VIDEOS[0]);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<'plate' | 'strut'>('plate');
+  const activeSeries = useMemo(() => {
+    return ANTIPRISM_TUTORIAL_SERIES.find((s) => s.id === selectedSeriesId) || ANTIPRISM_TUTORIAL_SERIES[0];
+  }, [selectedSeriesId]);
 
-  // Handle deep-link hashes (e.g. #mod-1 or #focus-2)
+  const [currentVideo, setCurrentVideo] = useState<VideoTutorial>(PLATE_ANTIPRISM_VIDEOS[0]);
+
+  const handleSelectSeries = (seriesId: 'plate' | 'strut', videoIndex = 0) => {
+    setSelectedSeriesId(seriesId);
+    const series = ANTIPRISM_TUTORIAL_SERIES.find((s) => s.id === seriesId) || ANTIPRISM_TUTORIAL_SERIES[0];
+    const target = series.videos[videoIndex] || series.videos[0];
+    setCurrentVideo(target);
+  };
+
+  const handleCopySublink = (hashName: string, label: string) => {
+    try {
+      const url = `${window.location.origin}${window.location.pathname}#${hashName}`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url);
+      }
+      if (onNotify) {
+        onNotify(`Copied direct sublink for ${label} (#${hashName})`);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Handle deep-link hashes (e.g. #plate-antiprism-modeling, #strut-antiprism-modeling, #mod-3, etc.)
   useEffect(() => {
     const handleHash = () => {
       const rawHash = window.location.hash.replace('#', '');
       if (rawHash) {
+        if (
+          rawHash === 'plate-antiprism-modeling' ||
+          rawHash === 'plate-antiprism' ||
+          rawHash === 'plate-tutorial' ||
+          rawHash === 'origami-antiprism'
+        ) {
+          setActiveViewMode('plate-tutorial');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        if (
+          rawHash === 'strut-antiprism-modeling' ||
+          rawHash === 'strut-antiprism' ||
+          rawHash === 'strut-tutorial' ||
+          rawHash === 'strut-antiprism-page' ||
+          rawHash === 'strut-workshop'
+        ) {
+          setActiveViewMode('strut-tutorial');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
         if (['mod-1', 'mod-2', 'mod-3', 'mod-4'].includes(rawHash)) {
+          setActiveViewMode('overview');
           setOpenAccordions((prev) => ({ ...prev, [rawHash]: true }));
         }
+        if (rawHash === 'strut-antiprism') {
+          setActiveViewMode('overview');
+          setOpenAccordions((prev) => ({ ...prev, 'mod-3': true }));
+          setSelectedSeriesId('strut');
+          setCurrentVideo(STRUT_ANTIPRISM_VIDEOS[0]);
+        } else if (rawHash === 'plate-antiprism') {
+          setActiveViewMode('overview');
+          setOpenAccordions((prev) => ({ ...prev, 'mod-3': true }));
+          setSelectedSeriesId('plate');
+          setCurrentVideo(PLATE_ANTIPRISM_VIDEOS[0]);
+        }
+
         setTimeout(() => {
           const el = document.getElementById(rawHash);
           if (el) {
@@ -206,7 +281,7 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  }, [onNotify]);
 
   // Automatically expand matching module accordions when user enters a search query
   useEffect(() => {
@@ -385,7 +460,90 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
 
   return (
     <div className="space-y-10 relative">
-      {/* Section Header */}
+      {/* Research Main View Mode Switcher Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-2xl dark:bg-[#070c14]/90 bg-white border dark:border-zinc-800 border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveViewMode('overview');
+              window.history.replaceState(null, '', '#mod-3');
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeViewMode === 'overview'
+                ? 'dark:bg-[#00ff41] bg-emerald-600 text-black shadow-md'
+                : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-300 text-slate-700 hover:text-white border dark:border-zinc-800 border-slate-300'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Research Overview &amp; Curriculum</span>
+          </button>
+
+          {/* Plate Antiprism Modeling Sublink Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveViewMode('plate-tutorial');
+              window.history.replaceState(null, '', '#plate-antiprism-modeling');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeViewMode === 'plate-tutorial'
+                ? 'dark:bg-[#00ff41] bg-emerald-600 text-black shadow-md'
+                : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-300 text-slate-700 hover:text-white border dark:border-zinc-800 border-slate-300'
+            }`}
+          >
+            <Boxes className="w-4 h-4 text-emerald-400" />
+            <span>Plate Antiprism Modeling</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded font-normal ${
+              activeViewMode === 'plate-tutorial' ? 'bg-black/20 text-black font-bold' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+            }`}>
+              2 Parts (492 MB)
+            </span>
+          </button>
+
+          {/* Strut Antiprism Modeling Sublink Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveViewMode('strut-tutorial');
+              window.history.replaceState(null, '', '#strut-antiprism-modeling');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeViewMode === 'strut-tutorial'
+                ? 'dark:bg-[#00ff41] bg-emerald-600 text-black shadow-md'
+                : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-300 text-slate-700 hover:text-white border dark:border-zinc-800 border-slate-300'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-sky-400" />
+            <span>Strut Antiprism Modeling</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded font-normal ${
+              activeViewMode === 'strut-tutorial' ? 'bg-black/20 text-black font-bold' : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+            }`}>
+              4 Parts (1080p)
+            </span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono px-2 text-zinc-400">
+          <span className="w-2 h-2 rounded-full bg-[#00ff41] animate-ping" />
+          <span>Abaqus 2024 CAE Studio</span>
+        </div>
+      </div>
+
+      {activeViewMode !== 'overview' ? (
+        <StrutAntiprismTutorialPage
+          initialCategory={activeViewMode === 'plate-tutorial' ? 'plate' : 'strut'}
+          onBack={() => {
+            setActiveViewMode('overview');
+            window.history.replaceState(null, '', '#mod-3');
+          }}
+          onNotify={onNotify}
+        />
+      ) : (
+        <>
+          {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b dark:border-amber-500/20 border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -724,11 +882,36 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                     <span className="font-bold text-sky-600 dark:text-[#00b8ff] uppercase tracking-wider">Research Scope: </span>
                     Investigation into mechanical energy dissipation, cellular metamaterials, AntiPrism unit cells, and dynamic impact mitigation.
                   </p>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold dark:bg-emerald-950/60 bg-emerald-50 border dark:border-emerald-500/40 border-emerald-300 dark:text-[#00ff41] text-emerald-800 shadow-[0_0_12px_rgba(0,255,65,0.15)]">
-                      <Film className="w-3.5 h-3.5" />
-                      AntiPrism CAE Studio Active
-                    </span>
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    {/* Plate Antiprism Modeling Sublink */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveViewMode('plate-tutorial');
+                        window.history.replaceState(null, '', '#plate-antiprism-modeling');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold dark:bg-emerald-950/70 bg-emerald-100/80 border dark:border-[#00ff41]/50 border-emerald-500/60 dark:text-[#00ff41] text-emerald-800 hover:scale-105 transition-all shadow-xs cursor-pointer"
+                      title="Open dedicated Plate Antiprism Modeling Tutorial (2 Parts)"
+                    >
+                      <Boxes className="w-3.5 h-3.5" />
+                      Plate Antiprism Modeling (2 Parts)
+                    </button>
+
+                    {/* Strut Antiprism Modeling Sublink */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveViewMode('strut-tutorial');
+                        window.history.replaceState(null, '', '#strut-antiprism-modeling');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold dark:bg-sky-950/70 bg-sky-100/80 border dark:border-sky-500/50 border-sky-400 dark:text-sky-300 text-sky-800 hover:scale-105 transition-all shadow-xs cursor-pointer"
+                      title="Open dedicated Strut Antiprism Modeling Tutorial (4 Parts)"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      Strut Antiprism Modeling (4 Parts)
+                    </button>
                   </div>
                 </div>
               </div>
@@ -910,7 +1093,10 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
 
                         {/* Module III: Research Environment: AntiPrism Structures (Cinema Simulation Console) */}
                         {item.id === 'mod-3' && (
-                          <div className="rounded-2xl dark:bg-gradient-to-b dark:from-[#050a12] dark:via-[#08101a] dark:to-[#04070c] bg-gradient-to-b from-slate-50 via-sky-50/40 to-slate-50 border dark:border-sky-500/35 border-sky-300 p-4 sm:p-6 space-y-5 shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_24px_rgba(0,184,255,0.12)]">
+                          <div
+                            id="strut-antiprism"
+                            className="rounded-2xl dark:bg-gradient-to-b dark:from-[#050a12] dark:via-[#08101a] dark:to-[#04070c] bg-gradient-to-b from-slate-50 via-sky-50/40 to-slate-50 border dark:border-sky-500/35 border-sky-300 p-4 sm:p-6 space-y-5 shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_24px_rgba(0,184,255,0.12)] scroll-mt-24"
+                          >
                             {/* Simulation Console Top Header Bar */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b dark:border-zinc-800/90 border-slate-200">
                               <div className="flex items-start sm:items-center gap-3">
@@ -921,10 +1107,10 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                 <div>
                                   <h4 className="font-section-title font-bold text-base sm:text-lg dark:text-[#00b8ff] text-sky-700 flex items-center uppercase tracking-wide">
                                     <span className="dark:text-[#00ff41] text-emerald-600 font-mono mr-2 select-none">//</span>
-                                    <span>Research Environment: AntiPrism Structures</span>
+                                    <span>Research Environment: AntiPrism Metamaterial Studio</span>
                                   </h4>
                                   <p className="text-xs dark:text-zinc-400 text-slate-500 font-mono mt-0.5">
-                                    Select a tutorial part from the playlist below &bull; Abaqus 2024 Dynamic Explicit Workbench
+                                    Select tutorial series &amp; part below &bull; Abaqus 2024 Dynamic Explicit Workbench
                                   </p>
                                 </div>
                               </div>
@@ -938,6 +1124,78 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                   <CheckCircle2 className="w-3 h-3" />
                                   Abaqus 2024
                                 </span>
+                              </div>
+                            </div>
+
+                            {/* Tutorial Series Sublink / Track Selector Bar */}
+                            <div className="p-2 sm:p-2.5 rounded-xl dark:bg-black/70 bg-white/90 border dark:border-zinc-800/90 border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-inner">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[11px] font-mono uppercase tracking-wider dark:text-zinc-400 text-slate-500 font-bold px-1.5">
+                                  Tutorial Track:
+                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {ANTIPRISM_TUTORIAL_SERIES.map((series) => {
+                                    const isSelected = selectedSeriesId === series.id;
+                                    return (
+                                      <button
+                                        key={series.id}
+                                        type="button"
+                                        onClick={() => handleSelectSeries(series.id as 'plate' | 'strut')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                                          isSelected
+                                            ? 'dark:bg-[#00ff41] bg-emerald-600 text-black shadow-[0_0_15px_rgba(0,255,65,0.35)]'
+                                            : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-300 text-slate-700 hover:dark:text-white hover:text-black border dark:border-zinc-800 border-slate-300'
+                                        }`}
+                                      >
+                                        {series.id === 'strut' ? (
+                                          <Layers className="w-3.5 h-3.5" />
+                                        ) : (
+                                          <Boxes className="w-3.5 h-3.5" />
+                                        )}
+                                        <span>{series.title}</span>
+                                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-normal ${
+                                          isSelected ? 'bg-black/20 text-black font-semibold' : 'dark:bg-zinc-800 bg-slate-200 text-zinc-400'
+                                        }`}>
+                                          {series.id === 'strut' ? '4 Parts' : '2 Parts'}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Direct Sublink Quick Action & Open Full Tutorial Page */}
+                              <div className="flex items-center gap-2 self-start md:self-auto px-1 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopySublink(
+                                    selectedSeriesId === 'strut' ? 'strut-antiprism-modeling' : 'plate-antiprism-modeling',
+                                    activeSeries.title
+                                  )}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono dark:text-sky-400 text-sky-700 hover:dark:text-sky-300 hover:text-sky-900 border dark:border-sky-500/30 border-sky-300/60 dark:bg-sky-950/30 bg-sky-50/60 transition-all cursor-pointer"
+                                  title="Copy direct sublink to this tutorial track"
+                                >
+                                  <Link2 className="w-3 h-3" />
+                                  <span>Sublink: #{selectedSeriesId === 'strut' ? 'strut-antiprism-modeling' : 'plate-antiprism-modeling'}</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveViewMode(selectedSeriesId === 'strut' ? 'strut-tutorial' : 'plate-tutorial');
+                                    window.history.replaceState(
+                                      null,
+                                      '',
+                                      selectedSeriesId === 'strut' ? '#strut-antiprism-modeling' : '#plate-antiprism-modeling'
+                                    );
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-mono font-bold dark:bg-emerald-950/60 bg-emerald-50 dark:text-[#00ff41] text-emerald-800 border dark:border-emerald-500/50 border-emerald-400 hover:scale-105 transition-all cursor-pointer shadow-xs"
+                                  title={`Open full ${selectedSeriesId === 'strut' ? 'Strut' : 'Plate'} Antiprism Tutorial page`}
+                                >
+                                  <GraduationCap className="w-3.5 h-3.5" />
+                                  <span>Open Full {selectedSeriesId === 'strut' ? 'Strut' : 'Plate'} Tutorial Page &rarr;</span>
+                                </button>
                               </div>
                             </div>
 
@@ -998,7 +1256,9 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                   {/* Technical Corner Crosshairs */}
                                   <div className="absolute top-2 left-2 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60 flex items-center gap-1">
                                     <span>+</span>
-                                    <span className="hidden sm:inline">CAE-VIEWPORT // PART-0{currentVideo.part}</span>
+                                    <span className="hidden sm:inline">
+                                      CAE-VIEWPORT // {selectedSeriesId === 'strut' ? 'STRUT' : 'ORIGAMI'}-PART-0{currentVideo.part}
+                                    </span>
                                   </div>
                                   <div className="absolute top-2 right-2 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60">
                                     <span>+</span>
@@ -1032,14 +1292,14 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                     </p>
                                   </div>
                                   <a
-                                    href={GOOGLE_DRIVE_VIDEOS_FOLDER}
+                                    href={activeSeries.folderUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-amber-400 text-amber-300 hover:text-amber-200 text-xs font-mono transition-all shrink-0 shadow-xs"
-                                    title="Open Google Drive repository folder"
+                                    title={`Open ${activeSeries.title} Google Drive folder`}
                                   >
                                     <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
-                                    <span>Folder Source</span>
+                                    <span>{activeSeries.shortTitle} Folder</span>
                                     <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
                                   </a>
                                 </div>
@@ -1052,20 +1312,21 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                   <div className="flex items-center justify-between pb-3 border-b dark:border-zinc-800 border-slate-200">
                                     <h5 className="font-section-title font-bold text-xs uppercase tracking-wider dark:text-[#00ff41] text-emerald-700 flex items-center gap-1.5">
                                       <Film className="w-3.5 h-3.5 text-sky-400" />
-                                      <span>Video Playlist</span>
+                                      <span>{activeSeries.shortTitle} Playlist</span>
                                     </h5>
                                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-semibold">
-                                      2 Parts (492 MB)
+                                      {activeSeries.badge}
                                     </span>
                                   </div>
 
                                   {/* Playlist Items */}
                                   <div className="space-y-2.5 mt-3">
-                                    {ANTIPRISM_VIDEOS.map((video) => {
+                                    {activeSeries.videos.map((video) => {
                                       const isSelected = currentVideo.id === video.id;
                                       return (
                                         <button
                                           key={video.id}
+                                          type="button"
                                           onClick={() => setCurrentVideo(video)}
                                           className={`w-full p-3 rounded-xl text-left transition-all text-xs font-mono flex items-start gap-3 border cursor-pointer ${
                                             isSelected
@@ -1086,18 +1347,18 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
 
                                           <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-1">
-                                              <span className="truncate font-semibold">{video.title}</span>
+                                              <span className="truncate font-semibold">Part {video.part}</span>
                                               {isSelected && (
                                                 <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-[#00ff41] uppercase tracking-wider shrink-0 flex items-center gap-1">
                                                   <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-ping" />
-                                                  Streaming
+                                                  Playing
                                                 </span>
                                               )}
                                             </div>
                                             <div className="text-[11px] font-mono text-amber-500 dark:text-amber-400 mt-0.5">
                                               {video.duration}
                                             </div>
-                                            <div className="text-[10px] dark:text-zinc-400 text-slate-500 font-normal line-clamp-1 mt-1">
+                                            <div className="text-[10px] dark:text-zinc-400 text-slate-500 font-normal line-clamp-2 mt-1">
                                               {video.description}
                                             </div>
                                           </div>
@@ -1109,18 +1370,18 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
 
                                 {/* Bottom Controls & Technical Specs Console */}
                                 <div className="space-y-3 pt-3 border-t dark:border-zinc-800 border-slate-200">
-                                  {/* Browse Drive Folder Button */}
+                                  {/* Browse Active Series Drive Folder Button */}
                                   <a
-                                    href={GOOGLE_DRIVE_VIDEOS_FOLDER}
+                                    href={activeSeries.folderUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-zinc-900 to-zinc-800 hover:from-zinc-800 hover:to-zinc-700 border border-zinc-700 hover:border-amber-400 text-zinc-100 flex items-center justify-between text-xs font-mono transition-all shadow-md group cursor-pointer"
                                   >
                                     <div className="flex items-center gap-2">
                                       <FolderOpen className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                                      <span className="font-semibold">Browse Drive Folder</span>
+                                      <span className="font-semibold truncate">Browse {activeSeries.shortTitle} Folder</span>
                                     </div>
-                                    <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform shrink-0" />
                                   </a>
 
                                   {/* Simulation Notes & Hardware Specifications Rack */}
@@ -1130,22 +1391,41 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                         <Terminal className="w-3.5 h-3.5" />
                                         Simulation Notes
                                       </span>
-                                      <span className="text-[10px] font-normal text-zinc-500">Abaqus/CAE</span>
+                                      <span className="text-[10px] font-normal text-zinc-500">{activeSeries.shortTitle}</span>
                                     </div>
 
                                     <div className="space-y-1.5 text-[11px] dark:text-zinc-400 text-slate-600">
-                                      <div className="flex items-start gap-1.5">
-                                        <span className="text-sky-400">&bull;</span>
-                                        <span>Explicit dynamic analysis via Abaqus 2024</span>
-                                      </div>
-                                      <div className="flex items-start gap-1.5">
-                                        <span className="text-[#00ff41]">&bull;</span>
-                                        <span>Automated python scripting for unit cell parametrization</span>
-                                      </div>
-                                      <div className="flex items-start gap-1.5">
-                                        <span className="text-amber-400">&bull;</span>
-                                        <span>General contact penalty &amp; plastic dissipation balance</span>
-                                      </div>
+                                      {selectedSeriesId === 'strut' ? (
+                                        <>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-sky-400">&bull;</span>
+                                            <span>Strut truss framework &amp; lattice cross-section definition</span>
+                                          </div>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-[#00ff41]">&bull;</span>
+                                            <span>General contact penalty at inter-strut plastic collapse hinges</span>
+                                          </div>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-amber-400">&bull;</span>
+                                            <span>Dynamic explicit SEA &amp; plateau crushing force extraction</span>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-sky-400">&bull;</span>
+                                            <span>Explicit dynamic analysis via Abaqus 2024</span>
+                                          </div>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-[#00ff41]">&bull;</span>
+                                            <span>Automated python scripting for unit cell parametrization</span>
+                                          </div>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-amber-400">&bull;</span>
+                                            <span>Folding facet-to-facet contact &amp; plastic dissipation balance</span>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
 
                                     <div className="mt-2.5 pt-2 border-t dark:border-zinc-800 border-slate-200 flex items-center justify-between text-[11px]">
@@ -1534,6 +1814,8 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
           )}
         </>
       )}
+    </>
+  )}
 
       {/* Standalone / Fallback Toast Notification */}
       {toastNotification && (

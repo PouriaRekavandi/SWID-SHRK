@@ -42,6 +42,19 @@ export interface VideoTutorial {
   downloadUrl?: string;
   description: string;
   duration?: string;
+  seriesId?: 'plate' | 'strut' | 'origami';
+  seriesName?: string;
+  folderUrl?: string;
+}
+
+export interface TutorialSeries {
+  id: 'plate' | 'strut' | 'origami';
+  title: string;
+  shortTitle: string;
+  subtitle: string;
+  badge: string;
+  folderUrl: string;
+  videos: VideoTutorial[];
 }
 
 export type TeamRoleCategory = 'all' | 'pi' | 'postdoc' | 'phd' | 'msc' | 'alumni';

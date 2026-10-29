@@ -3,7 +3,7 @@ import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { AudioControl } from './AudioControl';
 import { useEventHorizonAudio } from '../context/AudioContext';
-import { ArrowRight, GraduationCap, PlayCircle, Bot, Sparkles, Orbit, RefreshCw } from 'lucide-react';
+import { ArrowRight, GraduationCap, PlayCircle, Bot, Sparkles, Orbit, RefreshCw, MessageSquare } from 'lucide-react';
 import { BlackHoleHero } from './BlackHoleHero';
 import { BlackHoleLogoCrest } from './BlackHoleLogoCrest';
 
@@ -14,7 +14,21 @@ interface HeroSectionProps {
 type LensingMode = 'subtle' | 'enhanced' | 'off';
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
-  const [lensingMode, setLensingMode] = useState<LensingMode>('subtle');
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    }
+    return false;
+  });
+
+  const [lensingMode, setLensingMode] = useState<LensingMode>(() => {
+    if (typeof window !== 'undefined') {
+      const mobile = window.innerWidth < 768 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      return mobile ? 'off' : 'subtle';
+    }
+    return 'off';
+  });
+
   const [isLensingHovered, setIsLensingHovered] = useState(false);
   const [mouseProximity, setMouseProximity] = useState(0); // 0 (far) to 1 (at black hole core)
   const [mouseVector, setMouseVector] = useState({ x: 0, y: 0 });
@@ -23,7 +37,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
 
   const logoRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const rafId = useRef<number | null>(null);
   const { setProximitySwell } = useEventHorizonAudio();
+
+  // Track window resize for mobile check
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsMobile(mobile);
+      if (mobile && lensingMode !== 'off') {
+        setLensingMode('off');
+      }
+    };
+    window.addEventListener('resize', checkMobile, { passive: true });
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [lensingMode]);
 
   const cycleLensingMode = () => {
     setLensingMode((prev) => {
@@ -33,28 +61,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
     });
   };
 
-  // Track mouse proximity to central black hole and calculate relativistic light bending
+  // High-performance rAF-throttled mouse proximity calculation (desktop only)
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (!logoRef.current) return;
-    const rect = logoRef.current.getBoundingClientRect();
-    const bhCenterX = rect.left + rect.width / 2;
-    const bhCenterY = rect.top + rect.height / 2;
+    if (isMobile) return;
+    if (rafId.current !== null) return;
 
-    const dx = e.clientX - bhCenterX;
-    const dy = e.clientY - bhCenterY;
-    const distance = Math.hypot(dx, dy);
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
-    // Gravitational influence radius: 540px
-    const maxRadius = 540;
-    const prox = Math.max(0, Math.min(1, 1 - distance / maxRadius));
-    setMouseProximity(prox);
-    setMouseVector({ x: dx, y: dy });
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      if (!logoRef.current) return;
+      const rect = logoRef.current.getBoundingClientRect();
+      const bhCenterX = rect.left + rect.width / 2;
+      const bhCenterY = rect.top + rect.height / 2;
 
-    // Modulate Web Audio event horizon drone resonance based on proximity
-    setProximitySwell(prox > 0.22);
+      const dx = clientX - bhCenterX;
+      const dy = clientY - bhCenterY;
+      const distance = Math.hypot(dx, dy);
+
+      const maxRadius = 540;
+      const prox = Math.max(0, Math.min(1, 1 - distance / maxRadius));
+
+      // Avoid re-renders if proximity has barely changed
+      setMouseProximity((prev) => (Math.abs(prev - prox) > 0.04 ? prox : prev));
+      setMouseVector({ x: dx, y: dy });
+      setProximitySwell(prox > 0.25);
+    });
   };
 
   const handleMouseLeave = () => {
+    if (rafId.current !== null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
     setMouseProximity(0);
     setMouseVector({ x: 0, y: 0 });
     setIsLensingHovered(false);
@@ -62,11 +102,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
   };
 
   // Calculate dynamic displacement scale based on mode and mouse proximity
-  const baseScale = lensingMode === 'off' ? 0 : lensingMode === 'enhanced' ? 12 : 5.5;
-  const dynamicDisplacementScale = lensingMode === 'off' ? 0 : baseScale + mouseProximity * 15;
+  const baseScale = lensingMode === 'off' || isMobile ? 0 : lensingMode === 'enhanced' ? 12 : 5.5;
+  const dynamicDisplacementScale = lensingMode === 'off' || isMobile ? 0 : baseScale + mouseProximity * 15;
 
   const getLensingFilter = () => {
-    if (lensingMode === 'off') return 'none';
+    if (lensingMode === 'off' || isMobile) return 'none';
     return 'url(#gravitational-lensing-dynamic)';
   };
 
@@ -77,10 +117,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
     >
       {/* 
         SVG Gravitational Lensing Distortion Filters
-        Uses fractal noise turbulence + dynamic displacement mapping to authentically simulate general relativistic light bending (deflection of photons passing near Schwarzschild radius).
-        Scale dynamically magnifies as mouse approaches the central black hole/logo.
+        Only mounted on desktop when lensing is enabled to prevent mobile and Explorer CPU lock
       */}
-      <svg className="absolute w-0 h-0 pointer-events-none -z-10" aria-hidden="true">
+      {!isMobile && lensingMode !== 'off' && (
+        <svg className="absolute w-0 h-0 pointer-events-none -z-10" aria-hidden="true">
         <defs>
           <filter
             id="gravitational-lensing-dynamic"
@@ -120,6 +160,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
           </filter>
         </defs>
       </svg>
+      )}
 
       <header
         ref={headerRef}
@@ -133,8 +174,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
           <button
             onClick={() => setGenesisKey((prev) => prev + 1)}
             className="group/genesis inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono tracking-wider uppercase transition-all duration-300 bg-black/60 hover:bg-black/85 border border-amber-500/40 hover:border-amber-400 text-amber-200/90 hover:text-white shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_22px_rgba(245,158,11,0.45)] cursor-pointer backdrop-blur-md"
-            title="Trigger black hole singularity creation and logo genesis sequence"
-            aria-label="Singularity Genesis Birth Trigger"
+            title="Trigger star spaghettification and black hole swallowing sequence"
+            aria-label="Star Spaghettification & Crest Emergence Trigger"
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
@@ -147,10 +188,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
               } transition-transform duration-300`}
             />
             <span className="hidden sm:inline font-semibold">
-              {isMaterializing ? 'Forging…' : 'Singularity Genesis'}
+              {isMaterializing ? 'Spaghettifying…' : 'Singularity Genesis'}
             </span>
             <span className="sm:hidden font-semibold">
-              {isMaterializing ? 'Forging…' : 'Genesis'}
+              {isMaterializing ? 'Swallowing…' : 'Genesis'}
             </span>
             <RefreshCw
               className={`w-2.5 h-2.5 text-amber-400/80 ${
@@ -366,6 +407,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
             >
               <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Thesis Registry
+            </button>
+
+            <button
+              onClick={() => onSelectTab('qa')}
+              className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded bg-zinc-900/90 border border-emerald-400 hover:border-[#00ff41] text-emerald-300 hover:text-[#00ff41] font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-all duration-200 shadow-md backdrop-blur-sm cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00ff41]" />
+              Ask Pouria (Q&amp;A)
             </button>
 
             <button

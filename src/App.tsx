@@ -11,12 +11,13 @@ import { ThesisRegistry } from './components/ThesisRegistry';
 import { EquipmentSection } from './components/EquipmentSection';
 import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
+import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
 import { AbaqusGallery } from './components/AbaqusGallery';
 import { Footer } from './components/Footer';
 import { CosmicBackground } from './components/CosmicBackground';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
-import { CheckCircle2, AlertCircle, Bot, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Bot, Sparkles, MessageSquare } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
@@ -107,9 +108,14 @@ export const App: React.FC = () => {
                 <Team onNotify={showToast} onSelectTab={handleSelectTab} />
               </div>
 
+              {/* Ask Dr. Pouria: Mechanical & Aerospace Engineering Q&A Chatbox */}
+              <div className="pt-8 border-t dark:border-zinc-800 border-slate-200">
+                <EngineeringQAChatbox onNotify={showToast} onSelectTab={handleSelectTab} />
+              </div>
+
               {/* Integrated AI Assistant Section on Home */}
               <div className="pt-8 border-t dark:border-zinc-800 border-slate-200">
-                <AIChatSection onNotify={showToast} />
+                <AIChatSection onNotify={showToast} onSelectTab={handleSelectTab} />
               </div>
 
               {/* Thesis Registry Overview */}
@@ -124,9 +130,15 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'qa' && (
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <EngineeringQAChatbox onNotify={showToast} onSelectTab={handleSelectTab} />
+          </div>
+        )}
+
         {activeTab === 'chat' && (
           <div className="max-w-6xl mx-auto px-4 py-8">
-            <AIChatSection onNotify={showToast} />
+            <AIChatSection onNotify={showToast} onSelectTab={handleSelectTab} />
           </div>
         )}
 

@@ -9,7 +9,7 @@
     "dev": "tsx server.ts",
     "prebuild": "node scripts/ensure-assets.js",
     "build": "node scripts/ensure-assets.js && vite build && touch dist/.nojekyll && rm -rf docs && cp -r dist docs && touch docs/.nojekyll",
-    "start": "tsx server.ts",
+    "start": "node server.ts",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "lint": "tsc --noEmit",
     "predeploy": "npm run build",

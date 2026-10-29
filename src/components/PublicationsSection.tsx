@@ -38,6 +38,7 @@ import {
   Activity,
   BarChart3,
 } from 'lucide-react';
+import { BibTeXCitationGenerator } from './BibTeXCitationGenerator';
 
 interface PublicationsSectionProps {
   onNotify?: (msg: string, isError?: boolean) => void;
@@ -59,6 +60,9 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
   const [allBibtexCopied, setAllBibtexCopied] = useState(false);
   const [chartMetric, setChartMetric] = useState<'annual' | 'cumulative' | 'combined'>('annual');
   const [isChartVisible, setIsChartVisible] = useState<boolean>(true);
+  const [generatorModalOpen, setGeneratorModalOpen] = useState<boolean>(false);
+  const [generatorSelectedPaperId, setGeneratorSelectedPaperId] = useState<string | undefined>(undefined);
+  const [isEmbeddedGeneratorOpen, setIsEmbeddedGeneratorOpen] = useState<boolean>(false);
 
   // Extract all unique years present in publications, sorted newest to oldest
   const availableYears = useMemo(() => {
@@ -342,8 +346,34 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
           </p>
         </div>
 
-        {/* Quick Bulk BibTeX Export Button */}
+        {/* Header Action Tools: BibTeX Generator Studio & Quick Export */}
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              setGeneratorSelectedPaperId(filteredPublications[0]?.id || PUBLICATIONS[0]?.id);
+              setGeneratorModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold dark:bg-[#00ff41]/15 bg-emerald-100 dark:text-[#00ff41] text-emerald-800 border dark:border-[#00ff41]/50 border-emerald-400 hover:bg-[#00ff41]/25 dark:hover:bg-[#00ff41]/25 transition-all cursor-pointer shadow-sm hover:scale-102"
+            title="Open interactive BibTeX & multi-format academic citation generator modal"
+          >
+            <FileCode className="w-3.5 h-3.5 text-[#00ff41]" />
+            <span>BibTeX Generator Studio</span>
+            <Sparkles className="w-3 h-3 text-[#00b8ff] animate-pulse" />
+          </button>
+
+          <button
+            onClick={() => setIsEmbeddedGeneratorOpen(!isEmbeddedGeneratorOpen)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer shadow-xs ${
+              isEmbeddedGeneratorOpen
+                ? 'dark:bg-[#00b8ff]/20 dark:border-[#00b8ff] dark:text-[#00b8ff] bg-sky-100 border-sky-400 text-sky-800'
+                : 'dark:bg-zinc-900 bg-white dark:text-zinc-300 text-slate-700 border dark:border-zinc-700 border-slate-300 hover:border-sky-500'
+            }`}
+            title="Toggle in-page Citation Generator workstation"
+          >
+            <Quote className="w-3.5 h-3.5 text-[#00b8ff]" />
+            <span>{isEmbeddedGeneratorOpen ? 'Close Station' : 'In-Page Station'}</span>
+          </button>
+
           <button
             onClick={handleCopyAllBibtex}
             disabled={filteredPublications.length === 0}
@@ -364,6 +394,18 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
           </button>
         </div>
       </div>
+
+      {/* Embedded In-Page BibTeX Citation Generator Workstation */}
+      {isEmbeddedGeneratorOpen && (
+        <div className="animate-fadeIn">
+          <BibTeXCitationGenerator
+            publications={PUBLICATIONS}
+            initialSelectedId={generatorSelectedPaperId || filteredPublications[0]?.id}
+            mode="embedded"
+            onNotify={onNotify}
+          />
+        </div>
+      )}
 
       {/* Publications Summary Widget */}
       <div className="rounded-2xl dark:bg-[#0c1015]/90 bg-white border dark:border-zinc-800 border-slate-200 p-4 sm:p-5 shadow-sm font-mono space-y-4">
@@ -1304,7 +1346,19 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          setGeneratorSelectedPaperId(pub.id);
+                          setGeneratorModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 dark:bg-[#00ff41]/10 bg-emerald-50 hover:bg-emerald-100 dark:hover:bg-[#00ff41]/20 dark:border-[#00ff41]/40 border-emerald-300 dark:text-[#00ff41] text-emerald-800 font-mono text-xs rounded-lg transition-colors cursor-pointer border shadow-xs"
+                        title="Open interactive BibTeX and citation generator for this paper"
+                      >
+                        <FileCode className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <span>Cite / Generator</span>
+                      </button>
+
                       <button
                         onClick={() => handleCopyBibtex(pub)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 dark:bg-zinc-900 bg-slate-100 hover:bg-slate-200 dark:border-zinc-700 border-slate-300 dark:text-zinc-300 text-slate-700 font-mono text-xs rounded-lg transition-colors cursor-pointer border shadow-xs"
@@ -1418,6 +1472,16 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
                         </td>
                         <td className="py-3.5 px-4 align-top text-right whitespace-nowrap space-x-1.5">
                           <button
+                            onClick={() => {
+                              setGeneratorSelectedPaperId(pub.id);
+                              setGeneratorModalOpen(true);
+                            }}
+                            className="p-1.5 rounded dark:bg-emerald-950/60 bg-emerald-50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 dark:text-[#00ff41] text-emerald-700 border dark:border-emerald-800 border-emerald-300 cursor-pointer inline-block"
+                            title="Open BibTeX Citation Generator for this paper"
+                          >
+                            <FileCode className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => handleCopyBibtex(pub)}
                             className="p-1.5 rounded dark:bg-zinc-800 bg-slate-100 hover:bg-slate-200 dark:text-zinc-300 text-slate-600 border dark:border-zinc-700 border-slate-300 cursor-pointer inline-block"
                             title="Copy BibTeX"
@@ -1469,6 +1533,16 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
           </div>
         </div>
       )}
+
+      {/* BibTeX Citation Generator Modal Dialog */}
+      <BibTeXCitationGenerator
+        publications={PUBLICATIONS}
+        initialSelectedId={generatorSelectedPaperId}
+        isOpen={generatorModalOpen}
+        onClose={() => setGeneratorModalOpen(false)}
+        mode="modal"
+        onNotify={onNotify}
+      />
     </div>
   );
 };

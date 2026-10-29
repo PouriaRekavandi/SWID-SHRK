@@ -81,7 +81,7 @@ export interface TeamMember {
   status: 'Active' | 'Alumni' | 'Visiting';
 }
 
-export type TabKey = 'home' | 'team' | 'research' | 'publications' | 'students' | 'gear' | 'abaqus' | 'contact' | 'chat';
+export type TabKey = 'home' | 'team' | 'research' | 'publications' | 'students' | 'gear' | 'abaqus' | 'chat' | 'qa' | 'contact';
 
 export interface ChatMessage {
   id: string;
@@ -91,5 +91,41 @@ export interface ChatMessage {
   sources?: { title: string; uri: string }[];
   modelUsed?: string;
   isError?: boolean;
+}
+
+export type EngineeringDiscipline =
+  | 'All'
+  | 'Aerospace & Hypersonics'
+  | 'Solid Mechanics & Structures'
+  | 'Fluids & Thermal Sciences'
+  | 'Metamaterials & Advanced Composites'
+  | 'Biomechanics & Biomaterials'
+  | 'Robotics & Control Systems'
+  | 'Computational FEA & CFD';
+
+export interface QuestionReply {
+  id: string;
+  authorName: string;
+  authorRole: string;
+  authorEmail?: string;
+  isDirector: boolean;
+  content: string;
+  createdAt: string;
+  likes: number;
+}
+
+export interface EngineeringQuestion {
+  id: string;
+  title: string;
+  discipline: EngineeringDiscipline;
+  authorName: string;
+  authorAffiliation?: string;
+  authorEmail?: string;
+  content: string;
+  createdAt: string;
+  status: 'Answered by Dr. Pouria' | 'Open for Discussion' | 'Pending Review';
+  upvotes: number;
+  tags: string[];
+  replies: QuestionReply[];
 }
 

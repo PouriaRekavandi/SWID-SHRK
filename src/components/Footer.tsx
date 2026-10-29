@@ -70,6 +70,12 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
             Lab Gear
           </button>
           <button
+            onClick={() => onSelectTab('qa')}
+            className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer text-[#00b8ff] dark:text-[#00ff41]"
+          >
+            Ask Pouria (Q&amp;A)
+          </button>
+          <button
             onClick={() => onSelectTab('contact')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >

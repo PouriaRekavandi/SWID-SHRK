@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '../types';
+import { ChatMessage, TabKey } from '../types';
 import {
   Send,
   Bot,
@@ -16,19 +16,25 @@ import {
   RefreshCw,
   AlertCircle,
   HelpCircle,
+  BookOpen,
+  FolderOpen,
+  Film,
 } from 'lucide-react';
+import { generateLabAssistantResponse } from '../utils/labAssistantEngine';
+import { MarkdownMessage } from './MarkdownMessage';
 
 interface AIChatSectionProps {
   onNotify?: (message: string, isError?: boolean) => void;
+  onSelectTab?: (tab: TabKey) => void;
 }
 
-export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
+export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify, onSelectTab }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'model',
       content:
-        "Welcome to the **SWID-SHRK Research Lab AI Assistant**! I am grounded in the research group's work directed by **Pouria Hejazi Rekavandi**, including multiaxial fatigue & fracture mechanics, neural biomechanics (brain injury simulations), energy-absorbing metamaterials, and Abaqus CAE modeling.\n\nHow can I assist your investigation today?",
+        "Welcome to the **SWID-SHRK Research Lab AI Assistant**! I am grounded in the research group's work directed by **Pouria Hejazi Rekavandi**, including multiaxial fatigue & fracture mechanics, neural biomechanics (brain injury simulations), energy-absorbing metamaterials (Strut & Plate AntiPrism tutorials), and Abaqus CAE modeling.\n\nHow can I assist your investigation today?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       modelUsed: 'gemini-3.8-flash',
     },
@@ -104,7 +110,6 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
     setIsLoading(true);
 
     try {
-      // Send conversation history to backend proxy
       const apiPayload = {
         messages: newMessages.map((m) => ({
           role: m.role,
@@ -115,51 +120,84 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
         persona: persona,
       };
 
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(apiPayload),
-      });
+      let responseContent: string = '';
+      let responseSources: { title: string; uri: string }[] = [];
+      let modelLabel: string = selectedModel;
+      let usedServer = false;
 
-      if (!res.ok) {
-        if (res.status === 404) {
-          throw new Error(
-            'The Gemini AI backend endpoint (/api/chat) is not available on static hosting (such as GitHub Pages). ' +
-            'GitHub Pages only serves static files. To enable live AI reasoning and search grounding, run locally with `npm run dev` or deploy the backend to Cloud Run, Vercel, or Render.'
-          );
+      // Determine endpoint path (handles subpaths like /SWID-SHRK/ on GitHub Pages)
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+      const primaryUrl = `${normalizedBase}api/chat`;
+
+      try {
+        const res = await fetch(primaryUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiPayload),
+        });
+
+        // 405 Method Not Allowed is returned by GitHub Pages for any POST
+        // 404 is returned if backend route is not present
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.text) {
+            responseContent = data.text;
+            responseSources = data.sources || [];
+            modelLabel = data.modelUsed || selectedModel;
+            usedServer = true;
+          }
+        } else if (res.status !== 405 && res.status !== 404) {
+          // If server responded with a non-404/405 error, check if it returned a fallback text in body
+          const errorData = await res.json().catch(() => ({}));
+          if (errorData.text) {
+            responseContent = errorData.text;
+            responseSources = errorData.sources || [];
+            modelLabel = errorData.modelUsed || selectedModel;
+            usedServer = true;
+          }
         }
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${res.status}: Failed to reach Gemini API`);
+      } catch (fetchErr) {
+        // Network error, offline, or CORS issue: fall through to client knowledge engine
+        console.warn('Backend /api/chat unreachable, activating Edge Knowledge Engine:', fetchErr);
       }
 
-      const data = await res.json();
+      // If backend did not provide a valid response (e.g. GitHub Pages 405, server down, or offline):
+      if (!responseContent) {
+        const localResponse = generateLabAssistantResponse(text, persona, selectedModel);
+        responseContent = localResponse.text;
+        responseSources = localResponse.sources;
+        modelLabel = 'SWID-SHRK Knowledge Base';
+      }
 
       const modelMessage: ChatMessage = {
         id: `model-${Date.now()}`,
         role: 'model',
-        content: data.text || 'No response returned.',
+        content: responseContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sources: data.sources || [],
-        modelUsed: data.modelUsed || selectedModel,
+        sources: responseSources,
+        modelUsed: modelLabel,
       };
 
       setMessages((prev) => [...prev, modelMessage]);
+      if (onNotify && !usedServer) {
+        onNotify('Grounded via SWID-SHRK Lab Knowledge Base.');
+      }
     } catch (err: any) {
       console.error('Chat error:', err);
-      const isStaticNotice = err.message && err.message.includes('GitHub Pages');
-      const errorMessage: ChatMessage = {
-        id: `err-${Date.now()}`,
+      // Even under unexpected runtime failure, provide an informative lab answer rather than an empty error
+      const localResponse = generateLabAssistantResponse(text, persona, selectedModel);
+      const fallbackMessage: ChatMessage = {
+        id: `model-fallback-${Date.now()}`,
         role: 'model',
-        content: isStaticNotice
-          ? `ℹ️ **Static Hosting Environment Notice**\n\n${err.message}\n\n*All research modules, publications, thesis registry, gear inventory, and Abaqus tutorials are fully interactive on GitHub Pages!*`
-          : `**Error communicating with Gemini:**\n${err.message || 'Please check server logs or connectivity.'}`,
+        content: localResponse.text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isError: !isStaticNotice,
+        sources: localResponse.sources,
+        modelUsed: 'SWID-SHRK Knowledge Base',
       };
-      setMessages((prev) => [...prev, errorMessage]);
-      if (onNotify) onNotify(isStaticNotice ? 'Static hosting notice: AI backend requires Node server.' : `Error: ${err.message}`, !isStaticNotice);
+      setMessages((prev) => [...prev, fallbackMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -174,6 +212,14 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
 
   const samplePrompts = [
     {
+      label: '💬 Ask Dr. Pouria (Q&A Hub)',
+      prompt: 'Where can I ask Dr. Pouria questions about mechanical and aerospace engineering directly?',
+    },
+    {
+      label: '🎬 Find Antiprism Tutorial',
+      prompt: 'find the tutorial about antiprism',
+    },
+    {
       label: 'LCE & PINN Design',
       prompt: 'Explain the Liquid Crystal Elastomer (LCE) and PINN neural inverse design initiative at SWID-SHRK.',
     },
@@ -182,12 +228,12 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
       prompt: 'How are stress intensity factors calculated for functionally graded cylinders with multiple longitudinal cracks?',
     },
     {
-      label: 'Bouligand Composites (Search)',
-      prompt: 'What are the latest 2026 developments in bio-inspired helicoidal Bouligand composites for impact absorption?',
-    },
-    {
       label: 'Abaqus FEA Modeling',
       prompt: 'What are recommended guidelines for modeling viscoelastic brain parenchyma deformation in Abaqus explicit solvers?',
+    },
+    {
+      label: 'Bouligand Composites',
+      prompt: 'What are the developments in bio-inspired helicoidal Bouligand composites for impact absorption?',
     },
   ];
 
@@ -198,14 +244,14 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold uppercase tracking-wider dark:bg-[#00ff41]/10 dark:text-[#00ff41] bg-emerald-50 text-emerald-700 dark:border dark:border-[#00ff41]/30 border border-emerald-300 mb-2">
             <Sparkles className="w-3.5 h-3.5" />
-            Gemini Multimodal Reasoning &amp; Grounding
+            Gemini Multimodal Reasoning &amp; Lab Grounding
           </div>
           <h2 className="text-2xl sm:text-3xl font-section-title font-bold dark:text-white text-slate-900 tracking-wide uppercase flex items-center">
             <span className="dark:text-[#00ff41] text-emerald-600 font-mono mr-2 select-none">//</span>
             <span>SWID-SHRK AI Research Assistant</span>
           </h2>
           <p className="text-xs sm:text-sm font-mono dark:text-zinc-400 text-slate-600 mt-1">
-            Real-time mechanical &amp; aerospace intelligence, Abaqus FEA guidance, and search-grounded citation queries.
+            Real-time mechanical &amp; aerospace intelligence, Abaqus FEA guidance, Antiprism video tutorials, and search-grounded citation queries.
           </p>
         </div>
 
@@ -228,7 +274,7 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
         <div className="flex flex-col gap-1">
           <label className="dark:text-zinc-400 text-slate-600 font-bold uppercase text-[10px] tracking-wider flex items-center gap-1">
             <Cpu className="w-3 h-3 text-[#00b8ff]" />
-            Gemini Model
+            Reasoning Engine
           </label>
           <select
             value={selectedModel}
@@ -307,6 +353,7 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {messages.map((m) => {
             const isUser = m.role === 'user';
+            const isEdgeEngine = m.modelUsed && m.modelUsed.includes('Knowledge Base');
             return (
               <div
                 key={m.id}
@@ -319,7 +366,7 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
                 )}
 
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] rounded-lg p-3 sm:p-4 text-xs sm:text-sm font-mono leading-relaxed transition-all shadow-sm ${
+                  className={`max-w-[85%] sm:max-w-[78%] rounded-lg p-3 sm:p-4 text-xs sm:text-sm font-mono leading-relaxed transition-all shadow-sm ${
                     isUser
                       ? 'dark:bg-[#00ff41]/10 bg-sky-50 text-slate-900 dark:text-zinc-100 border dark:border-[#00ff41]/40 border-sky-300'
                       : m.isError
@@ -329,7 +376,7 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
                 >
                   {/* Sender & Timestamp Header */}
                   <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b dark:border-white/5 border-slate-200 text-[10px] dark:text-zinc-400 text-slate-500">
-                    <span className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="font-bold uppercase tracking-wider flex items-center gap-1.5 flex-wrap">
                       {isUser ? (
                         <>
                           <User className="w-3 h-3 text-sky-600 dark:text-[#00ff41]" />
@@ -340,14 +387,20 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
                           <Bot className="w-3 h-3 text-[#00b8ff]" />
                           SWID-SHRK Assistant
                           {m.modelUsed && (
-                            <span className="px-1 py-0.2 rounded text-[9px] dark:bg-black/60 bg-white border dark:border-zinc-700 border-slate-200">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] border ${
+                                isEdgeEngine
+                                  ? 'dark:bg-emerald-950/60 bg-emerald-50 text-emerald-600 dark:text-emerald-300 border-emerald-400/40'
+                                  : 'dark:bg-black/60 bg-white border-slate-200 dark:border-zinc-700 text-sky-600 dark:text-sky-400'
+                              }`}
+                            >
                               {m.modelUsed}
                             </span>
                           )}
                         </>
                       )}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-none">
                       <span>{m.timestamp}</span>
                       <button
                         onClick={() => handleCopy(m.id, m.content)}
@@ -364,28 +417,48 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
                   </div>
 
                   {/* Message Body with Markdown formatting support */}
-                  <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                  {isUser ? (
+                    <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                  ) : (
+                    <MarkdownMessage content={m.content} onSelectTab={onSelectTab} />
+                  )}
 
                   {/* Grounding Citations */}
                   {m.sources && m.sources.length > 0 && (
                     <div className="mt-3 pt-2.5 border-t dark:border-white/10 border-slate-200">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold dark:text-[#00b8ff] text-sky-700 uppercase tracking-wider mb-1.5">
                         <Globe className="w-3 h-3" />
-                        Verified Google Search Sources:
+                        Verified Resources &amp; Citations:
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {m.sources.map((src, sIdx) => (
-                          <a
-                            key={sIdx}
-                            href={src.uri}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] dark:bg-black/70 bg-white dark:hover:bg-[#00b8ff]/20 hover:bg-sky-100 text-sky-700 dark:text-sky-300 border dark:border-sky-500/30 border-sky-300 transition-colors"
-                          >
-                            <ExternalLink className="w-2.5 h-2.5" />
-                            <span className="truncate max-w-[200px]">{src.title}</span>
-                          </a>
-                        ))}
+                        {m.sources.map((src, sIdx) => {
+                          const isInternalTab = src.uri.startsWith('#') && onSelectTab;
+                          if (isInternalTab) {
+                            const tab = src.uri.substring(1) as TabKey;
+                            return (
+                              <button
+                                key={sIdx}
+                                onClick={() => onSelectTab(tab)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] dark:bg-black/70 bg-white dark:hover:bg-[#00ff41]/20 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border dark:border-emerald-500/30 border-emerald-300 transition-colors cursor-pointer"
+                              >
+                                <Sparkles className="w-2.5 h-2.5" />
+                                <span className="truncate max-w-[200px]">{src.title}</span>
+                              </button>
+                            );
+                          }
+                          return (
+                            <a
+                              key={sIdx}
+                              href={src.uri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] dark:bg-black/70 bg-white dark:hover:bg-[#00b8ff]/20 hover:bg-sky-100 text-sky-700 dark:text-sky-300 border dark:border-sky-500/30 border-sky-300 transition-colors"
+                            >
+                              <ExternalLink className="w-2.5 h-2.5" />
+                              <span className="truncate max-w-[200px]">{src.title}</span>
+                            </a>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -437,7 +510,7 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about fracture mechanics, brain trauma FEA, Bouligand composites, or thesis supervision..."
+                placeholder="Ask about Antiprism tutorials, fracture mechanics, brain trauma FEA, or thesis supervision..."
                 rows={2}
                 disabled={isLoading}
                 className="w-full px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-mono dark:bg-zinc-900 bg-white dark:text-white text-slate-900 border dark:border-zinc-700 border-slate-300 focus:outline-none dark:focus:border-[#00ff41] focus:border-sky-500 transition-colors resize-none placeholder:text-slate-400 dark:placeholder:text-zinc-600"
@@ -453,9 +526,14 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify }) => {
               <Send className="w-4 h-4" />
             </button>
           </form>
-          <div className="flex items-center justify-between text-[10px] font-mono dark:text-zinc-500 text-slate-500 mt-2 px-1">
-            <span>Press Enter to send, Shift+Enter for newline</span>
-            <span>Server-side @google/genai proxy</span>
+          <div className="flex flex-wrap items-center justify-between text-[10px] font-mono dark:text-zinc-500 text-slate-500 mt-2 px-1 gap-2">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] inline-block"></span>
+              Press Enter to send, Shift+Enter for newline
+            </span>
+            <span className="dark:text-zinc-400 text-slate-600">
+              Dual-Engine: Live Gemini Proxy + Offline Lab Knowledge Base
+            </span>
           </div>
         </div>
       </div>

@@ -146,6 +146,108 @@
   }
 }
 
+@keyframes spaghettifiedStarApproach {
+  0% {
+    transform: translate3d(-160%, -115%, 0) scale(0.85) rotate(0deg);
+    opacity: 0;
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 1)) drop-shadow(0 0 25px rgba(0, 184, 255, 0.9));
+  }
+  10% {
+    opacity: 1;
+    transform: translate3d(-135%, -95%, 0) scale(1.05) rotate(15deg);
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 1)) drop-shadow(0 0 35px rgba(255, 215, 64, 0.95));
+  }
+  30% {
+    /* Falling down gravitational well: tidal forces begin pulling near side */
+    opacity: 1;
+    transform: translate3d(-95%, -65%, 0) scale(1.8, 0.7) rotate(34deg);
+    filter: drop-shadow(0 0 22px rgba(255, 220, 90, 1)) drop-shadow(0 0 45px rgba(255, 152, 0, 0.95));
+  }
+  50% {
+    /* Tidal Disruption Radius: Star is violently pulled into spaghetti ribbon */
+    opacity: 1;
+    transform: translate3d(-52%, -32%, 0) scale(3.6, 0.32) rotate(58deg);
+    filter: drop-shadow(0 0 28px rgba(255, 240, 150, 1)) drop-shadow(0 0 55px rgba(245, 124, 0, 1));
+  }
+  68% {
+    /* Extreme spaghettification: ultra-thin incandescent filament spiraling inward */
+    opacity: 1;
+    transform: translate3d(-18%, -8%, 0) scale(5.0, 0.14) rotate(92deg);
+    filter: drop-shadow(0 0 32px rgba(255, 255, 255, 1)) drop-shadow(0 0 50px rgba(255, 190, 60, 1));
+  }
+  80% {
+    /* Relativistic plunge: tip enters event horizon void and collapses into singularity */
+    opacity: 0.85;
+    transform: translate3d(-2%, 0, 0) scale(2.8, 0.06) rotate(145deg);
+  }
+  85% {
+    /* Star completely swallowed into singularity */
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.01, 0.01) rotate(210deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.01);
+  }
+}
+
+@keyframes spaghettifiedTrail {
+  0% {
+    opacity: 0;
+    transform: scale(0.1) rotate(0deg);
+    stroke-dashoffset: 400;
+  }
+  18% {
+    opacity: 0.95;
+    stroke-dashoffset: 280;
+  }
+  48% {
+    opacity: 1;
+    stroke-dashoffset: 120;
+    filter: drop-shadow(0 0 12px rgba(255, 215, 64, 0.95)) drop-shadow(0 0 24px rgba(255, 140, 20, 0.8));
+  }
+  75% {
+    opacity: 0.9;
+    stroke-dashoffset: 20;
+  }
+  85% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes crestAfterSwallow {
+  0%, 74% {
+    opacity: 0;
+    transform: scale(0.01) rotate(-40deg);
+    filter: brightness(5) blur(12px) drop-shadow(0 0 45px #ffffff);
+  }
+  78% {
+    opacity: 0.95;
+    transform: scale(0.18) rotate(-18deg);
+    filter: brightness(3.5) blur(6px) drop-shadow(0 0 40px rgba(255, 225, 110, 1));
+  }
+  86% {
+    opacity: 1;
+    transform: scale(0.72) rotate(-4deg);
+    filter: brightness(2) blur(2px) drop-shadow(0 0 32px rgba(255, 190, 60, 0.95));
+  }
+  94% {
+    opacity: 1;
+    transform: scale(1.06) rotate(1deg);
+    filter: brightness(1.2) blur(0.5px) drop-shadow(0 0 25px rgba(255, 200, 70, 0.9));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1) blur(0px) drop-shadow(0 0 20px rgba(255, 190, 60, 0.85)) drop-shadow(0 0 38px rgba(245, 124, 0, 0.55));
+  }
+}
+
 @keyframes singularityBirth {
   0% {
     transform: scale(0.01) rotate(-35deg);
@@ -292,20 +394,45 @@
 .gravitational-lens-field {
   backdrop-filter: blur(2.5px) contrast(110%) saturate(125%) brightness(105%);
   -webkit-backdrop-filter: blur(2.5px) contrast(110%) saturate(125%) brightness(105%);
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
 
 .einstein-ring-badge {
   background: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 64, 0.15) 0%, rgba(0, 0, 0, 0.65) 75%);
-  backdrop-filter: blur(10px) contrast(115%) saturate(130%);
-  -webkit-backdrop-filter: blur(10px) contrast(115%) saturate(130%);
+  backdrop-filter: blur(8px) contrast(115%) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) contrast(115%) saturate(130%);
   border: 1px solid rgba(255, 215, 64, 0.35);
   box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25), 0 0 18px rgba(255, 180, 50, 0.25);
+  will-change: transform;
 }
 
 .lensing-bending-beam {
   background: linear-gradient(90deg, transparent 0%, rgba(255, 200, 60, 0.15) 20%, rgba(255, 255, 255, 0.7) 50%, rgba(0, 184, 255, 0.2) 80%, transparent 100%);
   background-size: 200% 100%;
-  animation: einsteinRingSheen 6s infinite linear;
+  animation: einsteinRingSheen 8s infinite linear;
+  will-change: background-position;
+}
+
+/* Smartphone & Low-Power Screen Optimizations: disable expensive filters during touch scroll */
+@media (max-width: 768px) {
+  .gravitational-lens-field,
+  .einstein-ring-badge {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Reduced Motion & Battery Saver Overrides */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Event Horizon Audio Visualizer Frequency Waves */

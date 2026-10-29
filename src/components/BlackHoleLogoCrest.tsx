@@ -27,14 +27,14 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
     }
   }, [externalGenesisKey]);
 
-  // Trigger singularity genesis birth sequence on initial mount or key change
+  // Trigger star spaghettification & black hole swallowing sequence on initial mount or key change
   useEffect(() => {
     setIsMaterializing(true);
     onMaterializingChange?.(true);
     const timer = setTimeout(() => {
       setIsMaterializing(false);
       onMaterializingChange?.(false);
-    }, 2400);
+    }, 3400); // 3.4 seconds for complete star spaghettification & crest emergence
     return () => clearTimeout(timer);
   }, [internalGenesisKey, onMaterializingChange]);
 
@@ -67,78 +67,84 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
         {/* Central Event Horizon Void Sphere (Reference Anchor) */}
         <div className="relative w-[170px] xs:w-[200px] sm:w-[250px] md:w-[280px] aspect-square rounded-full flex items-center justify-center">
           {/* 1. Outermost Gravitational Wave Pulses (Expanding Ripples in Spacetime) */}
+          {/* 1. Outermost Gravitational Wave Pulses (Expanding Ripples in Spacetime - hidden on mobile) */}
           <div
             aria-hidden="true"
-            className="absolute -inset-10 sm:-inset-16 rounded-full pointer-events-none opacity-35 animate-[ping_6s_cubic-bezier(0,0,0.2,1)_infinite]"
+            className="hidden sm:block absolute -inset-10 sm:-inset-16 rounded-full pointer-events-none opacity-30 animate-[ping_6s_cubic-bezier(0,0,0.2,1)_infinite]"
             style={{
-              border: '1px solid rgba(255, 193, 7, 0.4)',
+              border: '1px solid rgba(255, 193, 7, 0.35)',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
           <div
             aria-hidden="true"
-            className="absolute -inset-6 sm:-inset-10 rounded-full pointer-events-none opacity-45 animate-[ping_6s_cubic-bezier(0,0,0.2,1)_infinite_2s]"
+            className="hidden sm:block absolute -inset-6 sm:-inset-10 rounded-full pointer-events-none opacity-40 animate-[ping_6s_cubic-bezier(0,0,0.2,1)_infinite_2s]"
             style={{
-              border: '1px solid rgba(245, 124, 0, 0.35)',
+              border: '1px solid rgba(245, 124, 0, 0.3)',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
 
           {/* 2. Deep Relativistic Accretion Halo Glow (Warm Amber & Molten Gold) */}
           <div
             aria-hidden="true"
-            className="absolute -inset-12 sm:-inset-18 rounded-full pointer-events-none opacity-70 blur-2xl"
+            className="absolute -inset-8 sm:-inset-14 rounded-full pointer-events-none opacity-60 blur-xl"
             style={{
               background:
-                'radial-gradient(circle at center, rgba(255, 200, 70, 0.35) 0%, rgba(245, 124, 0, 0.25) 45%, rgba(216, 67, 21, 0.12) 65%, transparent 80%)',
+                'radial-gradient(circle at center, rgba(255, 200, 70, 0.3) 0%, rgba(245, 124, 0, 0.2) 45%, rgba(216, 67, 21, 0.1) 65%, transparent 80%)',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
 
           {/* 3. Upper Gravitational Lensing Arc (Bending over the top of the Event Horizon) */}
           <div
             aria-hidden="true"
-            className={`absolute -top-7 xs:-top-9 sm:-top-12 md:-top-14 left-1/2 -translate-x-1/2 w-[120%] sm:w-[124%] h-[68%] rounded-t-full pointer-events-none transition-all duration-700 blur-[2px] ${
+            className={`absolute -top-7 xs:-top-9 sm:-top-12 md:-top-14 left-1/2 -translate-x-1/2 w-[120%] sm:w-[124%] h-[68%] rounded-t-full pointer-events-none transition-all duration-700 blur-[1px] ${
               isHovered ? 'scale-105 opacity-100' : 'opacity-90'
             }`}
             style={{
               background:
                 'radial-gradient(ellipse at 50% 100%, transparent 60%, rgba(216, 67, 21, 0.4) 66%, rgba(255, 152, 0, 0.75) 74%, rgba(255, 224, 130, 0.95) 86%, rgba(255, 255, 255, 0.98) 92%, rgba(255, 179, 0, 0.6) 96%, transparent 100%)',
-              filter:
-                'drop-shadow(0 -6px 20px rgba(255, 180, 50, 0.9)) drop-shadow(0 -16px 40px rgba(230, 81, 0, 0.65))',
+              filter: 'drop-shadow(0 -4px 16px rgba(255, 180, 50, 0.8))',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
 
           {/* Inner Razor-Bright Upper Lensing Filament */}
           <div
             aria-hidden="true"
-            className="absolute -top-3.5 xs:-top-5 sm:-top-7 md:-top-8 left-1/2 -translate-x-1/2 w-[108%] sm:w-[112%] h-[52%] rounded-t-full pointer-events-none blur-[1px] opacity-95"
+            className="absolute -top-3.5 xs:-top-5 sm:-top-7 md:-top-8 left-1/2 -translate-x-1/2 w-[108%] sm:w-[112%] h-[52%] rounded-t-full pointer-events-none blur-[0.5px] opacity-95"
             style={{
               background:
                 'radial-gradient(ellipse at 50% 100%, transparent 68%, rgba(255, 215, 64, 0.85) 76%, rgba(255, 255, 255, 1) 88%, rgba(255, 183, 77, 0.8) 94%, transparent 100%)',
-              filter: 'drop-shadow(0 -3px 12px rgba(255, 240, 180, 0.95))',
+              filter: 'drop-shadow(0 -2px 8px rgba(255, 240, 180, 0.8))',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
 
           {/* 4. Lower Gravitational Lensing Arc (Bending under the bottom of the Event Horizon) */}
           <div
             aria-hidden="true"
-            className={`absolute -bottom-7 xs:-bottom-9 sm:-bottom-12 md:-bottom-14 left-1/2 -translate-x-1/2 w-[120%] sm:w-[124%] h-[68%] rounded-b-full pointer-events-none transition-all duration-700 blur-[2px] ${
+            className={`absolute -bottom-7 xs:-bottom-9 sm:-bottom-12 md:-bottom-14 left-1/2 -translate-x-1/2 w-[120%] sm:w-[124%] h-[68%] rounded-b-full pointer-events-none transition-all duration-700 blur-[1px] ${
               isHovered ? 'scale-105 opacity-100' : 'opacity-85'
             }`}
             style={{
               background:
                 'radial-gradient(ellipse at 50% 0%, transparent 60%, rgba(216, 67, 21, 0.35) 66%, rgba(255, 152, 0, 0.7) 74%, rgba(255, 224, 130, 0.9) 86%, rgba(255, 255, 255, 0.95) 92%, rgba(255, 179, 0, 0.5) 96%, transparent 100%)',
-              filter:
-                'drop-shadow(0 6px 20px rgba(255, 180, 50, 0.85)) drop-shadow(0 16px 40px rgba(230, 81, 0, 0.55))',
+              filter: 'drop-shadow(0 4px 16px rgba(255, 180, 50, 0.75))',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
 
           {/* Inner Lower Lensing Filament */}
           <div
             aria-hidden="true"
-            className="absolute -bottom-3.5 xs:-bottom-5 sm:-bottom-7 md:-bottom-8 left-1/2 -translate-x-1/2 w-[108%] sm:w-[112%] h-[52%] rounded-b-full pointer-events-none blur-[1px] opacity-90"
+            className="absolute -bottom-3.5 xs:-bottom-5 sm:-bottom-7 md:-bottom-8 left-1/2 -translate-x-1/2 w-[108%] sm:w-[112%] h-[52%] rounded-b-full pointer-events-none blur-[0.5px] opacity-90"
             style={{
               background:
                 'radial-gradient(ellipse at 50% 0%, transparent 68%, rgba(255, 215, 64, 0.8) 76%, rgba(255, 255, 255, 0.95) 88%, rgba(255, 183, 77, 0.7) 94%, transparent 100%)',
-              filter: 'drop-shadow(0 3px 12px rgba(255, 240, 180, 0.9))',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 240, 180, 0.75))',
+              transform: 'translate3d(0, 0, 0)',
             }}
           />
 
@@ -149,11 +155,10 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
               isHovered ? 'scale-105' : 'scale-100'
             }`}
             style={{
-              transform: 'rotate(-16deg) scaleY(0.36)',
+              transform: 'rotate(-16deg) scaleY(0.36) translate3d(0, 0, 0)',
               background:
                 'radial-gradient(ellipse at center, transparent 40%, rgba(255, 245, 200, 0.95) 48%, rgba(255, 215, 64, 0.9) 56%, rgba(255, 140, 20, 0.85) 66%, rgba(230, 81, 0, 0.75) 76%, rgba(183, 28, 28, 0.4) 86%, transparent 95%)',
-              filter:
-                'drop-shadow(0 0 28px rgba(255, 190, 60, 0.95)) drop-shadow(0 0 50px rgba(230, 81, 0, 0.7))',
+              filter: 'drop-shadow(0 0 20px rgba(255, 190, 60, 0.8))',
             }}
           />
 
@@ -252,30 +257,131 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
           />
 
           {/* 8. The Gravitational Singularity Core & Emergence Chamber */}
-          {/* Expanding Singularity Shockwave Blast Rings when Materializing */}
+          {/* 8. Tidal Disruption Event (TDE): Star Spaghettification & Singularity Swallowing Sequence */}
+          {isMaterializing && (
+            <div
+              key={`spaghettification-stream-${internalGenesisKey}`}
+              aria-hidden="true"
+              className="absolute inset-0 z-30 pointer-events-none overflow-visible flex items-center justify-center"
+            >
+              {/* Curved Geodesic Gravitational Infall Plasma Streamers (SVG) */}
+              <svg
+                className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
+                viewBox="0 0 300 300"
+              >
+                <defs>
+                  <linearGradient id="spaghettiTidalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(0, 184, 255, 0)" />
+                    <stop offset="20%" stopColor="rgba(0, 184, 255, 0.7)" />
+                    <stop offset="55%" stopColor="rgba(255, 220, 80, 0.95)" />
+                    <stop offset="85%" stopColor="rgba(255, 140, 20, 1)" />
+                    <stop offset="100%" stopColor="#ffffff" />
+                  </linearGradient>
+                  <filter id="spaghettiGlow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                {/* Outer Infalling Tidal Debris Stream */}
+                <path
+                  d="M -160 -120 C -70 20, 20 80, 150 150"
+                  fill="none"
+                  stroke="url(#spaghettiTidalGrad)"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray="400"
+                  filter="url(#spaghettiGlow)"
+                  className="animate-[spaghettifiedTrail_3.4s_cubic-bezier(0.2,0.8,0.2,1)_forwards]"
+                />
+                {/* Razor Core Hot Starlight Spaghetti Filament */}
+                <path
+                  d="M -150 -110 C -55 30, 40 95, 150 150"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray="400"
+                  className="animate-[spaghettifiedTrail_3.4s_cubic-bezier(0.2,0.8,0.2,1)_0.08s_forwards]"
+                />
+                {/* Secondary Orbiting Stripped Plasma Tendril */}
+                <path
+                  d="M -130 -140 C -40 10, 50 40, 150 150"
+                  fill="none"
+                  stroke="rgba(0, 184, 255, 0.65)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeDasharray="400"
+                  className="animate-[spaghettifiedTrail_3.4s_cubic-bezier(0.2,0.8,0.2,1)_0.16s_forwards]"
+                />
+              </svg>
+
+              {/* The Infalling Stellar Body (Stretching into Spaghetti & Swallowed into Black Hole) */}
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center animate-[spaghettifiedStarApproach_3.4s_cubic-bezier(0.2,0.8,0.2,1)_forwards] will-change-transform"
+              >
+                {/* Stellar Photosphere & Solar Flare Corona */}
+                <div
+                  className="absolute inset-0 rounded-full blur-[1px]"
+                  style={{
+                    background:
+                      'radial-gradient(circle, #ffffff 0%, rgba(255, 240, 160, 0.95) 28%, rgba(255, 160, 20, 0.85) 55%, rgba(0, 184, 255, 0.45) 80%, transparent 100%)',
+                  }}
+                />
+
+                {/* Trailing Spaghettified Tail Ribbon Behind Star Head */}
+                <div
+                  className="absolute -left-12 sm:-left-16 w-24 sm:w-32 h-3.5 sm:h-4.5 rounded-full blur-[1px] -rotate-12"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, transparent 0%, rgba(0, 184, 255, 0.7) 25%, rgba(255, 215, 64, 0.95) 65%, #ffffff 100%)',
+                  }}
+                />
+
+                {/* Luminous Core with Embedded Proto-Crest Emblem */}
+                <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-white shadow-[0_0_18px_#ffffff]">
+                  <img
+                    src={logoTransparent}
+                    alt="Infalling Star Proto-Crest"
+                    className="w-full h-full object-cover rounded-full brightness-150 contrast-125"
+                  />
+                </div>
+
+                {/* High-Energy Quantum Sparks Ejected During Tidal Disruption */}
+                <div className="absolute -top-3 -left-6 w-2 h-2 rounded-full bg-cyan-300 animate-ping opacity-85" />
+                <div className="absolute -bottom-2 -left-10 w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse opacity-90" />
+                <div className="absolute top-4 -left-14 w-1.5 h-1.5 rounded-full bg-white opacity-95" />
+              </div>
+            </div>
+          )}
+
+          {/* Expanding Singularity Shockwave Blast Rings when Star is Swallowed */}
           {isMaterializing && (
             <div
               key={`shockwaves-${internalGenesisKey}`}
               aria-hidden="true"
               className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center overflow-visible"
             >
-              {/* Shockwave Ring 1 */}
+              {/* Shockwave Ring 1 — Bursts right as star matter collapses into center (~2.4s) */}
               <div
-                className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-amber-300 animate-[singularityShockwave_1.4s_cubic-bezier(0.1,0.8,0.2,1)_forwards]"
+                className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-amber-300 animate-[singularityShockwave_1.1s_cubic-bezier(0.1,0.8,0.2,1)_2.4s_forwards]"
                 style={{
                   boxShadow: '0 0 30px 10px rgba(255, 235, 150, 0.9)',
                 }}
               />
               {/* Shockwave Ring 2 */}
               <div
-                className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-orange-400 animate-[singularityShockwave_1.8s_cubic-bezier(0.1,0.8,0.2,1)_0.25s_forwards]"
+                className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-orange-400 animate-[singularityShockwave_1.3s_cubic-bezier(0.1,0.8,0.2,1)_2.6s_forwards]"
                 style={{
                   boxShadow: '0 0 40px 14px rgba(255, 160, 20, 0.8)',
                 }}
               />
               {/* Shockwave Ring 3 */}
               <div
-                className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-white animate-[singularityShockwave_2.2s_cubic-bezier(0.1,0.8,0.2,1)_0.5s_forwards]"
+                className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-white animate-[singularityShockwave_1.5s_cubic-bezier(0.1,0.8,0.2,1)_2.8s_forwards]"
                 style={{
                   boxShadow: '0 0 50px 18px rgba(255, 255, 255, 0.95)',
                 }}
@@ -291,7 +397,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
             {/* Singularity Core Flare Point */}
             <div
               className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white transition-all duration-300 ${
-                isMaterializing ? 'scale-150' : 'scale-100'
+                isMaterializing ? 'scale-175' : 'scale-100'
               }`}
               style={{
                 animation: 'singularityPulse 2.8s infinite ease-in-out',
@@ -342,7 +448,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
             </div>
           </div>
 
-          {/* 9. The SWID-SHRK Master Crest Logo — Manifested from the Singularity */}
+          {/* 9. The SWID-SHRK Master Crest Logo — Manifested from the Singularity at Designated Place */}
           <div className="relative z-20 w-full h-full flex items-center justify-center p-2.5 sm:p-3.5 rounded-full overflow-hidden">
             <img
               key={`crest-genesis-${internalGenesisKey}`}
@@ -355,7 +461,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
               }}
               className={`w-full h-full object-contain select-none rounded-full [clip-path:circle(49%_at_50%_50%)] transition-all duration-500 filter ${
                 isMaterializing
-                  ? 'animate-[singularityBirth_2.4s_cubic-bezier(0.16,1,0.3,1)_forwards]'
+                  ? 'animate-[crestAfterSwallow_3.4s_cubic-bezier(0.16,1,0.3,1)_forwards]'
                   : isHovered
                   ? 'scale-105 brightness-110 drop-shadow-[0_0_24px_rgba(255,210,90,0.95)] drop-shadow-[0_0_46px_rgba(245,124,0,0.65)]'
                   : 'scale-100 drop-shadow-[0_0_20px_rgba(255,190,60,0.85)] drop-shadow-[0_0_38px_rgba(245,124,0,0.55)]'

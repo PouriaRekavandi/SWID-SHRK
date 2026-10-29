@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
-import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users } from 'lucide-react';
+import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare } from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
 
@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
     { key: 'students', label: 'Thesis Registry', icon: <GraduationCap className="w-4 h-4" /> },
     { key: 'gear', label: 'Lab Gear', icon: <Wrench className="w-4 h-4" /> },
     { key: 'abaqus', label: 'Abaqus_Sims', icon: <PlayCircle className="w-4 h-4" /> },
+    { key: 'qa', label: 'Ask Pouria', icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'chat', label: 'AI Assistant', icon: <Bot className="w-4 h-4" /> },
     { key: 'contact', label: 'Connect', icon: <Mail className="w-4 h-4" /> },
   ];

@@ -35,6 +35,7 @@ Shock Wave-Boundary Layer Interaction (SWBLI) is the primary driver of inlet uns
 * **Perforated Wall Bleed with Cavity Recirculation**: If utilizing boundary layer bleed, locate bleed slots directly across the impingement footprint with sonic orifices ($M_{bleed} \\approx 1$). However, for hypersonic cruise efficiency, passive aerodynamic tailoring (curved compression ramps) is strongly preferred over mass bleed.`,
         createdAt: '2026-10-25T16:15:00Z',
         likes: 19,
+        dislikes: 0,
       },
     ],
   },
@@ -75,6 +76,7 @@ The drastic reduction in fatigue life under out-of-phase (non-proportional) load
 * **Abaqus Implementation**: You can compute this via an Abaqus Python post-processing script or an embedded UMAT by sweeping candidate planes at $1^\\circ$ increments through Euler angles to locate the plane where the damage parameter maximizes. We have validated subroutine templates in our lab archive if you need reference files.`,
         createdAt: '2026-10-26T11:40:00Z',
         likes: 24,
+        dislikes: 0,
       },
     ],
   },
@@ -115,6 +117,32 @@ In crashworthiness and ballistic attenuation, the ideal absorber maximizes **Spe
 4. **Tutorials & Abaqus Models**: We have published a **4-part HD video modeling series** and an interactive tutorial on this website demonstrating exactly how to build, mesh, and evaluate AntiPrism unit cells in Abaqus/Explicit!`,
         createdAt: '2026-10-27T12:20:00Z',
         likes: 31,
+        dislikes: 0,
+      },
+      {
+        id: 'rep-3-ai',
+        authorName: 'SWID-SHRK Engineering AI',
+        authorRole: 'Aerospace & Mechanical AI Engine (Gemini 3.8 Flash)',
+        isDirector: false,
+        isAI: true,
+        content: `### Comparative Topology & Energy Absorption Metric Breakdown (AI Synthesis)
+
+To supplement Dr. Pouria's formulation, here is the computational parametric comparison between **Hexagonal Honeycomb**, **Strut-based AntiPrism**, and **Plate-based AntiPrism** lattice configurations under identical relative densities ($\\bar{\\rho} = 0.12$):
+
+| Architecture Metric | Hexagonal Core | Strut AntiPrism | Plate AntiPrism |
+| :--- | :--- | :--- | :--- |
+| **Dominant Deformation Mode** | Plastic Buckling / Folding | Stretch-Dominated Compression | Membrane Shear / In-plane Biaxial |
+| **Peak-to-Mean Force Ratio ($P_{max}/P_{mean}$)** | $1.92$ (Harmful blast spike) | $1.28$ (Smooth yield) | **$1.14$ (Near-ideal plateau)** |
+| **Crush Force Efficiency (CFE)** | $52.1\\%$ | $78.4\\%$ | **$87.6\\%$** |
+| **Specific Energy Absorption (SEA)** | $14.2\\text{ kJ/kg}$ | $22.7\\text{ kJ/kg}$ | **$34.8\\text{ kJ/kg}$** |
+| **Multi-Axial Off-Axis Capacity** | Poor ($<15^\\circ$ tolerance) | Moderate ($45^\\circ$ stable) | **Superior ($60^\\circ$ omnidirectional)** |
+
+#### Key Computational Findings:
+1. **Kinematic Rotational Invariance**: Because AntiPrism unit cells possess antiprismatic nodal symmetry, their triangular faces trigger progressive rotational snap-through rather than catastrophic localized shear banding.
+2. **Post-Yield Progressive Densification**: Strain at onset of densification is prolonged up to $\\epsilon_D \\approx 0.68$, delivering a wide plastic plateau ideal for hypersonic vehicle leading-edge impact and aerospace projectile shielding.`,
+        createdAt: '2026-10-27T14:40:00Z',
+        likes: 28,
+        dislikes: 1,
       },
     ],
   },
@@ -161,6 +189,7 @@ This is an essential question when simulating cellular crushing and thin-walled 
 4. **Alternative Element Choice**: If the struts are predominantly slender beams ($L/D > 10$), consider Timoshenko beam elements (\`B31\`) or quadratic tetrahedral elements (\`C3D10M\` - Modified 10-node tet with internal contact pressure degrees of freedom).`,
         createdAt: '2026-10-27T18:02:00Z',
         likes: 22,
+        dislikes: 0,
       },
     ],
   },
@@ -205,6 +234,7 @@ We utilize a **one- or two-term Ogden strain energy potential** coupled with a *
 While Abaqus has built-in hyperviscoelasticity, large shear deformations often lead to mesh tangling. We implement this through a customized **VUMAT subroutine** with Jaumann objective stress rate formulation and explicit element deletion or adaptive remeshing based on Maximum Principal Strain criteria ($MPS > 0.28$). Check our 2024 paper in *J. Mech. Behav. Biomed. Mater.* for our full experimental calibration data.`,
         createdAt: '2026-10-28T13:30:00Z',
         likes: 27,
+        dislikes: 0,
       },
     ],
   },
@@ -245,6 +275,7 @@ Supercritical fluids near their pseudo-critical line ($T_{pc} \\approx 190.5\\te
 * **Surface Roughness from Additive Manufacturing**: Laser powder bed fusion (LPBF) channels typically have an as-built roughness $Ra \\approx 8 - 15\\ \\mu\\text{m}$. While this enhances turbulence and boosts Nusselt number by up to $35\\%$, it increases Darcy friction factor by $70\\% - 100\\%$, so calibrate the pressure budget accordingly.`,
         createdAt: '2026-10-29T10:15:00Z',
         likes: 18,
+        dislikes: 0,
       },
     ],
   },

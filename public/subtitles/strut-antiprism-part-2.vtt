@@ -1,0 +1,32 @@
+WEBVTT - SWID-SHRK Aerospace & Mechanics Laboratory
+Title: Strut Antiprism Modeling — Part 2
+Kind: captions
+Language: en
+
+1
+00:00.000 --> 00:09.000
+<v Dr. Pouria Hejazi>Welcome back to Part 2 of Strut Antiprism Modeling. Here, we calibrate the constitutive elastoplastic material properties and beam cross-sectional orientations.
+
+2
+00:09.000 --> 00:22.000
+<v Dr. Pouria Hejazi>Navigate to the Property Module. Create a new material named "Ti6Al4V". In consistent Abaqus units (tonne, mm, s, MPa), enter density rho = 4.43e-9 tonne/mm³.
+
+3
+00:22.000 --> 00:36.000
+<v Dr. Pouria Hejazi>Under Mechanical > Elasticity, set Young Modulus E = 114,000 MPa and Poisson Ratio nu = 0.34. This captures the high initial stiffness of the titanium lattice struts.
+
+4
+00:36.000 --> 00:50.000
+<v Dr. Pouria Hejazi>Now add Plasticity. We input true yield stress of 880 MPa at zero plastic strain, and plastic hardening up to 1050 MPa at 0.12 true plastic strain.
+
+5
+00:50.000 --> 01:04.000
+<v Dr. Pouria Hejazi>Create a Profile: Select Circular Profile with radius r = 1.0 mm. Create a Beam Section assigned to this profile with integration performed before analysis.
+
+6
+01:04.000 --> 01:20.000
+<v Dr. Pouria Hejazi>Crucial step: Assign Beam Section Orientation. Define local normal vector n1 for each wire so the bending moments of inertia align symmetrically across all diagonal struts.
+
+7
+01:20.000 --> 01:35.000
+<v Dr. Pouria Hejazi>Verify the section assignment by checking the beam rendering in View > Part Display Options > Render Beam Profiles. Our geometry is now mechanically formulated.

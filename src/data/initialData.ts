@@ -1,4 +1,5 @@
 import { Publication, StudentRecord, VideoTutorial, TutorialSeries, TeamMember } from '../types';
+import { TUTORIAL_VTT_TRACKS } from './tutorialSubtitles';
 
 export const INITIAL_STUDENTS: StudentRecord[] = [
   {
@@ -273,7 +274,8 @@ export const PLATE_ANTIPRISM_VIDEOS: VideoTutorial[] = [
     duration: 'Part 1 • 240 MB',
     seriesId: 'plate',
     seriesName: 'Plate Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER
+    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER,
+    vttTrack: TUTORIAL_VTT_TRACKS['vid-plate-1']
   },
   {
     id: 'vid-plate-2',
@@ -287,7 +289,8 @@ export const PLATE_ANTIPRISM_VIDEOS: VideoTutorial[] = [
     duration: 'Part 2 • 252 MB',
     seriesId: 'plate',
     seriesName: 'Plate Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER
+    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER,
+    vttTrack: TUTORIAL_VTT_TRACKS['vid-plate-2']
   }
 ];
 
@@ -306,7 +309,8 @@ export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = [
     duration: 'Part 1 • 1080p',
     seriesId: 'strut',
     seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
+    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-1']
   },
   {
     id: 'vid-strut-2',
@@ -320,7 +324,8 @@ export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = [
     duration: 'Part 2 • 1080p',
     seriesId: 'strut',
     seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
+    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-2']
   },
   {
     id: 'vid-strut-3',
@@ -334,7 +339,8 @@ export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = [
     duration: 'Part 3 • 1080p',
     seriesId: 'strut',
     seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
+    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-3']
   },
   {
     id: 'vid-strut-4',
@@ -348,7 +354,8 @@ export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = [
     duration: 'Part 4 • 1080p',
     seriesId: 'strut',
     seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER
+    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
+    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-4']
   }
 ];
 

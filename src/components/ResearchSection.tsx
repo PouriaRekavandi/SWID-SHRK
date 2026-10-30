@@ -44,6 +44,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { StrutAntiprismTutorialPage } from './StrutAntiprismTutorialPage';
+import { TutorialVideoPlayer } from './TutorialVideoPlayer';
 
 interface ResearchItem {
   id: string;
@@ -1251,36 +1252,12 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                                   </div>
                                 </div>
 
-                                {/* Video Viewport with HUD Crosshairs */}
-                                <div className="relative aspect-video bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-[inset_0_0_30px_rgba(0,0,0,0.9),0_0_25px_rgba(0,184,255,0.1)] group">
-                                  {/* Technical Corner Crosshairs */}
-                                  <div className="absolute top-2 left-2 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60 flex items-center gap-1">
-                                    <span>+</span>
-                                    <span className="hidden sm:inline">
-                                      CAE-VIEWPORT // {selectedSeriesId === 'strut' ? 'STRUT' : 'ORIGAMI'}-PART-0{currentVideo.part}
-                                    </span>
-                                  </div>
-                                  <div className="absolute top-2 right-2 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60">
-                                    <span>+</span>
-                                  </div>
-                                  <div className="absolute bottom-2 left-2 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60">
-                                    <span>+</span>
-                                  </div>
-                                  <div className="absolute bottom-2 right-2 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60 flex items-center gap-1">
-                                    <span className="hidden sm:inline">REC: 1080p</span>
-                                    <span>+</span>
-                                  </div>
-
-                                  <iframe
-                                    key={currentVideo.id}
-                                    src={currentVideo.embedUrl || `https://drive.google.com/file/d/${currentVideo.driveId}/preview`}
-                                    title={currentVideo.title}
-                                    className="w-full h-full border-0 rounded-xl bg-black"
-                                    allow="autoplay; fullscreen; picture-in-picture"
-                                    allowFullScreen
-                                    loading="lazy"
-                                  />
-                                </div>
+                                {/* Video Viewport with 5-Second Fade-In Transition */}
+                                <TutorialVideoPlayer
+                                  video={currentVideo}
+                                  trackLabel={selectedSeriesId === 'strut' ? 'Strut Antiprism' : 'Plate Antiprism'}
+                                  onNotify={onNotify}
+                                />
 
                                 {/* Video Metadata & Folder Source Link */}
                                 <div className="p-3 rounded-lg bg-zinc-900/80 border border-zinc-800 text-xs font-mono flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

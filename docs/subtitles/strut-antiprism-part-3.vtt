@@ -1,0 +1,32 @@
+WEBVTT - SWID-SHRK Aerospace & Mechanics Laboratory
+Title: Strut Antiprism Modeling — Part 3
+Kind: captions
+Language: en
+
+1
+00:00.000 --> 00:08.000
+<v Dr. Pouria Hejazi>Welcome to Part 3: Finite element mesh discretization, hourglass suppression, and explicit general self-contact formulation.
+
+2
+00:08.000 --> 00:22.000
+<v Dr. Pouria Hejazi>In the Mesh Module, seed the strut edges with an element size of 0.75 mm, giving approximately 40 elements per diagonal member to capture localized plastic hinge formation.
+
+3
+00:22.000 --> 00:36.000
+<v Dr. Pouria Hejazi>For solid representations, select C3D8R 8-node linear brick elements with reduced integration. For beam representations, use B31 Timoshenko beams.
+
+4
+00:36.000 --> 00:52.000
+<v Dr. Pouria Hejazi>Under Element Type, enable Enhanced Hourglass Control. This is mandatory in Abaqus/Explicit to prevent unphysical zero-energy hourglass modes during severe strut plastic collapse.
+
+5
+00:52.000 --> 01:08.000
+<v Dr. Pouria Hejazi>Move to the Interaction Module. Create an Abaqus/Explicit General Contact interaction spanning all exterior surfaces of the metamaterial.
+
+6
+01:08.000 --> 01:25.000
+<v Dr. Pouria Hejazi>Assign Tangential Behavior with penalty friction coefficient mu = 0.20, and Normal Behavior with "Hard" contact pressure-overclosure. This models realistic strut-on-strut compaction.
+
+7
+01:25.000 --> 01:38.000
+<v Dr. Pouria Hejazi>Check mesh verification: confirm zero aspect-ratio warnings and verify that all contact pairs are properly recognized for dynamic crushing.

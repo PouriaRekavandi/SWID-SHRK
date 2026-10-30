@@ -1,0 +1,36 @@
+WEBVTT - SWID-SHRK Aerospace & Mechanics Laboratory
+Title: Strut Antiprism Modeling — Part 1
+Kind: captions
+Language: en
+
+1
+00:00.000 --> 00:08.000
+<v Dr. Pouria Hejazi>Welcome to the SWID-SHRK Aerospace and Mechanics Laboratory. In Part 1 of this masterclass, we explore 3D parametric geometric wireframing of the antiprism unit cell in Abaqus/CAE.
+
+2
+00:08.000 --> 00:18.000
+<v Dr. Pouria Hejazi>To begin, open Abaqus/CAE and create a 3D Deformable Wire Part named "Strut-AntiPrism-Cell". We will define coordinate vertices using parametric trigonometric relationships.
+
+3
+00:18.000 --> 00:30.000
+<v Dr. Pouria Hejazi>The geometric parameters are circumradius R_BOT = 15.0 mm for the lower polygonal ring, R_TOP = 15.0 mm for the upper ring, and a total unit cell height H = 30.0 mm.
+
+4
+00:30.000 --> 00:42.000
+<v Dr. Pouria Hejazi>Notice the relative rotation angle theta_twist = 45 degrees between upper and lower planes. This relative twist induces tetragonal antiprism symmetry, which governs the multi-mode crush response.
+
+5
+00:42.000 --> 00:56.000
+<v Dr. Pouria Hejazi>We now generate reference datum points for each vertex: four on the z = 0 plane and four on the z = 30 plane, shifted by 45 degrees.
+
+6
+00:56.000 --> 01:10.000
+<v Dr. Pouria Hejazi>Next, use the Wire PolyLine tool to connect the adjacent base nodes, the top ring nodes, and the inclined diagonal struts spanning between bottom and top rings.
+
+7
+01:10.000 --> 01:25.000
+<v Dr. Pouria Hejazi>Always enable Merge Type = MERGE. This ensures nodal continuity at every junction so forces and bending moments transmit smoothly without artificial disconnections.
+
+8
+01:25.000 --> 01:40.000
+<v Dr. Pouria Hejazi>Save the model database. We now have 8 vertices and 16 connecting struts fully indexed and ready for material calibration in Part 2.

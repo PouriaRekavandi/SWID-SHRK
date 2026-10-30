@@ -32,6 +32,27 @@ export interface Publication {
   abstract?: string;
 }
 
+export interface VttCue {
+  id?: string;
+  startTime: number; // in seconds
+  endTime: number; // in seconds
+  startFormatted: string; // e.g. "00:05.000"
+  endFormatted: string; // e.g. "00:15.000"
+  text: string;
+  speaker?: string;
+}
+
+export interface VttTrack {
+  id: string;
+  label: string;
+  language: string;
+  kind: 'subtitles' | 'captions';
+  default?: boolean;
+  vttUrl?: string;
+  vttContent: string;
+  cues: VttCue[];
+}
+
 export interface VideoTutorial {
   id: string;
   title: string;
@@ -45,6 +66,8 @@ export interface VideoTutorial {
   seriesId?: 'plate' | 'strut' | 'origami';
   seriesName?: string;
   folderUrl?: string;
+  vttTrack?: VttTrack;
+  vttTracks?: VttTrack[];
 }
 
 export interface TutorialSeries {
@@ -109,9 +132,11 @@ export interface QuestionReply {
   authorRole: string;
   authorEmail?: string;
   isDirector: boolean;
+  isAI?: boolean;
   content: string;
   createdAt: string;
   likes: number;
+  dislikes?: number;
 }
 
 export interface EngineeringQuestion {

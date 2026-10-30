@@ -504,3 +504,32 @@
   animation: neural-sweep 4s ease-in-out infinite;
 }
 
+/* 5-Second Tutorial Video Fade-In Transition */
+@keyframes videoFadeIn5s {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  15% {
+    opacity: 0.96;
+  }
+  50% {
+    opacity: 0.70;
+  }
+  75% {
+    opacity: 0.30;
+  }
+  92% {
+    opacity: 0.08;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.animate-video-fade-in-5s {
+  animation: videoFadeIn5s 5000ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  will-change: opacity, visibility;
+}
+

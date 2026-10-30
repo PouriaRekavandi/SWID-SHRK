@@ -1,0 +1,28 @@
+WEBVTT - SWID-SHRK Aerospace & Mechanics Laboratory
+Title: Plate Antiprism Modeling — Part 1
+Kind: captions
+Language: en
+
+1
+00:00.000 --> 00:08.000
+<v Dr. Pouria Hejazi>Welcome to the SWID-SHRK Plate Antiprism Modeling workshop. In Part 1, we establish parametric origami folded facet geometry and shell formulations in Abaqus/CAE.
+
+2
+00:08.000 --> 00:20.000
+<v Dr. Pouria Hejazi>Create a 3D Deformable Shell Part named "Plate-AntiPrism-Cell". The geometry consists of triangular and trapezoidal facets connected along inclined fold creases.
+
+3
+00:20.000 --> 00:34.000
+<v Dr. Pouria Hejazi>Set circumradius R = 20.0 mm, total height H = 25.0 mm, and fold rotation angle theta = 45 degrees. The fold dihedral angle dictates the initial bending mode upon impact.
+
+4
+00:34.000 --> 00:48.000
+<v Dr. Pouria Hejazi>In the Property Module, define aluminum alloy Al 6061-T6: density 2.70e-9 tonne/mm³, modulus E = 70,000 MPa, Poisson ratio nu = 0.33, and yield stress 276 MPa.
+
+5
+00:48.000 --> 01:02.000
+<v Dr. Pouria Hejazi>Create a Homogeneous Shell Section with uniform plate thickness t = 0.5 mm. Assign this section to all facet surfaces with 5 integration points through the thickness.
+
+6
+01:02.000 --> 01:18.000
+<v Dr. Pouria Hejazi>Apply kinematic crease constraints across fold hinge edges to simulate realistic localized plastic bending hinges during cell collapse.

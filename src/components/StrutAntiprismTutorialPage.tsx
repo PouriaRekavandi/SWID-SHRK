@@ -6,6 +6,7 @@ import {
   GOOGLE_DRIVE_STRUT_FOLDER,
 } from '../data/initialData';
 import { VideoTutorial } from '../types';
+import { TutorialVideoPlayer } from './TutorialVideoPlayer';
 import {
   ArrowLeft,
   Play,
@@ -658,34 +659,12 @@ print(">> SWID-SHRK Plate Antiprism model successfully generated!")`;
               </div>
             </div>
 
-            {/* Video Player Frame */}
-            <div className="relative aspect-video bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-[inset_0_0_40px_rgba(0,0,0,0.9),0_0_30px_rgba(0,184,255,0.1)]">
-              {/* Technical Crosshairs */}
-              <div className="absolute top-2 left-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60 flex items-center gap-1">
-                <span>+</span>
-                <span>SWID-SHRK // {tutorialType.toUpperCase()}-PART-0{currentVideo.part} // ABAQUS-STUDIO</span>
-              </div>
-              <div className="absolute top-2 right-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60">
-                <span>+</span>
-              </div>
-              <div className="absolute bottom-2 left-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60">
-                <span>+</span>
-              </div>
-              <div className="absolute bottom-2 right-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/60 flex items-center gap-1">
-                <span>REC // 60 FPS</span>
-                <span>+</span>
-              </div>
-
-              <iframe
-                key={currentVideo.id}
-                src={currentVideo.embedUrl || `https://drive.google.com/file/d/${currentVideo.driveId}/preview`}
-                title={currentVideo.title}
-                className="w-full h-full border-0 rounded-xl bg-black"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-                loading="lazy"
-              />
-            </div>
+            {/* Video Player Frame with 5-Second Fade-In Transition */}
+            <TutorialVideoPlayer
+              video={currentVideo}
+              trackLabel={tutorialType === 'plate' ? 'Plate Antiprism' : 'Strut Antiprism'}
+              onNotify={onNotify}
+            />
 
             {/* Video Controls & Next/Prev Part Switcher */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs font-mono">

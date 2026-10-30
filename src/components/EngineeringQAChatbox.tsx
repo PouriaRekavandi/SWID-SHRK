@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Clock,
   ThumbsUp,
+  ThumbsDown,
   Tag,
   UserCheck,
   Bot,
@@ -43,6 +44,7 @@ interface EngineeringQAChatboxProps {
 }
 
 const STORAGE_KEY = 'swid_shrk_engineering_qa_v1';
+const STORAGE_REPLY_VOTES_KEY = 'swid_shrk_engineering_qa_reply_votes_v2';
 
 export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
   onNotify,
@@ -55,7 +57,31 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Normalize replies: ensure dislikes property exists and rep-3-ai is retained
+          return parsed.map((q: EngineeringQuestion) => {
+            const replies: QuestionReply[] = (q.replies || []).map((r) => ({
+              ...r,
+              likes: typeof r.likes === 'number' ? r.likes : 0,
+              dislikes: typeof r.dislikes === 'number' ? r.dislikes : 0,
+            }));
+
+            // Inject AI reply into q-3 if not already present
+            if (q.id === 'q-3' && !replies.some((r) => r.id === 'rep-3-ai' || r.isAI)) {
+              const aiReplySeed = INITIAL_ENGINEERING_QUESTIONS.find((iq) => iq.id === 'q-3')?.replies.find((ir) => ir.id === 'rep-3-ai');
+              if (aiReplySeed) {
+                replies.push({
+                  ...aiReplySeed,
+                  likes: aiReplySeed.likes ?? 0,
+                  dislikes: aiReplySeed.dislikes ?? 0,
+                });
+              }
+            }
+
+            return {
+              ...q,
+              replies,
+            };
+          });
         }
       }
     } catch {
@@ -98,11 +124,33 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
   const [replyText, setReplyText] = useState('');
   const [replyAuthorName, setReplyAuthorName] = useState('');
   const [isDraftingAI, setIsDraftingAI] = useState(false);
+  const [generatingAIForQuestionId, setGeneratingAIForQuestionId] = useState<string | null>(null);
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
 
-  // Upvoted tracker
+  // Upvoted tracker for questions
   const [upvotedIds, setUpvotedIds] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Thumbs up / down feedback tracking for individual engineering answers
+  const [replyVotes, setReplyVotes] = useState<Record<string, 'up' | 'down'>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_REPLY_VOTES_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // ignore
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_REPLY_VOTES_KEY, JSON.stringify(replyVotes));
+    } catch (e) {
+      console.warn('Failed to save reply feedback votes', e);
+    }
+  }, [replyVotes]);
 
   // Expand / collapse tracking for long engineering answers
   const [expandedReplyIds, setExpandedReplyIds] = useState<Record<string, boolean>>({});
@@ -130,6 +178,133 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
     setCopiedReplyId(id);
     onNotify?.('Technical explanation copied to clipboard');
     setTimeout(() => setCopiedReplyId(null), 2000);
+  };
+
+  // Handle voting on individual engineering answers (thumbs-up / thumbs-down)
+  const handleVoteReply = (questionId: string, replyId: string, voteType: 'up' | 'down') => {
+    const currentVote = replyVotes[replyId];
+    const isRemoving = currentVote === voteType;
+    const targetQ = questions.find((q) => q.id === questionId);
+    const targetReply = targetQ?.replies.find((r) => r.id === replyId);
+    const isAIMessage = targetReply?.isAI || targetReply?.authorName?.toLowerCase().includes('ai');
+
+    // Update vote state
+    setReplyVotes((prev) => {
+      const next = { ...prev };
+      if (isRemoving) {
+        delete next[replyId];
+      } else {
+        next[replyId] = voteType;
+      }
+      return next;
+    });
+
+    // Update counts on question reply
+    setQuestions((prev) =>
+      prev.map((q) => {
+        if (q.id !== questionId) return q;
+        return {
+          ...q,
+          replies: q.replies.map((rep) => {
+            if (rep.id !== replyId) return rep;
+            let likes = typeof rep.likes === 'number' ? rep.likes : 0;
+            let dislikes = typeof rep.dislikes === 'number' ? rep.dislikes : 0;
+
+            // Remove previous vote
+            if (currentVote === 'up') likes = Math.max(0, likes - 1);
+            if (currentVote === 'down') dislikes = Math.max(0, dislikes - 1);
+
+            // Apply new vote if not removing
+            if (!isRemoving) {
+              if (voteType === 'up') likes += 1;
+              if (voteType === 'down') dislikes += 1;
+            }
+
+            return {
+              ...rep,
+              likes,
+              dislikes,
+            };
+          }),
+        };
+      })
+    );
+
+    // Toast notification
+    if (onNotify) {
+      if (isRemoving) {
+        onNotify('Feedback rating removed.');
+      } else if (voteType === 'up') {
+        onNotify(
+          isAIMessage
+            ? 'Rated AI engineering explanation as high quality 👍 Quality feedback recorded!'
+            : 'Rated explanation as helpful 👍'
+        );
+      } else {
+        onNotify(
+          isAIMessage
+            ? 'Feedback recorded 👎 — We will refine future AI engineering explanations for improved precision.'
+            : 'Feedback recorded 👎 — Thank you for rating this engineering explanation.'
+        );
+      }
+    }
+  };
+
+  // Trigger instant AI explanation for any question thread
+  const handleRequestAIExplanation = (question: EngineeringQuestion) => {
+    setGeneratingAIForQuestionId(question.id);
+    setExpandedQuestionId(question.id);
+
+    setTimeout(() => {
+      try {
+        const fullPrompt = `${question.title}. Details: ${question.content}`;
+        const aiResponse = generateLabAssistantResponse(fullPrompt, 'research_specialist');
+
+        const newAIReply: QuestionReply = {
+          id: `ai-rep-${Date.now()}`,
+          authorName: 'SWID-SHRK Engineering AI',
+          authorRole: 'Aerospace & Mechanical AI Engine (Gemini 3.8 Flash)',
+          isDirector: false,
+          isAI: true,
+          content: `### Computational & Analytical Assessment (AI Synthesis)\n\n${aiResponse.text}\n\n---\n*Grounded via SWID-SHRK multiaxial fatigue formulations, biomechanics models, and Abaqus finite element simulations.*`,
+          createdAt: new Date().toISOString(),
+          likes: 1,
+          dislikes: 0,
+        };
+
+        setQuestions((prev) =>
+          prev.map((q) => {
+            if (q.id === question.id) {
+              return {
+                ...q,
+                status: q.status === 'Open for Discussion' ? 'Answered by Dr. Pouria' : q.status,
+                replies: [...q.replies, newAIReply],
+              };
+            }
+            return q;
+          })
+        );
+
+        setExpandedReplyIds((prev) => ({
+          ...prev,
+          [newAIReply.id]: true,
+        }));
+
+        setReplyVotes((prev) => ({
+          ...prev,
+          [newAIReply.id]: 'up',
+        }));
+
+        if (onNotify) {
+          onNotify('Instant AI Engineering Explanation generated! You can rate its quality below with 👍 / 👎.');
+        }
+      } catch (err) {
+        console.error('Failed to generate AI response:', err);
+        if (onNotify) onNotify('Failed to generate AI explanation. Please try again.', true);
+      } finally {
+        setGeneratingAIForQuestionId(null);
+      }
+    }, 400);
   };
 
   const disciplines: EngineeringDiscipline[] = [
@@ -835,43 +1010,75 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
                     {/* Replies List Header & Quick Actions */}
                     <div className="space-y-4">
                       {q.replies.length === 0 ? (
-                        <div className="p-4 rounded-lg border border-dashed dark:border-zinc-800 border-slate-300 text-center text-zinc-500">
-                          No answers or comments yet. Dr. Pouria or another researcher can answer below.
+                        <div className="p-6 rounded-xl border border-dashed dark:border-zinc-800 border-slate-300 text-center dark:bg-zinc-950/40 bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+                          <p className="text-zinc-400 text-xs font-mono">
+                            No answers or follow-up responses yet. You can ask our AI engine for an instant assessment or post as Dr. Pouria.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => handleRequestAIExplanation(q)}
+                            disabled={generatingAIForQuestionId === q.id}
+                            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold dark:bg-purple-950/70 dark:hover:bg-purple-900/80 dark:text-purple-300 bg-purple-100 hover:bg-purple-200 text-purple-900 border dark:border-purple-700/60 border-purple-300 transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                          >
+                            <Bot className={`w-3.5 h-3.5 ${generatingAIForQuestionId === q.id ? 'animate-spin' : 'text-purple-400'}`} />
+                            <span>
+                              {generatingAIForQuestionId === q.id
+                                ? 'Synthesizing Technical Breakdown...'
+                                : '⚡ Generate Instant AI Engineering Explanation'}
+                            </span>
+                          </button>
                         </div>
                       ) : (
                         <>
-                          {/* Header bar when long answers are present */}
-                          {q.replies.some((r) => r.content.length > 350 || r.content.split('\n').length > 6) && (
-                            <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 pb-1">
-                              <span className="font-semibold uppercase tracking-wider text-[10px] dark:text-zinc-400 text-slate-500">
-                                {q.replies.length} {q.replies.length === 1 ? 'Technical Explanation' : 'Explanations & Follow-ups'}
-                              </span>
+                          {/* Header bar with count, instant AI trigger, and Expand All */}
+                          <div className="flex flex-wrap items-center justify-between gap-2.5 text-[11px] text-zinc-400 px-1 pb-1">
+                            <span className="font-semibold uppercase tracking-wider text-[10px] dark:text-zinc-400 text-slate-500">
+                              {q.replies.length} {q.replies.length === 1 ? 'Technical Explanation' : 'Explanations & Follow-ups'}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              {/* Trigger instant AI explanation on this question */}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const allExpanded = q.replies.every((r) => !!expandedReplyIds[r.id]);
-                                  expandAllRepliesForQuestion(q, !allExpanded);
-                                }}
-                                className="text-[11px] font-mono dark:text-[#00b8ff] text-sky-600 hover:underline cursor-pointer flex items-center gap-1 font-bold"
+                                onClick={() => handleRequestAIExplanation(q)}
+                                disabled={generatingAIForQuestionId === q.id}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono font-bold dark:bg-purple-950/60 dark:hover:bg-purple-900/60 dark:text-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-800 border dark:border-purple-700/50 border-purple-300 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                                title="Synthesize an instant engineering explanation using SWID-SHRK AI engine"
                               >
-                                {q.replies.every((r) => !!expandedReplyIds[r.id]) ? (
-                                  <>
-                                    <ChevronUp className="w-3.5 h-3.5" /> Collapse All Answers
-                                  </>
-                                ) : (
-                                  <>
-                                    <ChevronDown className="w-3.5 h-3.5" /> Expand All Answers
-                                  </>
-                                )}
+                                <Bot className={`w-3 h-3 ${generatingAIForQuestionId === q.id ? 'animate-spin' : 'text-purple-400'}`} />
+                                <span>{generatingAIForQuestionId === q.id ? 'Synthesizing...' : '⚡ Ask AI Explanation'}</span>
                               </button>
+
+                              {q.replies.some((r) => r.content.length > 350 || r.content.split('\n').length > 6) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const allExpanded = q.replies.every((r) => !!expandedReplyIds[r.id]);
+                                    expandAllRepliesForQuestion(q, !allExpanded);
+                                  }}
+                                  className="text-[11px] font-mono dark:text-[#00b8ff] text-sky-600 hover:underline cursor-pointer flex items-center gap-1 font-bold"
+                                >
+                                  {q.replies.every((r) => !!expandedReplyIds[r.id]) ? (
+                                    <>
+                                      <ChevronUp className="w-3.5 h-3.5" /> Collapse All
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronDown className="w-3.5 h-3.5" /> Expand All
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
-                          )}
+                          </div>
 
                           {q.replies.map((rep) => {
                             const isLong = rep.content.length > 350 || rep.content.split('\n').length > 6;
                             const isExpanded = !isLong || !!expandedReplyIds[rep.id];
                             const wordCount = Math.ceil(rep.content.length / 5);
                             const readTimeMin = Math.max(1, Math.ceil(rep.content.length / 800));
+                            const userVote = replyVotes[rep.id];
+                            const isAIMessage = rep.isAI || rep.authorName.toLowerCase().includes('ai');
 
                             return (
                               <div
@@ -879,23 +1086,44 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
                                 className={`p-4 sm:p-5 rounded-xl border space-y-3 transition-all ${
                                   rep.isDirector
                                     ? 'dark:bg-zinc-900/90 bg-white border-2 dark:border-[#00b8ff]/60 border-sky-400 shadow-sm'
+                                    : isAIMessage
+                                    ? 'dark:bg-[#0c0d16] bg-purple-50/40 border-2 dark:border-purple-600/50 border-purple-300 shadow-sm'
                                     : 'dark:bg-black/60 bg-white border dark:border-zinc-800 border-slate-300'
                                 }`}
                               >
                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b dark:border-zinc-800 border-slate-200 pb-2">
                                   <div className="flex items-center gap-2">
-                                    {rep.isDirector && (
+                                    {rep.isDirector ? (
                                       <div className="w-5 h-5 rounded-full bg-[#00b8ff] text-black flex items-center justify-center font-bold text-[10px]">
                                         ✓
                                       </div>
+                                    ) : isAIMessage ? (
+                                      <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px]">
+                                        <Bot className="w-3.5 h-3.5" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full dark:bg-zinc-800 bg-slate-200 text-zinc-400 flex items-center justify-center text-[10px]">
+                                        •
+                                      </div>
                                     )}
-                                    <div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
                                       <span className="font-bold dark:text-white text-slate-900 text-xs">
                                         {rep.authorName}
                                       </span>
-                                      <span className="ml-2 text-[10px] dark:text-[#00b8ff] text-sky-700 font-bold">
-                                        {rep.authorRole}
-                                      </span>
+                                      {rep.isDirector ? (
+                                        <span className="text-[10px] dark:text-[#00b8ff] text-sky-700 font-bold px-1.5 py-0.5 rounded dark:bg-[#00b8ff]/10 bg-sky-50 border dark:border-[#00b8ff]/30 border-sky-200">
+                                          {rep.authorRole}
+                                        </span>
+                                      ) : isAIMessage ? (
+                                        <span className="inline-flex items-center gap-1 text-[10px] dark:text-purple-300 text-purple-800 font-bold px-2 py-0.5 rounded dark:bg-purple-950/70 bg-purple-100 border dark:border-purple-700/60 border-purple-300">
+                                          <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                                          AI Engineering Model
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] dark:text-zinc-400 text-slate-600">
+                                          {rep.authorRole}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                   <span className="text-zinc-500 text-[10px]">
@@ -925,15 +1153,18 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
                                       className={`pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${
                                         rep.isDirector
                                           ? 'dark:from-[#18181b] dark:via-[#18181b]/95 from-white via-white/95 to-transparent'
+                                          : isAIMessage
+                                          ? 'dark:from-[#0c0d16] dark:via-[#0c0d16]/95 from-purple-50 via-purple-50/95 to-transparent'
                                           : 'dark:from-[#05090e] dark:via-[#05090e]/95 from-slate-50 via-slate-50/95 to-transparent'
                                       }`}
                                     />
                                   )}
                                 </div>
 
-                                {/* Expand/Collapse and Action Controls for Long Answers */}
-                                {isLong && (
-                                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t dark:border-zinc-800/80 border-slate-200 mt-2">
+                                {/* Bottom Action & Quality Feedback Controls for ALL Replies */}
+                                <div className="pt-2.5 flex flex-wrap items-center justify-between gap-3 border-t dark:border-zinc-800/80 border-slate-200 mt-2">
+                                  {/* Left: Expand / Collapse Toggle if Long */}
+                                  {isLong ? (
                                     <button
                                       type="button"
                                       onClick={() => toggleReplyExpand(rep.id)}
@@ -959,29 +1190,72 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
                                         </>
                                       )}
                                     </button>
-
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCopyReply(rep.id, rep.content)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono text-zinc-400 hover:text-white dark:bg-zinc-800/60 bg-slate-100 border dark:border-zinc-700/80 border-slate-300 transition-colors cursor-pointer"
-                                        title="Copy technical explanation markdown"
-                                      >
-                                        {copiedReplyId === rep.id ? (
-                                          <>
-                                            <Check className="w-3 h-3 text-[#00ff41]" />
-                                            <span className="text-[#00ff41]">Copied</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Copy className="w-3 h-3" />
-                                            <span>Copy Answer</span>
-                                          </>
-                                        )}
-                                      </button>
+                                  ) : (
+                                    <div className="text-[11px] font-mono text-zinc-500 italic">
+                                      {isAIMessage ? 'AI-synthesized engineering breakdown' : 'Verified peer response'}
                                     </div>
+                                  )}
+
+                                  {/* Right: Thumbs-Up / Thumbs-Down Quality Rating & Copy Actions */}
+                                  <div className="flex flex-wrap items-center gap-2 ml-auto">
+                                    {/* Rate Quality Label */}
+                                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider dark:text-zinc-400 text-slate-500 mr-1 flex items-center gap-1">
+                                      {isAIMessage ? 'Rate AI Explanation:' : 'Helpful?'}
+                                    </span>
+
+                                    {/* Thumbs Up Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleVoteReply(q.id, rep.id, 'up')}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono transition-all cursor-pointer border ${
+                                        userVote === 'up'
+                                          ? 'dark:bg-[#00ff41]/20 dark:border-[#00ff41] dark:text-[#00ff41] bg-emerald-100 border-emerald-500 text-emerald-800 font-bold ring-1 ring-[#00ff41]/40 shadow-sm'
+                                          : 'dark:bg-zinc-800/60 dark:hover:bg-zinc-700/60 bg-slate-100 hover:bg-slate-200 dark:text-zinc-400 text-slate-600 dark:border-zinc-700/80 border-slate-300'
+                                      }`}
+                                      title="Rate as technically accurate and helpful (Thumbs Up)"
+                                      aria-label="Thumbs up"
+                                    >
+                                      <ThumbsUp className={`w-3.5 h-3.5 ${userVote === 'up' ? 'fill-current text-[#00ff41]' : ''}`} />
+                                      <span className="font-bold">{rep.likes || 0}</span>
+                                    </button>
+
+                                    {/* Thumbs Down Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleVoteReply(q.id, rep.id, 'down')}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono transition-all cursor-pointer border ${
+                                        userVote === 'down'
+                                          ? 'dark:bg-rose-500/20 dark:border-rose-500 dark:text-rose-400 bg-rose-100 border-rose-400 text-rose-800 font-bold ring-1 ring-rose-500/40 shadow-sm'
+                                          : 'dark:bg-zinc-800/60 dark:hover:bg-zinc-700/60 bg-slate-100 hover:bg-slate-200 dark:text-zinc-400 text-slate-600 dark:border-zinc-700/80 border-slate-300'
+                                      }`}
+                                      title="Rate as inaccurate or needs improvement (Thumbs Down)"
+                                      aria-label="Thumbs down"
+                                    >
+                                      <ThumbsDown className={`w-3.5 h-3.5 ${userVote === 'down' ? 'fill-current text-rose-400' : ''}`} />
+                                      <span className="font-bold">{rep.dislikes || 0}</span>
+                                    </button>
+
+                                    {/* Copy Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyReply(rep.id, rep.content)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-mono text-zinc-400 hover:text-white dark:bg-zinc-800/60 bg-slate-100 border dark:border-zinc-700/80 border-slate-300 transition-colors cursor-pointer"
+                                      title="Copy technical explanation markdown"
+                                    >
+                                      {copiedReplyId === rep.id ? (
+                                        <>
+                                          <Check className="w-3 h-3 text-[#00ff41]" />
+                                          <span className="text-[#00ff41]">Copied</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3 h-3" />
+                                          <span>Copy</span>
+                                        </>
+                                      )}
+                                    </button>
                                   </div>
-                                )}
+                                </div>
                               </div>
                             );
                           })}

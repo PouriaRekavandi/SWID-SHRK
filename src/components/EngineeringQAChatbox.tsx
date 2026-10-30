@@ -34,6 +34,7 @@ import {
   PlusCircle,
   KeyRound,
   RotateCcw,
+  Copy,
 } from 'lucide-react';
 
 interface EngineeringQAChatboxProps {
@@ -102,6 +103,34 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
   // Upvoted tracker
   const [upvotedIds, setUpvotedIds] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Expand / collapse tracking for long engineering answers
+  const [expandedReplyIds, setExpandedReplyIds] = useState<Record<string, boolean>>({});
+  const [copiedReplyId, setCopiedReplyId] = useState<string | null>(null);
+
+  const toggleReplyExpand = (replyId: string) => {
+    setExpandedReplyIds((prev) => ({
+      ...prev,
+      [replyId]: !prev[replyId],
+    }));
+  };
+
+  const expandAllRepliesForQuestion = (q: EngineeringQuestion, expand: boolean) => {
+    setExpandedReplyIds((prev) => {
+      const next = { ...prev };
+      q.replies.forEach((r) => {
+        next[r.id] = expand;
+      });
+      return next;
+    });
+  };
+
+  const handleCopyReply = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedReplyId(id);
+    onNotify?.('Technical explanation copied to clipboard');
+    setTimeout(() => setCopiedReplyId(null), 2000);
+  };
 
   const disciplines: EngineeringDiscipline[] = [
     'All',
@@ -803,53 +832,160 @@ export const EngineeringQAChatbox: React.FC<EngineeringQAChatboxProps> = ({
                 {/* Expanded Thread: Answers & Conversation */}
                 {isExpanded && (
                   <div className="p-5 sm:p-6 dark:bg-[#05090e] bg-slate-50 border-t dark:border-zinc-800 border-slate-200 space-y-4 font-mono text-xs">
-                    {/* Replies List */}
+                    {/* Replies List Header & Quick Actions */}
                     <div className="space-y-4">
                       {q.replies.length === 0 ? (
                         <div className="p-4 rounded-lg border border-dashed dark:border-zinc-800 border-slate-300 text-center text-zinc-500">
                           No answers or comments yet. Dr. Pouria or another researcher can answer below.
                         </div>
                       ) : (
-                        q.replies.map((rep) => (
-                          <div
-                            key={rep.id}
-                            className={`p-4 sm:p-5 rounded-xl border space-y-3 ${
-                              rep.isDirector
-                                ? 'dark:bg-zinc-900/90 bg-white border-2 dark:border-[#00b8ff]/60 border-sky-400 shadow-sm'
-                                : 'dark:bg-black/60 bg-white border dark:border-zinc-800 border-slate-300'
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b dark:border-zinc-800 border-slate-200 pb-2">
-                              <div className="flex items-center gap-2">
-                                {rep.isDirector && (
-                                  <div className="w-5 h-5 rounded-full bg-[#00b8ff] text-black flex items-center justify-center font-bold text-[10px]">
-                                    ✓
-                                  </div>
+                        <>
+                          {/* Header bar when long answers are present */}
+                          {q.replies.some((r) => r.content.length > 350 || r.content.split('\n').length > 6) && (
+                            <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 pb-1">
+                              <span className="font-semibold uppercase tracking-wider text-[10px] dark:text-zinc-400 text-slate-500">
+                                {q.replies.length} {q.replies.length === 1 ? 'Technical Explanation' : 'Explanations & Follow-ups'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const allExpanded = q.replies.every((r) => !!expandedReplyIds[r.id]);
+                                  expandAllRepliesForQuestion(q, !allExpanded);
+                                }}
+                                className="text-[11px] font-mono dark:text-[#00b8ff] text-sky-600 hover:underline cursor-pointer flex items-center gap-1 font-bold"
+                              >
+                                {q.replies.every((r) => !!expandedReplyIds[r.id]) ? (
+                                  <>
+                                    <ChevronUp className="w-3.5 h-3.5" /> Collapse All Answers
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="w-3.5 h-3.5" /> Expand All Answers
+                                  </>
                                 )}
-                                <div>
-                                  <span className="font-bold dark:text-white text-slate-900 text-xs">
-                                    {rep.authorName}
-                                  </span>
-                                  <span className="ml-2 text-[10px] dark:text-[#00b8ff] text-sky-700 font-bold">
-                                    {rep.authorRole}
+                              </button>
+                            </div>
+                          )}
+
+                          {q.replies.map((rep) => {
+                            const isLong = rep.content.length > 350 || rep.content.split('\n').length > 6;
+                            const isExpanded = !isLong || !!expandedReplyIds[rep.id];
+                            const wordCount = Math.ceil(rep.content.length / 5);
+                            const readTimeMin = Math.max(1, Math.ceil(rep.content.length / 800));
+
+                            return (
+                              <div
+                                key={rep.id}
+                                className={`p-4 sm:p-5 rounded-xl border space-y-3 transition-all ${
+                                  rep.isDirector
+                                    ? 'dark:bg-zinc-900/90 bg-white border-2 dark:border-[#00b8ff]/60 border-sky-400 shadow-sm'
+                                    : 'dark:bg-black/60 bg-white border dark:border-zinc-800 border-slate-300'
+                                }`}
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b dark:border-zinc-800 border-slate-200 pb-2">
+                                  <div className="flex items-center gap-2">
+                                    {rep.isDirector && (
+                                      <div className="w-5 h-5 rounded-full bg-[#00b8ff] text-black flex items-center justify-center font-bold text-[10px]">
+                                        ✓
+                                      </div>
+                                    )}
+                                    <div>
+                                      <span className="font-bold dark:text-white text-slate-900 text-xs">
+                                        {rep.authorName}
+                                      </span>
+                                      <span className="ml-2 text-[10px] dark:text-[#00b8ff] text-sky-700 font-bold">
+                                        {rep.authorRole}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <span className="text-zinc-500 text-[10px]">
+                                    {new Date(rep.createdAt).toLocaleDateString([], {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
                                   </span>
                                 </div>
-                              </div>
-                              <span className="text-zinc-500 text-[10px]">
-                                {new Date(rep.createdAt).toLocaleDateString([], {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                })}
-                              </span>
-                            </div>
 
-                            {/* Markdown Formatted Answer */}
-                            <div className="dark:text-zinc-200 text-slate-800 leading-relaxed text-xs sm:text-sm">
-                              <MarkdownMessage content={rep.content} onSelectTab={onSelectTab} />
-                            </div>
-                          </div>
-                        ))
+                                {/* Markdown Formatted Answer with Expand/Collapse Clamping */}
+                                <div className="relative">
+                                  <div
+                                    className={`dark:text-zinc-200 text-slate-800 leading-relaxed text-xs sm:text-sm transition-all duration-300 ${
+                                      !isExpanded
+                                        ? 'max-h-52 sm:max-h-60 overflow-hidden select-none'
+                                        : 'max-h-none'
+                                    }`}
+                                  >
+                                    <MarkdownMessage content={rep.content} onSelectTab={onSelectTab} />
+                                  </div>
+
+                                  {/* Fade gradient mask when collapsed */}
+                                  {isLong && !isExpanded && (
+                                    <div
+                                      className={`pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${
+                                        rep.isDirector
+                                          ? 'dark:from-[#18181b] dark:via-[#18181b]/95 from-white via-white/95 to-transparent'
+                                          : 'dark:from-[#05090e] dark:via-[#05090e]/95 from-slate-50 via-slate-50/95 to-transparent'
+                                      }`}
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Expand/Collapse and Action Controls for Long Answers */}
+                                {isLong && (
+                                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t dark:border-zinc-800/80 border-slate-200 mt-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleReplyExpand(rep.id)}
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
+                                        isExpanded
+                                          ? 'dark:bg-zinc-800/80 dark:hover:bg-zinc-700 bg-slate-100 hover:bg-slate-200 dark:text-zinc-300 text-slate-700 dark:border-zinc-700 border-slate-300'
+                                          : 'dark:bg-[#00b8ff]/15 dark:hover:bg-[#00b8ff]/25 dark:text-[#00b8ff] dark:border-[#00b8ff]/50 bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-300 shadow-sm'
+                                      }`}
+                                      aria-expanded={isExpanded}
+                                    >
+                                      {isExpanded ? (
+                                        <>
+                                          <ChevronUp className="w-3.5 h-3.5" />
+                                          <span>Show Less</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ChevronDown className="w-3.5 h-3.5" />
+                                          <span>Read Full Detailed Explanation</span>
+                                          <span className="text-[10px] font-normal opacity-80">
+                                            ({wordCount} words · ~{readTimeMin} min read)
+                                          </span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyReply(rep.id, rep.content)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono text-zinc-400 hover:text-white dark:bg-zinc-800/60 bg-slate-100 border dark:border-zinc-700/80 border-slate-300 transition-colors cursor-pointer"
+                                        title="Copy technical explanation markdown"
+                                      >
+                                        {copiedReplyId === rep.id ? (
+                                          <>
+                                            <Check className="w-3 h-3 text-[#00ff41]" />
+                                            <span className="text-[#00ff41]">Copied</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="w-3 h-3" />
+                                            <span>Copy Answer</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </>
                       )}
                     </div>
 

@@ -331,7 +331,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({ onNoti
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 w-full mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 dark:border-[#00b8ff] border-sky-600 pb-4">
         <div>

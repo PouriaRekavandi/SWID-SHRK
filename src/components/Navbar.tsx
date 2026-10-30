@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
-import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare } from 'lucide-react';
+import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2 } from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
 
 interface NavbarProps {
   activeTab: TabKey;
   onSelectTab: (tab: TabKey) => void;
+  isFullFit?: boolean;
+  onToggleFullFit?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
+  onSelectTab,
+  isFullFit = true,
+  onToggleFullFit
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
@@ -34,7 +41,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
 
   return (
     <nav className="sticky top-0 z-50 dark:bg-[#050505]/95 bg-white/95 backdrop-blur-md border-b dark:border-[#333333] border-slate-200 transition-colors duration-200 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-[58px] gap-2">
+      <div className={`w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-between min-h-[58px] gap-2 transition-all duration-300 ${
+        isFullFit ? 'max-w-[1720px] 2xl:max-w-[1880px]' : 'max-w-6xl'
+      }`}>
         {/* Brand / Logo */}
         <button
           onClick={() => handleNavClick('home')}
@@ -85,8 +94,35 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
           })}
         </div>
 
-        {/* Right Actions: Theme Switcher & Mobile Menu */}
+        {/* Right Actions: Fit Toggle, Theme Switcher & Mobile Menu */}
         <div className="flex items-center gap-2">
+          {/* Content Fit Width Toggle */}
+          {onToggleFullFit && (
+            <button
+              type="button"
+              onClick={onToggleFullFit}
+              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
+                isFullFit
+                  ? 'dark:bg-emerald-950/60 bg-emerald-50 text-emerald-700 dark:text-[#00ff41] border-emerald-500/50 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
+                  : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-400 text-slate-600 border-zinc-700/60 hover:text-white'
+              }`}
+              title={isFullFit ? 'Displaying Full-Fitted Widescreen (Click to switch to Boxed)' : 'Displaying Standard Boxed (Click to switch to Full-Fitted)'}
+              aria-label="Toggle Full Fitted Layout"
+            >
+              {isFullFit ? (
+                <>
+                  <Minimize2 className="w-3.5 h-3.5 text-[#00ff41]" />
+                  <span className="hidden xl:inline">FULL FIT</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
+                  <span className="hidden xl:inline">BOXED</span>
+                </>
+              )}
+            </button>
+          )}
+
           {/* Theme Switcher Toggle */}
           <ThemeSwitcher />
 

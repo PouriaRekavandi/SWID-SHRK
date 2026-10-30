@@ -238,7 +238,7 @@ export const AIChatSection: React.FC<AIChatSectionProps> = ({ onNotify, onSelect
   ];
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-12">
+    <section className="w-full mx-auto py-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b dark:border-zinc-800 border-slate-200">
         <div>

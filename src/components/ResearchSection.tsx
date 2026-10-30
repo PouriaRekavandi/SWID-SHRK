@@ -1200,10 +1200,10 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                               </div>
                             </div>
 
-                            {/* Main Stage: Left 2-Cols Video Viewport, Right Col Interactive Playlist */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                            {/* Main Stage: Left 8-Cols Video Viewport, Right 4-Cols Interactive Playlist */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                               {/* Left Video Stage */}
-                              <div className="lg:col-span-2 bg-black border dark:border-zinc-800 border-slate-800 rounded-xl p-3.5 space-y-3.5 shadow-2xl">
+                              <div className="lg:col-span-8 bg-black border dark:border-zinc-800 border-slate-800 rounded-xl p-3.5 space-y-3.5 shadow-2xl">
                                 {/* Video Top Action HUD */}
                                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-zinc-800/80">
                                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1283,7 +1283,7 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ onNotify }) =>
                               </div>
 
                               {/* Right Interactive Playlist & Technical Specifications Rack */}
-                              <div className="dark:bg-[#090e15] bg-slate-50 border dark:border-zinc-800/90 border-slate-200 rounded-xl p-4 space-y-4 flex flex-col justify-between shadow-lg">
+                              <div className="lg:col-span-4 dark:bg-[#090e15] bg-slate-50 border dark:border-zinc-800/90 border-slate-200 rounded-xl p-4 space-y-4 flex flex-col justify-between shadow-lg">
                                 <div>
                                   {/* Playlist Header */}
                                   <div className="flex items-center justify-between pb-3 border-b dark:border-zinc-800 border-slate-200">

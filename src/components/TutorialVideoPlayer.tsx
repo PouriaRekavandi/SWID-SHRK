@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { VideoTutorial, VttCue, VttTrack } from '../types';
 import { getVttTrackForVideo, downloadVttTrackFile } from '../data/tutorialSubtitles';
 import {
@@ -51,6 +51,8 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
   }, [video.id, video.vttTrack]);
 
   const [subtitlesEnabled, setSubtitlesEnabled] = useState<boolean>(true);
+  const [subtitleDockMode, setSubtitleDockMode] = useState<'docked' | 'overlay'>('docked');
+  const [viewportFit, setViewportFit] = useState<'full-fit' | 'cinema'>('full-fit');
   const [currentCueIndex, setCurrentCueIndex] = useState<number>(0);
   const [subtitleFontSize, setSubtitleFontSize] = useState<'sm' | 'base' | 'lg'>('base');
   const [highContrast, setHighContrast] = useState<boolean>(false);
@@ -58,6 +60,21 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
   const [transcriptSearch, setTranscriptSearch] = useState<string>('');
   const [copiedTranscript, setCopiedTranscript] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!viewportRef.current) return;
+    try {
+      if (!document.fullscreenElement) {
+        viewportRef.current.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   // Auto-cycle cues or sync with time
   const [autoFollow, setAutoFollow] = useState<boolean>(false);
@@ -184,25 +201,43 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
   const embedUrl = video.embedUrl || (video.driveId ? `https://drive.google.com/file/d/${video.driveId}/preview` : video.url);
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      {/* Video Viewport Container: Fully clear and transparent */}
-      <div className="relative aspect-video bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-[inset_0_0_40px_rgba(0,0,0,0.95),0_0_30px_rgba(0,184,255,0.12)] group">
-        
+    <div className={`space-y-3.5 ${className}`}>
+      {/* Video Viewport Container: Scaled for full fit without cutting off lower text */}
+      <div
+        ref={viewportRef}
+        className={`relative w-full bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-[inset_0_0_40px_rgba(0,0,0,0.95),0_0_30px_rgba(0,184,255,0.12)] group transition-all duration-300 ${
+          viewportFit === 'full-fit'
+            ? 'min-h-[400px] sm:min-h-[480px] md:min-h-[540px] lg:min-h-[620px] xl:min-h-[680px] aspect-[16/10]'
+            : 'aspect-video min-h-[340px] sm:min-h-[420px]'
+        }`}
+      >
         {/* Technical Corner Crosshairs HUD */}
         <div className="absolute top-2.5 left-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/80 flex items-center gap-1.5 drop-shadow-md">
           <span className="text-[#00ff41]">+</span>
           <span>SWID-SHRK // {trackLabel.toUpperCase().replace(/\s+/g, '-')} // PART-0{video.part}</span>
         </div>
-        <div className="absolute top-2.5 right-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/80 drop-shadow-md">
-          <span>+</span>
+
+        {/* Top Right HUD: Fullscreen Trigger & Fit Status */}
+        <div className="absolute top-2.5 right-3 z-10 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="p-1 rounded bg-black/70 hover:bg-black text-zinc-300 hover:text-white border border-zinc-700/80 transition-all cursor-pointer shadow-md"
+            title="Expand Video to Native Fullscreen"
+            aria-label="Toggle native fullscreen"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
+          </button>
+          <span className="text-[9px] font-mono text-sky-400/80 drop-shadow-md pointer-events-none">+</span>
         </div>
+
         <div className="absolute bottom-2.5 left-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/80 flex items-center gap-1 drop-shadow-md">
           <span>+</span>
-          <span className="text-zinc-400 hidden sm:inline">ABAQUS/CAE 2024 &bull; 1080p HD</span>
+          <span className="text-zinc-400 hidden sm:inline">ABAQUS/CAE 2024 &bull; 1080p HD &bull; FULL FIT</span>
         </div>
         <div className="absolute bottom-2.5 right-3 z-10 pointer-events-none text-[9px] font-mono text-sky-400/80 flex items-center gap-1.5 drop-shadow-md">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span>VTT-SYNC // ACTIVE</span>
+          <span>VTT-SYNC // {subtitleDockMode === 'docked' ? 'DOCKED' : 'OVERLAY'}</span>
           <span className="text-[#00ff41]">+</span>
         </div>
 
@@ -242,41 +277,41 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
           loading="eager"
         />
 
-        {/* Interactive WebVTT Subtitle Track Overlay (CC) */}
-        {subtitlesEnabled && currentCue && (
+        {/* Interactive WebVTT Subtitle Track Overlay (Only when in overlay mode) */}
+        {subtitlesEnabled && currentCue && subtitleDockMode === 'overlay' && (
           <div
             role="region"
             aria-label="Closed Captions & Subtitles"
             aria-live="polite"
-            className="absolute bottom-9 left-3 right-3 sm:left-8 sm:right-8 z-20 pointer-events-none flex flex-col items-center justify-center animate-fadeIn"
+            className="absolute bottom-6 left-3 right-3 sm:left-8 sm:right-8 z-20 pointer-events-none flex flex-col items-center justify-center animate-fadeIn"
           >
             <div
-              className={`max-w-2xl w-full p-2.5 sm:p-3 rounded-xl border backdrop-blur-md shadow-2xl transition-all duration-200 pointer-events-auto ${
+              className={`max-w-2xl w-full p-2 sm:p-2.5 rounded-xl border backdrop-blur-md shadow-2xl transition-all duration-200 pointer-events-auto ${
                 highContrast
                   ? 'bg-black text-white border-white/80 ring-2 ring-black'
-                  : 'bg-black/85 dark:bg-zinc-950/90 text-zinc-100 border-[#00ff41]/40 shadow-[0_0_20px_rgba(0,0,0,0.8)]'
+                  : 'bg-black/90 text-zinc-100 border-[#00ff41]/50 shadow-[0_0_20px_rgba(0,0,0,0.85)]'
               }`}
             >
-              {/* Cue HUD Meta: Speaker + Timestamp + Index */}
-              <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-zinc-800 text-[10px] font-mono">
+              <div className="flex items-center justify-between gap-2 pb-1 mb-1 border-b border-zinc-800 text-[10px] font-mono">
                 <div className="flex items-center gap-1.5 text-sky-400">
                   <Subtitles className="w-3 h-3 text-[#00ff41]" />
                   <span className="font-bold text-[#00ff41]">{currentCue.speaker || 'SWID-SHRK Laboratory'}</span>
-                  <span className="text-zinc-600">&bull;</span>
-                  <span className="text-zinc-400">Abaqus CAE 2024</span>
                 </div>
-
                 <div className="flex items-center gap-2 text-zinc-400">
                   <span className="px-1.5 py-0.2 rounded bg-zinc-900 border border-zinc-700 text-amber-400 font-semibold">
                     {currentCue.startFormatted} &rarr; {currentCue.endFormatted}
                   </span>
-                  <span>
-                    ({currentCueIndex + 1}/{activeVttTrack?.cues.length || 1})
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSubtitleDockMode('docked')}
+                    className="text-sky-400 hover:text-white cursor-pointer ml-1"
+                    title="Dock subtitles below video so nothing is blocked"
+                  >
+                    Dock Below &darr;
+                  </button>
                 </div>
               </div>
 
-              {/* Subtitle Cue Text */}
               <p
                 className={`font-sans leading-relaxed text-center font-medium drop-shadow-md select-text ${
                   subtitleFontSize === 'sm' ? 'text-xs sm:text-sm' : subtitleFontSize === 'lg' ? 'text-base sm:text-lg font-semibold' : 'text-sm sm:text-base'
@@ -284,62 +319,99 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
               >
                 {currentCue.text}
               </p>
-
-              {/* Mini Subtitle Stepper & Dismiss Bar */}
-              <div className="flex items-center justify-between gap-2 pt-1.5 mt-1 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400">
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handlePrevCue}
-                    disabled={currentCueIndex === 0}
-                    className="px-1.5 py-0.5 rounded hover:bg-zinc-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                    title="Previous subtitle cue"
-                  >
-                    &larr; Prev
-                  </button>
-                  <span className="text-zinc-600">|</span>
-                  <button
-                    type="button"
-                    onClick={handleNextCue}
-                    disabled={!activeVttTrack || currentCueIndex === activeVttTrack.cues.length - 1}
-                    className="px-1.5 py-0.5 rounded hover:bg-zinc-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                    title="Next subtitle cue"
-                  >
-                    Next &rarr;
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAutoFollow((prev) => !prev)}
-                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
-                      autoFollow ? 'bg-[#00ff41]/20 text-[#00ff41] font-bold' : 'hover:bg-zinc-800 hover:text-zinc-300'
-                    }`}
-                    title="Auto-advance through subtitle cues"
-                  >
-                    Auto-Cycle: {autoFollow ? 'ON' : 'OFF'}
-                  </button>
-                  <span className="text-zinc-600">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setSubtitlesEnabled(false)}
-                    className="hover:text-red-400 cursor-pointer"
-                    title="Hide Subtitles"
-                  >
-                    Hide [CC]
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         )}
       </div>
 
+      {/* DOCKED SUBTITLE THEATER CONSOLE: Below video so presenter & slides remain 100% visible */}
+      {subtitlesEnabled && currentCue && subtitleDockMode === 'docked' && (
+        <div
+          role="region"
+          aria-label="Synchronized Technical Closed Captions"
+          className="p-3 sm:p-4 rounded-xl bg-gradient-to-r from-[#080d15] via-[#09111c] to-[#070b12] border-2 border-[#00ff41]/40 shadow-[0_4px_20px_rgba(0,255,65,0.12)] font-mono space-y-2 animate-fadeIn"
+        >
+          {/* Header Row: Speaker, Time Range, Index, Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-800/80 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-emerald-950/70 text-[#00ff41] border border-emerald-500/40 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                <Subtitles className="w-3 h-3 text-[#00ff41]" />
+                <span>{currentCue.speaker || 'Dr. Pouria Hejazi'}</span>
+              </span>
+              <span className="text-zinc-500">•</span>
+              <span className="text-zinc-400 text-[11px] font-mono">
+                {currentCue.startFormatted} &rarr; {currentCue.endFormatted}
+              </span>
+              <span className="text-zinc-600 hidden xs:inline">|</span>
+              <span className="text-amber-400 font-bold text-[11px] hidden xs:inline">
+                Cue {currentCueIndex + 1} of {activeVttTrack?.cues.length || 1}
+              </span>
+            </div>
+
+            {/* Subtitle Cue Stepper Buttons */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handlePrevCue}
+                disabled={currentCueIndex === 0}
+                className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700 text-zinc-200 text-[11px] font-bold cursor-pointer transition-colors"
+                title="Previous subtitle cue"
+              >
+                &larr; Prev Cue
+              </button>
+              <button
+                type="button"
+                onClick={handleNextCue}
+                disabled={!activeVttTrack || currentCueIndex === activeVttTrack.cues.length - 1}
+                className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700 text-zinc-200 text-[11px] font-bold cursor-pointer transition-colors"
+                title="Next subtitle cue"
+              >
+                Next Cue &rarr;
+              </button>
+              <button
+                type="button"
+                onClick={() => setAutoFollow((prev) => !prev)}
+                className={`px-2 py-1 rounded border text-[11px] transition-colors cursor-pointer ${
+                  autoFollow
+                    ? 'bg-[#00ff41]/20 border-[#00ff41] text-[#00ff41] font-bold shadow-xs'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+                title="Auto-advance through cues"
+              >
+                Auto-Cycle: {autoFollow ? 'ON' : 'OFF'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubtitleDockMode('overlay')}
+                className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-sky-400 text-[11px] cursor-pointer"
+                title="Switch to overlay mode on video"
+              >
+                Overlay Mode &uarr;
+              </button>
+            </div>
+          </div>
+
+          {/* Large, High-Legibility Subtitle Text */}
+          <div className="py-1">
+            <p
+              className={`font-sans leading-relaxed text-zinc-100 select-text ${
+                subtitleFontSize === 'sm'
+                  ? 'text-xs sm:text-sm'
+                  : subtitleFontSize === 'lg'
+                  ? 'text-base sm:text-lg font-semibold'
+                  : 'text-sm sm:text-base font-medium'
+              }`}
+            >
+              {currentCue.text}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Primary Video Toolbar: Subtitles [CC], Transcript, Settings & Direct Links */}
       <div className="p-3 rounded-xl dark:bg-[#080d14] bg-white border dark:border-zinc-800 border-slate-200 shadow-sm space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-          {/* Left Group: CC Toggle, Transcript Toggle, Settings */}
+          {/* Left Group: CC Toggle, Dock Mode Toggle, Transcript Toggle, Settings */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Master Closed Captions / Subtitle Toggle */}
             <button
@@ -353,7 +425,44 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
               title="Toggle WebVTT Subtitles (Closed Captions)"
             >
               <Subtitles className={`w-3.5 h-3.5 ${subtitlesEnabled ? 'text-[#00ff41]' : 'text-zinc-400'}`} />
-              <span>CC Subtitles: {subtitlesEnabled ? 'ON' : 'OFF'}</span>
+              <span>CC: {subtitlesEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+
+            {/* Subtitle Dock/Overlay Toggle */}
+            {subtitlesEnabled && (
+              <button
+                type="button"
+                onClick={() => setSubtitleDockMode((prev) => (prev === 'docked' ? 'overlay' : 'docked'))}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg dark:bg-zinc-900 bg-slate-100 hover:dark:bg-zinc-800 border dark:border-zinc-800 border-slate-300 dark:text-zinc-300 text-slate-700 transition-all cursor-pointer"
+                title={subtitleDockMode === 'docked' ? 'Subtitles are docked below video. Click to float on video.' : 'Subtitles are floating on video. Click to dock below video.'}
+              >
+                <span>{subtitleDockMode === 'docked' ? '⇲ Docked Below' : '⇱ Floating on Video'}</span>
+              </button>
+            )}
+
+            {/* Video Viewport Fit Toggle */}
+            <button
+              type="button"
+              onClick={() => setViewportFit((prev) => (prev === 'full-fit' ? 'cinema' : 'full-fit'))}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                viewportFit === 'full-fit'
+                  ? 'dark:bg-sky-950/60 bg-sky-100 text-sky-400 border-sky-500/50 font-bold'
+                  : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-400 text-slate-600 dark:border-zinc-800 border-slate-300'
+              }`}
+              title={viewportFit === 'full-fit' ? 'Current: Full Fitted (Height expanded to prevent cropping). Click for 16:9.' : 'Current: 16:9. Click for Full Fit.'}
+            >
+              <span>Fit: {viewportFit === 'full-fit' ? 'Full Fit' : '16:9'}</span>
+            </button>
+
+            {/* Native Fullscreen Button */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg dark:bg-zinc-900 bg-slate-100 hover:dark:bg-zinc-800 hover:bg-slate-200 border dark:border-zinc-800 border-slate-300 dark:text-zinc-300 text-slate-700 transition-all cursor-pointer"
+              title="Enter Fullscreen"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
+              <span className="hidden sm:inline">Fullscreen</span>
             </button>
 
             {/* Interactive Transcript Drawer Toggle */}

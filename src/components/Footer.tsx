@@ -4,9 +4,10 @@ import { Shield, ChevronUp } from 'lucide-react';
 
 interface FooterProps {
   onSelectTab: (tab: TabKey) => void;
+  isFullFit?: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
+export const Footer: React.FC<FooterProps> = ({ onSelectTab, isFullFit = true }) => {
   const currentYear = new Date().getFullYear();
 
   const scrollToTop = () => {
@@ -15,7 +16,9 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
 
   return (
     <footer className="mt-20 border-t dark:border-[#222222] border-slate-200 dark:bg-[#000000] bg-slate-100 py-10 px-4 dark:text-zinc-400 text-slate-600 font-mono text-xs transition-colors duration-200">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className={`w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-300 ${
+        isFullFit ? 'max-w-[1720px] 2xl:max-w-[1880px] sm:px-6 lg:px-8 xl:px-12' : 'max-w-6xl'
+      }`}>
         <div className="flex flex-col items-center md:items-start gap-1 text-center md:text-left">
           <div className="flex items-center gap-2 dark:text-white text-slate-900 font-orbitron font-bold text-sm tracking-wider">
             <span className="dark:text-[#00ff41] text-emerald-700">SWID-SHRK</span>
@@ -153,7 +156,9 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
         </button>
       </div>
 
-      <div className="max-w-6xl mx-auto mt-8 pt-6 border-t dark:border-zinc-900 border-slate-200 text-center text-[11px] dark:text-zinc-600 text-slate-500">
+      <div className={`w-full mx-auto mt-8 pt-6 border-t dark:border-zinc-900 border-slate-200 text-center text-[11px] dark:text-zinc-600 text-slate-500 transition-all duration-300 ${
+        isFullFit ? 'max-w-[1720px] 2xl:max-w-[1880px]' : 'max-w-6xl'
+      }`}>
         © {currentYear} SWID-SHRK &mdash; Mechanical &amp; Aerospace Research Lab. All rights reserved.
       </div>
     </footer>

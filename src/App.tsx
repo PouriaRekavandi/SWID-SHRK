@@ -23,6 +23,38 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
+  // Full-Fit Widescreen state (defaults to true for immersive monitor coverage)
+  const [isFullFit, setIsFullFit] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_layout_full_fit');
+        if (saved !== null) return saved === 'true';
+      } catch {
+        // fallback
+      }
+    }
+    return true; // Default to full-fitted wide screen layout
+  });
+
+  const toggleFullFit = () => {
+    setIsFullFit((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('swid_layout_full_fit', String(next));
+        } catch {
+          // ignore
+        }
+      }
+      showToast(next ? 'Layout Fit: Full Widescreen Active' : 'Layout Fit: Standard Boxed Active');
+      return next;
+    });
+  };
+
+  const containerClass = isFullFit
+    ? 'w-full max-w-[1720px] 2xl:max-w-[1880px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 transition-all duration-300'
+    : 'max-w-6xl mx-auto px-4 transition-all duration-300';
+
   // Guarantee that the website always opens from the very top on initial load
   React.useEffect(() => {
     try {
@@ -88,7 +120,12 @@ export const App: React.FC = () => {
       <ProjectBanner />
 
       {/* Navigation */}
-      <Navbar activeTab={activeTab} onSelectTab={handleSelectTab} />
+      <Navbar
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        isFullFit={isFullFit}
+        onToggleFullFit={toggleFullFit}
+      />
 
       {/* Main Content Area */}
       <main id="main-content" className="flex-1 focus:outline-none">
@@ -96,7 +133,7 @@ export const App: React.FC = () => {
           <div className="space-y-16">
             <HeroSection onSelectTab={handleSelectTab} />
 
-            <div className="max-w-6xl mx-auto px-4 space-y-16">
+            <div className={`${containerClass} space-y-16`}>
               {/* Principal Researcher Card */}
               <ProfileSection />
 
@@ -125,49 +162,49 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'team' && (
-          <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className={`${containerClass} py-12`}>
             <Team onNotify={showToast} onSelectTab={handleSelectTab} />
           </div>
         )}
 
         {activeTab === 'qa' && (
-          <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className={`${containerClass} py-8`}>
             <EngineeringQAChatbox onNotify={showToast} onSelectTab={handleSelectTab} />
           </div>
         )}
 
         {activeTab === 'chat' && (
-          <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className={`${containerClass} py-8`}>
             <AIChatSection onNotify={showToast} onSelectTab={handleSelectTab} />
           </div>
         )}
 
         {activeTab === 'research' && (
-          <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className={`${containerClass} py-12`}>
             <ResearchSection onNotify={showToast} />
           </div>
         )}
 
         {activeTab === 'publications' && (
-          <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className={`${containerClass} py-12`}>
             <PublicationsSection onNotify={showToast} />
           </div>
         )}
 
         {activeTab === 'students' && (
-          <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className={`${containerClass} py-12`}>
             <ThesisRegistry onNotify={showToast} />
           </div>
         )}
 
         {activeTab === 'gear' && (
-          <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className={`${containerClass} py-12`}>
             <EquipmentSection />
           </div>
         )}
 
         {activeTab === 'abaqus' && (
-          <div className="max-w-6xl mx-auto px-4 py-12 space-y-8">
+          <div className={`${containerClass} py-12 space-y-8`}>
             <div>
               <div className="inline-block border-b-2 border-[#00b8ff] pb-1 mb-4">
                 <h2 className="font-section-title text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-wider text-white flex items-center">
@@ -184,7 +221,7 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'contact' && (
-          <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className={`${containerClass} py-12`}>
             <ContactSection onNotify={showToast} />
           </div>
         )}
@@ -209,7 +246,7 @@ export const App: React.FC = () => {
       <ScrollToTopButton threshold={450} hasBottomChatButton={activeTab !== 'chat'} />
 
       {/* Footer */}
-      <Footer onSelectTab={handleSelectTab} />
+      <Footer onSelectTab={handleSelectTab} isFullFit={isFullFit} />
 
       {/* Global Cyber Toast Notification */}
       {toast && (

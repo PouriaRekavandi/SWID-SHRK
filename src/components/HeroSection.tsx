@@ -3,7 +3,7 @@ import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { AudioControl } from './AudioControl';
 import { useEventHorizonAudio } from '../context/AudioContext';
-import { ArrowRight, GraduationCap, PlayCircle, Bot, Sparkles, Orbit, RefreshCw, MessageSquare } from 'lucide-react';
+import { ArrowRight, GraduationCap, PlayCircle, Bot, Sparkles, Orbit, RefreshCw, MessageSquare, FileSearch } from 'lucide-react';
 import { BlackHoleHero } from './BlackHoleHero';
 import { BlackHoleLogoCrest } from './BlackHoleLogoCrest';
 
@@ -415,6 +415,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
             >
               <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00ff41]" />
               Ask Pouria (Q&amp;A)
+            </button>
+
+            <button
+              onClick={() => onSelectTab('analyzer')}
+              className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded bg-zinc-900/90 border border-sky-500 hover:border-[#00b8ff] text-sky-300 hover:text-[#00b8ff] font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-all duration-200 shadow-md backdrop-blur-sm cursor-pointer"
+            >
+              <FileSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00b8ff]" />
+              Paper Analyzer
             </button>
 
             <button

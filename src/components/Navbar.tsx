@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
-import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2 } from 'lucide-react';
+import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2, FileSearch } from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
 
@@ -25,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { key: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
     { key: 'research', label: 'Research Areas', icon: <Layers className="w-4 h-4" /> },
     { key: 'publications', label: 'Publications', icon: <BookOpen className="w-4 h-4" /> },
+    { key: 'analyzer', label: 'Paper Analyzer', icon: <FileSearch className="w-4 h-4" /> },
     { key: 'students', label: 'Thesis Registry', icon: <GraduationCap className="w-4 h-4" /> },
     { key: 'gear', label: 'Lab Gear', icon: <Wrench className="w-4 h-4" /> },
     { key: 'abaqus', label: 'Abaqus_Sims', icon: <PlayCircle className="w-4 h-4" /> },

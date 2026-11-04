@@ -104,7 +104,36 @@ export interface TeamMember {
   status: 'Active' | 'Alumni' | 'Visiting';
 }
 
-export type TabKey = 'home' | 'team' | 'research' | 'publications' | 'students' | 'gear' | 'abaqus' | 'chat' | 'qa' | 'contact';
+export type TabKey = 'home' | 'team' | 'research' | 'publications' | 'analyzer' | 'students' | 'gear' | 'abaqus' | 'chat' | 'qa' | 'contact';
+
+export interface PaperDimensionSection {
+  title: string;
+  summary: string;
+  bulletPoints: string[];
+  subsections?: { subtitle: string; content: string[] }[];
+}
+
+export interface PaperAnalysisResult {
+  id: string;
+  paperTitle: string;
+  authors: string;
+  journalOrConference?: string;
+  publicationYear?: string;
+  executiveSummary: string;
+  criticalTakeaway: string;
+  keywords: string[];
+  dimensions: {
+    objective: PaperDimensionSection;
+    researchGap: PaperDimensionSection;
+    methodology: PaperDimensionSection;
+    findings: PaperDimensionSection;
+    futureGaps: PaperDimensionSection;
+  };
+  analyzedAt: string;
+  modelUsed: string;
+  sourceType: 'pdf' | 'text';
+  fileName?: string;
+}
 
 export interface ChatMessage {
   id: string;

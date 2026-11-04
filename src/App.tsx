@@ -13,11 +13,12 @@ import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
 import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
 import { AbaqusGallery } from './components/AbaqusGallery';
+import { PaperAnalyzer } from './components/PaperAnalyzer';
 import { Footer } from './components/Footer';
 import { CosmicBackground } from './components/CosmicBackground';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
-import { CheckCircle2, AlertCircle, Bot, Sparkles, MessageSquare } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Bot, Sparkles, MessageSquare, FileSearch } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
@@ -188,6 +189,12 @@ export const App: React.FC = () => {
         {activeTab === 'publications' && (
           <div className={`${containerClass} py-12`}>
             <PublicationsSection onNotify={showToast} />
+          </div>
+        )}
+
+        {activeTab === 'analyzer' && (
+          <div className={`${containerClass} py-12`}>
+            <PaperAnalyzer onNotify={showToast} />
           </div>
         )}
 

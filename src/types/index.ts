@@ -133,6 +133,8 @@ export interface PaperAnalysisResult {
   modelUsed: string;
   sourceType: 'pdf' | 'text';
   fileName?: string;
+  apiKeyStatus?: 'valid' | 'invalid_key' | 'offline_mode';
+  apiKeyMessage?: string;
 }
 
 export interface ChatMessage {

@@ -1052,6 +1052,13 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                     ))}
                   </div>
                 )}
+
+                {analysisResult.apiKeyMessage && (
+                  <div className="mt-3 p-3.5 rounded-xl dark:bg-amber-950/30 bg-amber-50 border dark:border-amber-700/50 border-amber-300 text-xs sm:text-sm font-mono text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-none" />
+                    <span>{analysisResult.apiKeyMessage}</span>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons: PDF Export with jsPDF, Google Drive Save, & Copy Markdown */}

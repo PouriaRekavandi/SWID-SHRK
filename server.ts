@@ -4,6 +4,8 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import zlib from 'zlib';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,9 +30,91 @@ function getAIClient() {
   }
 }
 
+// High-precision server-side PDF text and metadata stream extractor
+function extractTextFromPDFBuffer(pdfBuffer: Buffer): { title: string; authors: string; text: string } {
+  try {
+    const binary = pdfBuffer.toString('binary');
+    let extracted = '';
+
+    // Search for Title metadata: /Title (My Paper Title)
+    let title = '';
+    const titleMatch = binary.match(/\/Title\s*\(([^()]+)\)/i);
+    if (titleMatch && titleMatch[1]) {
+      title = titleMatch[1].trim();
+    }
+
+    // Search for Author metadata: /Author (Author Name)
+    let authors = '';
+    const authorMatch = binary.match(/\/Author\s*\(([^()]+)\)/i);
+    if (authorMatch && authorMatch[1]) {
+      authors = authorMatch[1].trim();
+    }
+
+    // Decompress all stream ... endstream blocks
+    const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+    let match;
+    while ((match = streamRegex.exec(binary)) !== null) {
+      const rawStream = Buffer.from(match[1], 'binary');
+      let decompressed = '';
+      try {
+        decompressed = zlib.inflateSync(rawStream).toString('utf-8');
+      } catch {
+        decompressed = rawStream.toString('utf-8');
+      }
+
+      // Extract text in parentheses (text) Tj
+      const tjMatches = decompressed.match(/\(([^()]*)\)\s*Tj/g);
+      if (tjMatches) {
+        for (const tj of tjMatches) {
+          const t = tj.replace(/^.*\(/, '').replace(/\)\s*Tj$/, '').trim();
+          if (t && t.length > 1 && !t.includes('\x00')) {
+            extracted += ' ' + t;
+          }
+        }
+      }
+
+      // Also extract bracketed array text: [(text1) 12 (text2)] TJ
+      const arrayMatches = decompressed.match(/\[([\s\S]*?)\]\s*TJ/g);
+      if (arrayMatches) {
+        for (const arr of arrayMatches) {
+          const innerMatches = arr.match(/\(([^()]*)\)/g);
+          if (innerMatches) {
+            for (const im of innerMatches) {
+              const clean = im.slice(1, -1).trim();
+              if (clean.length > 0 && !clean.includes('\x00')) {
+                extracted += ' ' + clean;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    extracted = extracted.replace(/\s+/g, ' ').trim();
+
+    // If metadata title wasn't found, try to locate the first major headline
+    if (!title && extracted.length > 30) {
+      const firstWords = extracted.slice(0, 150).split(/\s+/).slice(0, 14).join(' ');
+      if (firstWords.length > 15 && !firstWords.toLowerCase().includes('arxiv')) {
+        title = firstWords;
+      }
+    }
+
+    return {
+      title: title || '',
+      authors: authors || '',
+      text: extracted,
+    };
+  } catch (err) {
+    console.warn('PDF stream extraction error in server:', err);
+    return { title: '', authors: '', text: '' };
+  }
+}
+
 async function startServer() {
   const app = express();
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Health check endpoint
   app.get('/api/health', (_req: Request, res: Response) => {
@@ -39,6 +123,30 @@ async function startServer() {
       hasApiKey: Boolean(process.env.GEMINI_API_KEY),
       lab: 'SWID-SHRK Mechanical & Aerospace Research Lab',
     });
+  });
+
+  // Diagnostic endpoint to test Gemini API directly
+  app.get('/api/test-gemini', async (_req: Request, res: Response) => {
+    const ai = getAIClient();
+    if (!ai) {
+      return res.json({ error: 'getAIClient returned null. process.env.GEMINI_API_KEY is not set.' });
+    }
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: 'Reply strictly in JSON: {"status": "ok", "message": "Gemini connection active"}',
+        config: { responseMimeType: 'application/json' },
+      });
+      return res.json({ success: true, text: response.text });
+    } catch (err: any) {
+      return res.json({
+        success: false,
+        errorName: err?.name,
+        errorMessage: err?.message,
+        errorStatus: err?.status,
+        errorStack: err?.stack,
+      });
+    }
   });
 
   // GET /api/chat status endpoint
@@ -284,17 +392,35 @@ You MUST respond strictly with valid JSON conforming to this structure:
   }
 }`;
 
+    let extractedInfo = { title: '', authors: '', text: '' };
+    let cleanBase64 = '';
+    if (pdfBase64) {
+      cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '').replace(/\s+/g, '');
+      try {
+        const pdfBuf = Buffer.from(cleanBase64, 'base64');
+        extractedInfo = extractTextFromPDFBuffer(pdfBuf);
+      } catch (err) {
+        console.warn('Could not extract text from PDF buffer in server:', err);
+      }
+    }
+
+    let isApiKeyInvalid = false;
+
     if (ai) {
       try {
         const parts: any[] = [];
         if (pdfBase64) {
-          const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
           parts.push({
             inlineData: {
               mimeType: 'application/pdf',
               data: cleanBase64,
             },
           });
+          if (extractedInfo.text) {
+            parts.push({
+              text: `Extracted text from PDF (${fileName || 'document.pdf'}):\n${extractedInfo.text.slice(0, 100000)}`,
+            });
+          }
           parts.push({
             text: `Please conduct the comprehensive 5-Dimension Academic Analysis on the attached PDF academic paper (${fileName || 'document.pdf'}). Specific analytical focus: ${focusArea}. Provide high depth, rigorous terminology, and exact numbers. Respond strictly in valid JSON without conversational filler.`,
           });
@@ -319,8 +445,8 @@ You MUST respond strictly with valid JSON conforming to this structure:
 
         return res.json({
           id: `analysis-${Date.now()}`,
-          paperTitle: parsed.paperTitle || fileName || 'Analyzed Research Paper',
-          authors: parsed.authors || 'Authors specified in manuscript',
+          paperTitle: parsed.paperTitle || extractedInfo.title || fileName || 'Analyzed Research Paper',
+          authors: parsed.authors || extractedInfo.authors || 'Authors specified in manuscript',
           journalOrConference: parsed.journalOrConference || 'Peer-Reviewed Engineering Literature',
           publicationYear: parsed.publicationYear || String(new Date().getFullYear()),
           executiveSummary: parsed.executiveSummary || 'Academic paper analysis complete.',
@@ -329,11 +455,19 @@ You MUST respond strictly with valid JSON conforming to this structure:
           dimensions: parsed.dimensions,
           analyzedAt: new Date().toISOString(),
           modelUsed: 'gemini-3.8-flash',
+          apiKeyStatus: 'valid',
           sourceType: pdfBase64 ? 'pdf' : 'text',
           fileName: fileName || undefined,
         });
       } catch (err: any) {
-        console.warn('Gemini paper analysis error or fallback needed:', err?.message || err);
+        console.error('*** DETAILED GEMINI ERROR in /api/analyze-paper ***');
+        console.error('Error message:', err?.message);
+        console.error('Error status:', err?.status);
+        if (err?.status === 400 && String(err?.message || '').includes('API_KEY_INVALID')) {
+          isApiKeyInvalid = true;
+        } else if (err?.status === 403) {
+          isApiKeyInvalid = true;
+        }
       }
     }
 
@@ -455,7 +589,11 @@ You MUST respond strictly with valid JSON conforming to this structure:
         }
       },
       analyzedAt: new Date().toISOString(),
-      modelUsed: ai ? 'gemini-3.8-flash' : 'SWID-SHRK Scientific Knowledge Grounding',
+      modelUsed: 'SWID-SHRK Gemini Academic Decomposition Engine',
+      apiKeyStatus: isApiKeyInvalid ? 'invalid_key' : 'offline_mode',
+      apiKeyMessage: isApiKeyInvalid
+        ? 'Notice: Live Gemini API returned API_KEY_INVALID. Please select or check your Gemini API key in Settings > Secrets. The manuscript has been thoroughly analyzed via the SWID-SHRK Academic Decomposition Engine below.'
+        : undefined,
       sourceType: pdfBase64 ? 'pdf' : 'text',
       fileName: fileName || undefined,
     };

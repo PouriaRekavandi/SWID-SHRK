@@ -1,5 +1,4 @@
-import { Publication, StudentRecord, VideoTutorial, TutorialSeries, TeamMember } from '../types';
-import { TUTORIAL_VTT_TRACKS } from './tutorialSubtitles';
+import { Publication, StudentRecord, VideoTutorial } from '../types';
 
 export const INITIAL_STUDENTS: StudentRecord[] = [
   {
@@ -12,11 +11,8 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     expectedDate: '2026-12-15',
     status: 'In Progress',
     email: 'akarimi1@umbc.edu',
-    notes: 'Completed qualifying exams with distinction. Developing customized Fortran VUMAT subroutine for high-strain dynamic deformation.',
-    updatedAt: new Date().toISOString(),
-    milestoneStage: 'Experimental & FEA Modeling',
-    progressPercent: 65,
-    researchFocus: 'Neural Biomechanics & Viscoelasticity',
+    notes: 'Completed qualifying exams. Developing customized Fortran VUMAT subroutine for high-strain deformation.',
+    updatedAt: new Date().toISOString()
   },
   {
     id: 'rec-2',
@@ -28,11 +24,8 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     expectedDate: '2025-05-20',
     status: 'Submitted',
     email: 'erostami@umbc.edu',
-    notes: 'Dissertation manuscript submitted to graduate committee. 2 first-author Q1 journal papers accepted (Materials & Design).',
-    updatedAt: new Date().toISOString(),
-    milestoneStage: 'Manuscript & Committee Review',
-    progressPercent: 92,
-    researchFocus: 'Cellular Metamaterials & Crashworthiness',
+    notes: 'Dissertation manuscript under committee review. 2 journal papers accepted.',
+    updatedAt: new Date().toISOString()
   },
   {
     id: 'rec-3',
@@ -44,11 +37,8 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     expectedDate: '2024-11-30',
     status: 'Completed',
     email: 'mvance@umbc.edu',
-    notes: 'Successfully defended with honors. Co-authored Theoretical & Applied Fracture Mechanics paper. Now Research Engineer at APL.',
-    updatedAt: new Date().toISOString(),
-    milestoneStage: 'Final Dissertation Defense & Archiving',
-    progressPercent: 100,
-    researchFocus: 'Quasi-Brittle Fracture & Full-Field DIC',
+    notes: 'Successfully defended with honors. Now at Applied Physics Laboratory.',
+    updatedAt: new Date().toISOString()
   },
   {
     id: 'rec-4',
@@ -60,28 +50,9 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     expectedDate: '2025-08-30',
     status: 'In Progress',
     email: 'schen@umbc.edu',
-    notes: '3D printing multi-material test specimens using high-toughness photopolymers. Drop-weight impact testing scheduled.',
-    updatedAt: new Date().toISOString(),
-    milestoneStage: 'Dissertation Proposal Defense',
-    progressPercent: 50,
-    researchFocus: 'Biomimetic Bouligand Armor',
-  },
-  {
-    id: 'rec-5',
-    name: 'Dr. Tariq Mansour',
-    degree: 'Postdoctoral',
-    studentId: 'UMBC-PD-1102',
-    title: 'Physics-Informed Neural Network (PINN) Surrogates for Real-Time Aerospace Fracture Prognosis',
-    startDate: '2024-06-01',
-    expectedDate: '2026-05-31',
-    status: 'In Progress',
-    email: 'tmansour@umbc.edu',
-    notes: 'Leading NSF grant task on accelerated surrogate training for non-proportional multiaxial crack growth.',
-    updatedAt: new Date().toISOString(),
-    milestoneStage: 'Experimental & FEA Modeling',
-    progressPercent: 70,
-    researchFocus: 'AI Physics & Digital Twins',
-  },
+    notes: '3D printing specimens using high-toughness photopolymers.',
+    updatedAt: new Date().toISOString()
+  }
 ];
 
 export const PUBLICATIONS: Publication[] = [
@@ -256,301 +227,21 @@ export const PUBLICATIONS: Publication[] = [
   }
 ];
 
-export const GOOGLE_DRIVE_PLATE_FOLDER = 'https://drive.google.com/drive/folders/199sypG2Nt8LKnrE8BtUrJG_fl7FqeIe-?usp=sharing';
-export const GOOGLE_DRIVE_ORIGAMI_FOLDER = GOOGLE_DRIVE_PLATE_FOLDER;
-export const GOOGLE_DRIVE_STRUT_FOLDER = 'https://drive.google.com/drive/folders/1MC6Nr6kH6i4mspvWFXUC22qdluSqrzln?usp=sharing';
-export const GOOGLE_DRIVE_VIDEOS_FOLDER = GOOGLE_DRIVE_STRUT_FOLDER;
-
-export const PLATE_ANTIPRISM_VIDEOS: VideoTutorial[] = [
-  {
-    id: 'vid-plate-1',
-    title: 'Plate Antiprism Modeling — Part 1',
-    part: 1,
-    url: 'https://drive.google.com/file/d/1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4/view?usp=sharing',
-    embedUrl: 'https://drive.google.com/file/d/1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4/preview',
-    driveId: '1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4',
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1HhVHIvkErp48jHMv183RxYPcu1hrQDZ4',
-    description: 'Geometry definition, parametric folded facet unit cell synthesis, shell thickness, and boundary conditions in Abaqus/CAE.',
-    duration: 'Part 1 • 240 MB',
-    seriesId: 'plate',
-    seriesName: 'Plate Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER,
-    vttTrack: TUTORIAL_VTT_TRACKS['vid-plate-1']
-  },
-  {
-    id: 'vid-plate-2',
-    title: 'Plate Antiprism Modeling — Part 2',
-    part: 2,
-    url: 'https://drive.google.com/file/d/1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu/view?usp=sharing',
-    embedUrl: 'https://drive.google.com/file/d/1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu/preview',
-    driveId: '1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu',
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1RzznYhSniSszm4tHtIhoaeYE4bFFkfLu',
-    description: 'Meshing, dynamic explicit crush solver settings, fold hinge contact penalty formulations, and energy extraction.',
-    duration: 'Part 2 • 252 MB',
-    seriesId: 'plate',
-    seriesName: 'Plate Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER,
-    vttTrack: TUTORIAL_VTT_TRACKS['vid-plate-2']
-  }
-];
-
-export const ORIGAMI_ANTIPRISM_VIDEOS = PLATE_ANTIPRISM_VIDEOS;
-
-export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = [
-  {
-    id: 'vid-strut-1',
-    title: 'Strut Antiprism Modeling — Part 1',
-    part: 1,
-    url: 'https://drive.google.com/file/d/1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL/view?usp=sharing',
-    embedUrl: 'https://drive.google.com/file/d/1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL/preview',
-    driveId: '1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL',
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1_DFSsUJpScdonYTeKI8dNpEET5-FAFyL',
-    description: 'Unit cell geometric wireframe layout, 3D coordinate kinematics, reference nodes, and truss alignment in Abaqus/CAE.',
-    duration: 'Part 1 • 1080p',
-    seriesId: 'strut',
-    seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
-    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-1']
-  },
-  {
-    id: 'vid-strut-2',
-    title: 'Strut Antiprism Modeling — Part 2',
-    part: 2,
-    url: 'https://drive.google.com/file/d/1aOFgJmleefouFqo9G5p4_7CjkDerHZK1/view?usp=sharing',
-    embedUrl: 'https://drive.google.com/file/d/1aOFgJmleefouFqo9G5p4_7CjkDerHZK1/preview',
-    driveId: '1aOFgJmleefouFqo9G5p4_7CjkDerHZK1',
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1aOFgJmleefouFqo9G5p4_7CjkDerHZK1',
-    description: 'Constitutive material plasticity calibration, circular beam & solid profiles, cross-sectional inertia, and section assignments.',
-    duration: 'Part 2 • 1080p',
-    seriesId: 'strut',
-    seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
-    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-2']
-  },
-  {
-    id: 'vid-strut-3',
-    title: 'Strut Antiprism Modeling — Part 3',
-    part: 3,
-    url: 'https://drive.google.com/file/d/1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU/view?usp=sharing',
-    embedUrl: 'https://drive.google.com/file/d/1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU/preview',
-    driveId: '1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU',
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1jc2Ems1fG7fXZP7uIU2ehah6jkPR7_EU',
-    description: 'Finite element mesh discretization, C3D8R hex element formulation, enhanced hourglass control, and general self-contact interaction.',
-    duration: 'Part 3 • 1080p',
-    seriesId: 'strut',
-    seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
-    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-3']
-  },
-  {
-    id: 'vid-strut-4',
-    title: 'Strut Antiprism Modeling — Part 4',
-    part: 4,
-    url: 'https://drive.google.com/file/d/1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ/view?usp=sharing',
-    embedUrl: 'https://drive.google.com/file/d/1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ/preview',
-    driveId: '1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ',
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1MawSOUl-TCd6ExRxXD_HB3QRihEipqsQ',
-    description: 'Dynamic explicit crush execution, boundary conditions, history output extraction (ALLIE, ALLKE, RF2), and Specific Energy Absorption (SEA) evaluation.',
-    duration: 'Part 4 • 1080p',
-    seriesId: 'strut',
-    seriesName: 'Strut Antiprism Modeling',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
-    vttTrack: TUTORIAL_VTT_TRACKS['vid-strut-4']
-  }
-];
-
-export const ANTIPRISM_TUTORIAL_SERIES: TutorialSeries[] = [
-  {
-    id: 'plate',
-    title: 'Plate Antiprism Modeling',
-    shortTitle: 'Plate Antiprism',
-    subtitle: '2-Part Video Guide: Parametric Fold Geometry & Hinge Contact',
-    badge: '2 Parts • 492 MB',
-    folderUrl: GOOGLE_DRIVE_PLATE_FOLDER,
-    videos: PLATE_ANTIPRISM_VIDEOS
-  },
-  {
-    id: 'strut',
-    title: 'Strut Antiprism Modeling',
-    shortTitle: 'Strut Antiprism',
-    subtitle: '4-Part Complete Video Guide & Lattice Modeling in Abaqus',
-    badge: '4 Parts • 1080p HD',
-    folderUrl: GOOGLE_DRIVE_STRUT_FOLDER,
-    videos: STRUT_ANTIPRISM_VIDEOS
-  }
-];
-
-// Unified playlist for backward compatibility
 export const ANTIPRISM_VIDEOS: VideoTutorial[] = [
-  ...PLATE_ANTIPRISM_VIDEOS,
-  ...STRUT_ANTIPRISM_VIDEOS
-];
-
-
-export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
   {
-    id: 'team-pi',
-    name: 'Dr. Pouria Hejazi Rekavandi',
-    role: 'Principal Investigator & Lab Director',
-    category: 'pi',
-    affiliation: 'Department of Mechanical & Aerospace Engineering, UMBC',
-    email: 's.s.hejazirekavandi@gmail.com',
-    researchFocus: [
-      'Multiaxial Fatigue & Fracture Mechanics',
-      'High-Rate Biomechanics & TBI',
-      '3D AntiPrism Architected Metamaterials',
-      'Nonlinear FEA & User Subroutines (UMAT/VUMAT)'
-    ],
-    bio: 'Directing the SWID-SHRK Aerospace & Mechanics Laboratory. Leading experimental impact, non-linear continuum mechanics, and multiscale finite element investigations of advanced structural architectures and bio-inspired composite systems.',
-    avatarUrl: '/src/assets/profile.png',
-    googleScholar: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Pouria+Hejazi+Rekavandi',
-    researchGate: 'https://www.researchgate.net/profile/Pouria-Hejazi-Rekavandi',
-    orcid: 'https://orcid.org/0000-0002-4589-9121',
-    github: 'https://github.com/PouriaRekavandi',
-    linkedin: 'https://www.linkedin.com/in/pouria-hejazi-rekavandi',
-    academicProfile: 'https://swid-shrk.umbc.edu/',
-    currentProjects: [
-      'ONR Dynamic Impact Resistance of 3D Auxetic AntiPrism Meta-Cores',
-      'NSF High-Rate Traumatic Brain Viscoelastic Characterization',
-      'Coupled DIC-FEA Fracture Criteria for Non-Proportional Fatigue'
-    ],
-    joinedYear: '2018',
-    highlight: 'Lab Founder & PI · Lead Investigator for ONR & NSF Projects',
-    status: 'Active'
+    id: 'vid-1',
+    title: 'AntiPrism Tutorial — Part 1',
+    part: 1,
+    url: 'https://github.com/PouriaRekavandi/SWID-SHRK/releases/download/Abaqus/antiprism-tutorial-Part1.mp4',
+    description: 'Geometry definition, parametric unit cell synthesis, and boundary conditions in Abaqus/CAE.',
+    duration: 'Part 1'
   },
   {
-    id: 'team-postdoc-1',
-    name: 'Dr. Tariq Mansour',
-    role: 'Postdoctoral Research Fellow',
-    category: 'postdoc',
-    affiliation: 'SWID-SHRK Aerospace & Mechanics Lab, UMBC',
-    email: 'tmansour@umbc.edu',
-    researchFocus: [
-      'Physics-Informed Neural Networks (PINNs)',
-      'Accelerated FEA Surrogate Modeling',
-      'Real-Time Aerospace Fracture Prognosis',
-      'Digital Twins & Inverse Mechanics'
-    ],
-    bio: 'Spearheading physics-constrained deep learning surrogates for real-time prognosis of multi-axial crack propagation under irregular flight spectrum fatigue loading.',
-    googleScholar: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Tariq+Mansour+mechanics',
-    researchGate: 'https://www.researchgate.net/search/researcher?q=Tariq+Mansour+mechanics',
-    orcid: 'https://orcid.org/0000-0003-1284-5902',
-    github: 'https://github.com/tmansour-pinn',
-    linkedin: 'https://www.linkedin.com/in/tariq-mansour-phd',
-    academicProfile: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Tariq+Mansour+mechanics',
-    currentProjects: [
-      'Physics-Informed Neural Network (PINN) Surrogates for Aerospace Fracture',
-      'Real-Time Structural Health Monitoring for Hypersonic Skin Panels'
-    ],
-    joinedYear: '2024',
-    highlight: 'Postdoctoral Fellow · NSF Surrogate Modeling Lead',
-    status: 'Active'
-  },
-  {
-    id: 'team-phd-1',
-    name: 'Elena Rostami',
-    role: 'Senior PhD Candidate',
-    category: 'phd',
-    affiliation: 'Department of Mechanical Engineering, UMBC',
-    email: 'erostami@umbc.edu',
-    researchFocus: [
-      '3D AntiPrism Metamaterial Architectures',
-      'Dynamic Shock Wave Mitigation',
-      'Specific Energy Absorption (SEA)',
-      'Nonlinear Crashworthiness & Additive Manufacturing'
-    ],
-    bio: 'Conducting parametric design, additive manufacturing, and explicit finite element crush evaluations of 3D antiprism truss meta-cores under explosive and ballistic shock regimes.',
-    googleScholar: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Elena+Rostami+metamaterials',
-    researchGate: 'https://www.researchgate.net/search/researcher?q=Elena+Rostami+metamaterials',
-    orcid: 'https://orcid.org/0000-0001-8492-3810',
-    linkedin: 'https://www.linkedin.com/in/elena-rostami-fea',
-    academicProfile: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Elena+Rostami+metamaterials',
-    currentProjects: [
-      '3D AntiPrism Cellular Metamaterials: Shock Wave Attenuation',
-      'Dynamic Crush Optimization with Negative Poisson Ratios'
-    ],
-    joinedYear: '2022',
-    highlight: 'PhD Candidate · 2 First-Author Q1 Papers (Materials & Design)',
-    status: 'Active'
-  },
-  {
-    id: 'team-phd-2',
-    name: 'Alireza Karimi',
-    role: 'PhD Candidate & Graduate Assistant',
-    category: 'phd',
-    affiliation: 'Department of Mechanical Engineering, UMBC',
-    email: 'akarimi1@umbc.edu',
-    researchFocus: [
-      'Neural Biomechanics & Axonal Injury',
-      'Viscoelastic Characterization of Brain Parenchyma',
-      'High-Strain Dynamic Rates',
-      'Abaqus Explicit Fortran VUMAT Subroutines'
-    ],
-    bio: 'Investigating high-rate dynamic shear strains across cerebral white matter tracts to establish biomechanical thresholds for diffuse axonal injury and blast-induced traumatic brain injury.',
-    googleScholar: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Alireza+Karimi+biomechanics',
-    researchGate: 'https://www.researchgate.net/search/researcher?q=Alireza+Karimi+viscoelastic',
-    orcid: 'https://orcid.org/0000-0002-9104-5827',
-    linkedin: 'https://www.linkedin.com/in/alireza-karimi-biomech',
-    academicProfile: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Alireza+Karimi+biomechanics',
-    currentProjects: [
-      'Viscoelastic Constitutive Modeling of Human Cerebral Parenchyma',
-      'Dynamic Rotational Acceleration Head Injury Surrogates'
-    ],
-    joinedYear: '2023',
-    highlight: 'PhD Candidate · Qualifying Exams Passed with Distinction',
-    status: 'Active'
-  },
-  {
-    id: 'team-msc-1',
-    name: 'Sarah Chen',
-    role: 'MSc Graduate Research Fellow',
-    category: 'msc',
-    affiliation: 'Department of Mechanical Engineering, UMBC',
-    email: 'schen@umbc.edu',
-    researchFocus: [
-      'Bio-inspired Helicoidal Bouligand Composites',
-      'Multi-Material Photopolymer 3D Printing',
-      'Instrumented Drop-Weight Impact Testing',
-      'Atomistic Molecular Dynamics Simulations'
-    ],
-    bio: 'Synthesizing bio-inspired helicoidal architecture composites inspired by the mantis shrimp dactyl club, analyzing crack twisting mechanisms and energy dissipation under localized impact.',
-    googleScholar: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Sarah+Chen+Bouligand+composites',
-    researchGate: 'https://www.researchgate.net/search/researcher?q=Sarah+Chen+Bouligand',
-    linkedin: 'https://www.linkedin.com/in/sarah-chen-materials',
-    academicProfile: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Sarah+Chen+Bouligand+composites',
-    currentProjects: [
-      'Bio-inspired Helicoidal Composites: Compression & Impact Optimization',
-      'High-Toughness Photopolymer 3D Lattice Fabrication'
-    ],
-    joinedYear: '2024',
-    highlight: 'MSc Fellow · Experimental Additive Manufacturing Lead',
-    status: 'Active'
-  },
-  {
-    id: 'team-alumni-1',
-    name: 'Marcus Vance',
-    role: 'Affiliated Research Engineer (Alumnus)',
-    category: 'alumni',
-    affiliation: 'Johns Hopkins Applied Physics Laboratory (APL) & SWID-SHRK Alumnus',
-    email: 'mvance@umbc.edu',
-    researchFocus: [
-      'Digital Image Correlation (DIC)',
-      'Cohesive Zone Modeling (CZM)',
-      'Quasi-Brittle Fracture Mechanics',
-      'High-Speed Optical Metrology'
-    ],
-    bio: 'MSc graduate with honors (2024). Developed the lab stereoscopic 3D DIC optical tracking system and cohesive zone fracture models for reinforced composite interfaces. Currently Research Engineer at JHU/APL.',
-    googleScholar: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Marcus+Vance+DIC+fracture',
-    researchGate: 'https://www.researchgate.net/search/researcher?q=Marcus+Vance+fracture',
-    linkedin: 'https://www.linkedin.com/in/marcus-vance-eng',
-    academicProfile: 'https://scholar.google.com/citations?view_op=search_authors&mauthors=Marcus+Vance+DIC+fracture',
-    currentProjects: [
-      'Stereo DIC Full-Field Strain Tracking in Quasi-Brittle Materials'
-    ],
-    joinedYear: '2023',
-    highlight: 'MSc Alumnus Defended with Honors · Now Research Engineer at APL',
-    status: 'Alumni'
+    id: 'vid-2',
+    title: 'AntiPrism Tutorial — Part 2',
+    part: 2,
+    url: 'https://github.com/PouriaRekavandi/SWID-SHRK/releases/download/Abaqus/antiprism-tutorial-Part2.mp4',
+    description: 'Meshing, dynamic explicit crush solver settings, contact penalty formulations, and energy extraction.',
+    duration: 'Part 2'
   }
 ];
-
-

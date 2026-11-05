@@ -5,11 +5,9 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "predev": "node scripts/ensure-assets.js",
     "dev": "tsx server.ts",
-    "prebuild": "node scripts/ensure-assets.js",
-    "build": "node scripts/ensure-assets.js && vite build && touch dist/.nojekyll && rm -rf docs && cp -r dist docs && touch docs/.nojekyll",
-    "start": "node server.ts",
+    "build": "vite build && rm -rf docs && cp -r dist docs && touch docs/.nojekyll",
+    "start": "tsx server.ts",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "lint": "tsc --noEmit",
     "predeploy": "npm run build",
@@ -18,22 +16,15 @@
   "dependencies": {
     "@google/genai": "^2.30.0",
     "express": "^4.21.2",
-    "firebase": "^13.2.0",
-    "html2canvas": "^1.4.1",
     "jpeg-js": "^0.4.4",
-    "jspdf": "^4.2.1",
     "lucide-react": "^1.58.0",
-    "pako": "^2.1.0",
-    "pdfjs-dist": "^6.5.438",
     "pngjs": "^7.0.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "recharts": "^3.10.1"
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@types/express": "^5.0.6",
-    "@types/pako": "^2.0.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

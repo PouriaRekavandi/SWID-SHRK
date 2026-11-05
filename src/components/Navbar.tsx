@@ -1,39 +1,26 @@
 import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
-import { FontSizeToggle } from './FontSizeToggle';
-import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2, FileSearch, ExternalLink } from 'lucide-react';
-import { useCelestial } from '../context/CelestialContext';
+import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot } from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
 
 interface NavbarProps {
   activeTab: TabKey;
   onSelectTab: (tab: TabKey) => void;
-  isFullFit?: boolean;
-  onToggleFullFit?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
-  onSelectTab,
-  isFullFit = true,
-  onToggleFullFit
-}) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { activeBodyKey, activeInfo, advanceToNextBody, handleEarthClick } = useCelestial();
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
-    { key: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
+    { key: 'chat', label: 'AI Assistant', icon: <Bot className="w-4 h-4" /> },
     { key: 'research', label: 'Research Areas', icon: <Layers className="w-4 h-4" /> },
     { key: 'publications', label: 'Publications', icon: <BookOpen className="w-4 h-4" /> },
-    { key: 'analyzer', label: 'Paper Analyzer', icon: <FileSearch className="w-4 h-4" /> },
     { key: 'students', label: 'Thesis Registry', icon: <GraduationCap className="w-4 h-4" /> },
     { key: 'gear', label: 'Lab Gear', icon: <Wrench className="w-4 h-4" /> },
     { key: 'abaqus', label: 'Abaqus_Sims', icon: <PlayCircle className="w-4 h-4" /> },
-    { key: 'qa', label: 'Ask Pouria', icon: <MessageSquare className="w-4 h-4" /> },
-    { key: 'chat', label: 'AI Assistant', icon: <Bot className="w-4 h-4" /> },
     { key: 'contact', label: 'Connect', icon: <Mail className="w-4 h-4" /> },
   ];
 
@@ -45,31 +32,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav className="sticky top-0 z-50 dark:bg-[#050505]/95 bg-white/95 backdrop-blur-md border-b dark:border-[#333333] border-slate-200 transition-colors duration-200 shadow-sm">
-      <div className={`w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-between min-h-[58px] gap-2 transition-all duration-300 ${
-        isFullFit ? 'max-w-[1720px] 2xl:max-w-[1880px]' : 'max-w-6xl'
-      }`}>
+      <div className="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-[58px] gap-2">
         {/* Brand / Logo */}
         <button
           onClick={() => handleNavClick('home')}
           className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none flex-none"
         >
-          <div className="w-8 h-8 flex items-center justify-center flex-none transition-transform duration-300 group-hover:scale-110 rounded-full overflow-hidden">
+          <div className="w-8 h-8 flex items-center justify-center flex-none transition-transform duration-300 group-hover:scale-110">
             <img
               src={logoTransparent}
               alt="SWID-SHRK Logo"
-              loading="eager"
-              decoding="async"
-              className="w-full h-full object-contain rounded-full [clip-path:circle(49%_at_50%_50%)] filter drop-shadow-[0_0_8px_rgba(0,184,255,0.45)] dark:drop-shadow-[0_0_10px_rgba(0,184,255,0.7)]"
+              className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(0,184,255,0.45)] dark:drop-shadow-[0_0_10px_rgba(0,184,255,0.7)]"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = logoFallback;
               }}
             />
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-orbitron font-bold text-xs sm:text-sm tracking-wider dark:text-white text-slate-900 dark:group-hover:text-[#00ff41] group-hover:text-sky-600 transition-colors truncate">
+          <div className="flex flex-col">
+            <span className="font-orbitron font-bold text-sm tracking-wider dark:text-white text-slate-900 dark:group-hover:text-[#00ff41] group-hover:text-sky-600 transition-colors">
               SWID-SHRK
             </span>
-            <span className="text-[9px] sm:text-[10px] dark:text-zinc-400 text-slate-500 font-mono tracking-widest uppercase truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
+            <span className="text-[10px] dark:text-zinc-400 text-slate-500 font-mono tracking-widest uppercase">
               Aerospace &amp; Mechanics Lab
             </span>
           </div>
@@ -98,69 +81,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </div>
 
-        {/* Right Actions: Fit Toggle, Theme Switcher & Mobile Menu */}
+        {/* Right Actions: Theme Switcher & Mobile Menu */}
         <div className="flex items-center gap-2">
-          {/* Content Fit Width Toggle */}
-          {onToggleFullFit && (
-            <button
-              type="button"
-              onClick={onToggleFullFit}
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
-                isFullFit
-                  ? 'dark:bg-emerald-950/60 bg-emerald-50 text-emerald-700 dark:text-[#00ff41] border-emerald-500/50 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
-                  : 'dark:bg-zinc-900 bg-slate-100 dark:text-zinc-400 text-slate-600 border-zinc-700/60 hover:text-white'
-              }`}
-              title={isFullFit ? 'Displaying Full-Fitted Widescreen (Click to switch to Boxed)' : 'Displaying Standard Boxed (Click to switch to Full-Fitted)'}
-              aria-label="Toggle Full Fitted Layout"
-            >
-              {isFullFit ? (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5 text-[#00ff41]" />
-                  <span className="hidden xl:inline">FULL FIT</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
-                  <span className="hidden xl:inline">BOXED</span>
-                </>
-              )}
-            </button>
-          )}
-
-          {/* Celestial Orbit Object Quick Toggle & Earth Analyzer Trigger */}
-          <button
-            type="button"
-            onClick={() => {
-              if (activeBodyKey === 'earth') {
-                handleEarthClick(onSelectTab);
-              } else {
-                advanceToNextBody();
-              }
-            }}
-            className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
-              activeBodyKey === 'earth'
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-[0_0_14px_rgba(6,182,212,0.4)] animate-pulse'
-                : activeBodyKey === 'blackhole'
-                ? 'bg-amber-500/10 text-amber-300 border-amber-500/40 hover:bg-amber-500/20'
-                : 'dark:bg-zinc-900 bg-slate-100 text-zinc-300 border-zinc-700/60 hover:text-white'
-            }`}
-            title={
-              activeBodyKey === 'earth'
-                ? 'Earth Active: Click to select Analyzer & open in new tab ↗'
-                : `${activeInfo.name} (Orbit ${activeInfo.orderIndex}/9): Click to step to next celestial body`
-            }
-            aria-label="Celestial Object Toggle"
-          >
-            <span className="text-sm leading-none">{activeInfo.astronomicalSymbol}</span>
-            <span className="hidden xl:inline">
-              {activeBodyKey === 'blackhole' ? 'Singularity' : activeInfo.name.split(' ')[0]}
-            </span>
-            {activeBodyKey === 'earth' && <ExternalLink className="w-3 h-3 text-cyan-300" />}
-          </button>
-
-          {/* Interactive Font Sizer Toggle */}
-          <FontSizeToggle />
-
           {/* Theme Switcher Toggle */}
           <ThemeSwitcher />
 

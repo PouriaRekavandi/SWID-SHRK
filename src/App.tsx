@@ -4,153 +4,20 @@ import { ProjectBanner } from './components/ProjectBanner';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ProfileSection } from './components/ProfileSection';
-import { Team } from './components/Team';
 import { ResearchSection } from './components/ResearchSection';
+import { PublicationsSection } from './components/PublicationsSection';
 import { ThesisRegistry } from './components/ThesisRegistry';
+import { EquipmentSection } from './components/EquipmentSection';
+import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
-import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
+import { AbaqusGallery } from './components/AbaqusGallery';
 import { Footer } from './components/Footer';
-import { CosmicBackground } from './components/CosmicBackground';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
-import { ScrollToTopButton } from './components/ScrollToTopButton';
-
-// Dynamic code-split lazy imports for heavy submodules
-const PublicationsSection = React.lazy(() =>
-  import('./components/PublicationsSection').then((m) => ({ default: m.PublicationsSection }))
-);
-const PaperAnalyzer = React.lazy(() =>
-  import('./components/PaperAnalyzer').then((m) => ({ default: m.PaperAnalyzer }))
-);
-const EquipmentSection = React.lazy(() =>
-  import('./components/EquipmentSection').then((m) => ({ default: m.EquipmentSection }))
-);
-const AbaqusGallery = React.lazy(() =>
-  import('./components/AbaqusGallery').then((m) => ({ default: m.AbaqusGallery }))
-);
-const ContactSection = React.lazy(() =>
-  import('./components/ContactSection').then((m) => ({ default: m.ContactSection }))
-);
-
-const SectionLoader: React.FC = () => (
-  <div className="w-full py-24 flex flex-col items-center justify-center space-y-4">
-    <div className="w-10 h-10 border-2 border-[#00ff41] border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(0,255,65,0.4)]" />
-    <span className="text-xs font-mono text-zinc-400 uppercase tracking-widest animate-pulse">
-      Loading Research Module…
-    </span>
-  </div>
-);
-import { CheckCircle2, AlertCircle, Bot, Sparkles, MessageSquare, FileSearch } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Bot, Sparkles } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const tabParam = params.get('tab') as TabKey;
-        const validTabs: TabKey[] = [
-          'home', 'team', 'research', 'publications', 'analyzer',
-          'students', 'gear', 'abaqus', 'chat', 'qa', 'contact'
-        ];
-        if (tabParam && validTabs.includes(tabParam)) {
-          return tabParam;
-        }
-        const hash = window.location.hash.replace('#', '') as TabKey;
-        if (hash && validTabs.includes(hash)) {
-          return hash;
-        }
-      } catch {
-        // fallback
-      }
-    }
-    return 'home';
-  });
+  const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
-
-  // Sync tab with browser URL history and back/forward navigation
-  React.useEffect(() => {
-    const onPopState = () => {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const tabParam = params.get('tab') as TabKey;
-        const validTabs: TabKey[] = [
-          'home', 'team', 'research', 'publications', 'analyzer',
-          'students', 'gear', 'abaqus', 'chat', 'qa', 'contact'
-        ];
-        if (tabParam && validTabs.includes(tabParam)) {
-          setActiveTab(tabParam);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  // Full-Fit Widescreen state (defaults to true for immersive monitor coverage)
-  const [isFullFit, setIsFullFit] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('swid_layout_full_fit');
-        if (saved !== null) return saved === 'true';
-      } catch {
-        // fallback
-      }
-    }
-    return true; // Default to full-fitted wide screen layout
-  });
-
-  const toggleFullFit = () => {
-    setIsFullFit((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('swid_layout_full_fit', String(next));
-        } catch {
-          // ignore
-        }
-      }
-      showToast(next ? 'Layout Fit: Full Widescreen Active' : 'Layout Fit: Standard Boxed Active');
-      return next;
-    });
-  };
-
-  const containerClass = isFullFit
-    ? 'w-full max-w-[1720px] 2xl:max-w-[1880px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 transition-all duration-300'
-    : 'max-w-6xl mx-auto px-4 transition-all duration-300';
-
-  // Guarantee that the website always opens from the very top on initial load
-  React.useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        if ('history' in window && 'scrollRestoration' in window.history) {
-          window.history.scrollRestoration = 'manual';
-        }
-        const resetScroll = () => {
-          try {
-            window.scrollTo(0, 0);
-            if (document.documentElement) document.documentElement.scrollTop = 0;
-            if (document.body) document.body.scrollTop = 0;
-          } catch {
-            // Ignore scroll restrictions
-          }
-        };
-
-        resetScroll();
-        const t1 = setTimeout(resetScroll, 30);
-        const t2 = setTimeout(resetScroll, 120);
-        const t3 = setTimeout(resetScroll, 300);
-
-        return () => {
-          clearTimeout(t1);
-          clearTimeout(t2);
-          clearTimeout(t3);
-        };
-      }
-    } catch {
-      // Ignore sandbox/iframe restrictions
-    }
-  }, []);
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError });
@@ -161,23 +28,11 @@ export const App: React.FC = () => {
 
   const handleSelectTab = (tab: TabKey) => {
     setActiveTab(tab);
-    if (typeof window !== 'undefined') {
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.history.pushState({}, '', url.toString());
-      } catch {
-        // ignore
-      }
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="relative min-h-screen dark:bg-[#050505]/95 bg-[#f8fafc]/95 dark:text-[#e0e0e0] text-slate-900 flex flex-col font-mono selection:bg-[#00ff41]/20 selection:text-[#00ff41] transition-colors duration-200">
-      {/* Interactive Global Dark Matter Particle Simulation Canvas Background */}
-      <CosmicBackground />
-
+    <div className="min-h-screen dark:bg-[#050505] bg-[#f8fafc] dark:text-[#e0e0e0] text-slate-900 flex flex-col font-mono selection:bg-[#00ff41]/20 selection:text-[#00ff41] transition-colors duration-200">
       {/* Viewport Reading Progress Bar */}
       <ReadingProgressBar />
 
@@ -193,12 +48,7 @@ export const App: React.FC = () => {
       <ProjectBanner />
 
       {/* Navigation */}
-      <Navbar
-        activeTab={activeTab}
-        onSelectTab={handleSelectTab}
-        isFullFit={isFullFit}
-        onToggleFullFit={toggleFullFit}
-      />
+      <Navbar activeTab={activeTab} onSelectTab={handleSelectTab} />
 
       {/* Main Content Area */}
       <main id="main-content" className="flex-1 focus:outline-none">
@@ -206,26 +56,16 @@ export const App: React.FC = () => {
           <div className="space-y-16">
             <HeroSection onSelectTab={handleSelectTab} />
 
-            <div className={`${containerClass} space-y-16`}>
+            <div className="max-w-6xl mx-auto px-4 space-y-16">
               {/* Principal Researcher Card */}
               <ProfileSection />
 
               {/* Research Preview with Accordions and Video Player */}
               <ResearchSection onNotify={showToast} />
 
-              {/* Lab Research Team */}
-              <div className="pt-8 border-t dark:border-zinc-800 border-slate-200">
-                <Team onNotify={showToast} onSelectTab={handleSelectTab} />
-              </div>
-
-              {/* Ask Dr. Pouria: Mechanical & Aerospace Engineering Q&A Chatbox */}
-              <div className="pt-8 border-t dark:border-zinc-800 border-slate-200">
-                <EngineeringQAChatbox onNotify={showToast} onSelectTab={handleSelectTab} />
-              </div>
-
               {/* Integrated AI Assistant Section on Home */}
               <div className="pt-8 border-t dark:border-zinc-800 border-slate-200">
-                <AIChatSection onNotify={showToast} onSelectTab={handleSelectTab} />
+                <AIChatSection onNotify={showToast} />
               </div>
 
               {/* Thesis Registry Overview */}
@@ -234,56 +74,38 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'team' && (
-          <div className={`${containerClass} py-12`}>
-            <Team onNotify={showToast} onSelectTab={handleSelectTab} />
-          </div>
-        )}
-
-        {activeTab === 'qa' && (
-          <div className={`${containerClass} py-8`}>
-            <EngineeringQAChatbox onNotify={showToast} onSelectTab={handleSelectTab} />
-          </div>
-        )}
-
         {activeTab === 'chat' && (
-          <div className={`${containerClass} py-8`}>
-            <AIChatSection onNotify={showToast} onSelectTab={handleSelectTab} />
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <AIChatSection onNotify={showToast} />
           </div>
         )}
 
         {activeTab === 'research' && (
-          <div className={`${containerClass} py-12`}>
+          <div className="max-w-6xl mx-auto px-4 py-12">
             <ResearchSection onNotify={showToast} />
           </div>
         )}
 
         {activeTab === 'publications' && (
-          <div className={`${containerClass} py-12`}>
+          <div className="max-w-6xl mx-auto px-4 py-12">
             <PublicationsSection onNotify={showToast} />
           </div>
         )}
 
-        {activeTab === 'analyzer' && (
-          <div className={`${containerClass} py-12`}>
-            <PaperAnalyzer onNotify={showToast} />
-          </div>
-        )}
-
         {activeTab === 'students' && (
-          <div className={`${containerClass} py-12`}>
+          <div className="max-w-6xl mx-auto px-4 py-12">
             <ThesisRegistry onNotify={showToast} />
           </div>
         )}
 
         {activeTab === 'gear' && (
-          <div className={`${containerClass} py-12`}>
+          <div className="max-w-6xl mx-auto px-4 py-12">
             <EquipmentSection />
           </div>
         )}
 
         {activeTab === 'abaqus' && (
-          <div className={`${containerClass} py-12 space-y-8`}>
+          <div className="max-w-6xl mx-auto px-4 py-12 space-y-8">
             <div>
               <div className="inline-block border-b-2 border-[#00b8ff] pb-1 mb-4">
                 <h2 className="font-section-title text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-wider text-white flex items-center">
@@ -300,7 +122,7 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'contact' && (
-          <div className={`${containerClass} py-12`}>
+          <div className="max-w-6xl mx-auto px-4 py-12">
             <ContactSection onNotify={showToast} />
           </div>
         )}
@@ -321,11 +143,8 @@ export const App: React.FC = () => {
         </button>
       )}
 
-      {/* Floating Scroll to Top Button (Appears past the Hero Section) */}
-      <ScrollToTopButton threshold={450} hasBottomChatButton={activeTab !== 'chat'} />
-
       {/* Footer */}
-      <Footer onSelectTab={handleSelectTab} isFullFit={isFullFit} />
+      <Footer onSelectTab={handleSelectTab} />
 
       {/* Global Cyber Toast Notification */}
       {toast && (

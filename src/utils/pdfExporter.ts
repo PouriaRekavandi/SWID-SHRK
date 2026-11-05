@@ -46,7 +46,7 @@ export function exportEnglishVectorPDF(analysis: PaperAnalysisResult): void {
   doc.setFontSize(8.5);
   doc.setTextColor(190, 210, 230);
   doc.text(
-    `6-Section Rigorous Academic Decomposition • Model: ${analysis.modelUsed}`,
+    `6-Section Rigorous Academic Paper Analysis • Model: ${analysis.modelUsed}`,
     margin + 6,
     y + 15
   );
@@ -686,7 +686,7 @@ export async function exportPersianOrBilingualPDF(
             ${isBilingual ? 'SWID-SHRK RESEARCH LAB // گزارش ارزیابی علمی و پیوست اعتبارسنجی' : 'آزمایشگاه تحقیقاتی مکانیک و هوافضا SWID-SHRK'}
           </div>
           <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
-            ${isBilingual ? '6-Section Decomposition + Validation Appendix • ارزیابی ۶ بخشی و بسته اعتبارسنجی بازتولید' : 'گزارش ارزیابی جامع ۶ بخشی مقالات علمی • تحلیل مراجع، خلأها، تجهیزات و داده‌های اعتبارسنجی'}
+            ${isBilingual ? '6-Section Academic Paper Analysis + Validation Appendix • ارزیابی ۶ بخشی و بسته اعتبارسنجی بازتولید' : 'گزارش ارزیابی جامع ۶ بخشی مقالات علمی • تحلیل مراجع، خلأها، تجهیزات و داده‌های اعتبارسنجی'}
           </div>
         </div>
         <div style="text-align: right; font-size: 11px; color: #cbd5e1;">

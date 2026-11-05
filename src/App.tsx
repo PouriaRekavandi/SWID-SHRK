@@ -6,23 +6,86 @@ import { HeroSection } from './components/HeroSection';
 import { ProfileSection } from './components/ProfileSection';
 import { Team } from './components/Team';
 import { ResearchSection } from './components/ResearchSection';
-import { PublicationsSection } from './components/PublicationsSection';
 import { ThesisRegistry } from './components/ThesisRegistry';
-import { EquipmentSection } from './components/EquipmentSection';
-import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
 import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
-import { AbaqusGallery } from './components/AbaqusGallery';
-import { PaperAnalyzer } from './components/PaperAnalyzer';
 import { Footer } from './components/Footer';
 import { CosmicBackground } from './components/CosmicBackground';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
+
+// Dynamic code-split lazy imports for heavy submodules
+const PublicationsSection = React.lazy(() =>
+  import('./components/PublicationsSection').then((m) => ({ default: m.PublicationsSection }))
+);
+const PaperAnalyzer = React.lazy(() =>
+  import('./components/PaperAnalyzer').then((m) => ({ default: m.PaperAnalyzer }))
+);
+const EquipmentSection = React.lazy(() =>
+  import('./components/EquipmentSection').then((m) => ({ default: m.EquipmentSection }))
+);
+const AbaqusGallery = React.lazy(() =>
+  import('./components/AbaqusGallery').then((m) => ({ default: m.AbaqusGallery }))
+);
+const ContactSection = React.lazy(() =>
+  import('./components/ContactSection').then((m) => ({ default: m.ContactSection }))
+);
+
+const SectionLoader: React.FC = () => (
+  <div className="w-full py-24 flex flex-col items-center justify-center space-y-4">
+    <div className="w-10 h-10 border-2 border-[#00ff41] border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(0,255,65,0.4)]" />
+    <span className="text-xs font-mono text-zinc-400 uppercase tracking-widest animate-pulse">
+      Loading Research Module…
+    </span>
+  </div>
+);
 import { CheckCircle2, AlertCircle, Bot, Sparkles, MessageSquare, FileSearch } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab') as TabKey;
+        const validTabs: TabKey[] = [
+          'home', 'team', 'research', 'publications', 'analyzer',
+          'students', 'gear', 'abaqus', 'chat', 'qa', 'contact'
+        ];
+        if (tabParam && validTabs.includes(tabParam)) {
+          return tabParam;
+        }
+        const hash = window.location.hash.replace('#', '') as TabKey;
+        if (hash && validTabs.includes(hash)) {
+          return hash;
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return 'home';
+  });
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
+
+  // Sync tab with browser URL history and back/forward navigation
+  React.useEffect(() => {
+    const onPopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab') as TabKey;
+        const validTabs: TabKey[] = [
+          'home', 'team', 'research', 'publications', 'analyzer',
+          'students', 'gear', 'abaqus', 'chat', 'qa', 'contact'
+        ];
+        if (tabParam && validTabs.includes(tabParam)) {
+          setActiveTab(tabParam);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // Full-Fit Widescreen state (defaults to true for immersive monitor coverage)
   const [isFullFit, setIsFullFit] = useState<boolean>(() => {
@@ -98,6 +161,15 @@ export const App: React.FC = () => {
 
   const handleSelectTab = (tab: TabKey) => {
     setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.pushState({}, '', url.toString());
+      } catch {
+        // ignore
+      }
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

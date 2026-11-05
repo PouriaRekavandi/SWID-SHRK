@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   FileText,
   Upload,
@@ -26,9 +26,20 @@ import {
   LogOut,
   Save,
   Link2,
+  Languages,
+  Globe,
+  ChevronDown,
+  BookOpen,
+  Wrench,
+  CheckSquare,
+  Square,
+  Sliders,
+  Target,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { PaperAnalysisResult } from '../types';
-import { exportPaperAnalysisToPDF } from '../utils/pdfExporter';
+import { exportPaperAnalysisToPDF, PDFExportLanguage } from '../utils/pdfExporter';
+import { translateAnalysisToPersian } from '../utils/persianTranslator';
 import {
   initAuth,
   googleSignIn,
@@ -91,6 +102,8 @@ Traumatic brain injury (TBI) induced by rapid rotational angular acceleration re
   },
 ];
 
+type SectionTabKey = 'all' | 'name' | 'purpose' | 'gap' | 'methods' | 'results' | 'future' | 'validation';
+
 export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'paste' | 'gdrive' | 'onedrive'>('upload');
   const [paperText, setPaperText] = useState('');
@@ -101,11 +114,21 @@ export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState('');
   const [analysisResult, setAnalysisResult] = useState<PaperAnalysisResult | null>(null);
-  const [selectedDimension, setSelectedDimension] = useState<
-    'all' | 'objective' | 'researchGap' | 'methodology' | 'findings' | 'futureGaps'
-  >('all');
+  const [selectedSection, setSelectedSection] = useState<SectionTabKey>('all');
   const [copiedMarkdown, setCopiedMarkdown] = useState(false);
+  const [copiedScript, setCopiedScript] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [exportingLang, setExportingLang] = useState<PDFExportLanguage | null>(null);
+  const [displayLanguage, setDisplayLanguage] = useState<'en' | 'fa' | 'bilingual'>('en');
+
+  // Multi-paper selection state
+  const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>(['sample-fgm']);
+
+  // High-fidelity academic Persian translation memoized
+  const faAnalysis = useMemo(() => {
+    if (!analysisResult) return null;
+    return translateAnalysisToPersian(analysisResult);
+  }, [analysisResult]);
 
   // Google Drive Cloud State
   const [googleUser, setGoogleUser] = useState<any>(null);
@@ -182,7 +205,6 @@ export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
       setDriveFiles(files);
     } catch (err: any) {
       console.warn('Drive list files notice:', err?.message || err);
-      // If quota or scope error, keep empty
     } finally {
       setIsLoadingDriveFiles(false);
     }
@@ -217,7 +239,7 @@ export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
     }
 
     const confirmSave = window.confirm(
-      `Save academic analysis report for "${analysisResult.paperTitle}" to your Google Drive?`
+      `Save academic 6-section analysis report for "${analysisResult.paperTitle}" to your Google Drive?`
     );
     if (!confirmSave) return;
 
@@ -228,31 +250,59 @@ Authors: ${analysisResult.authors}
 Analysis Date: ${new Date().toLocaleDateString()}
 Model: ${analysisResult.modelUsed}
 
-## Executive Summary
-${analysisResult.executiveSummary}
+## 01. NAME OF THE CHOSEN PAPERS
+${analysisResult.paperNameSection?.citation || analysisResult.paperTitle}
 
-## Critical Takeaway
-${analysisResult.criticalTakeaway}
+## 02. PURPOSE OF THE PAPERS
+${analysisResult.purposeSection?.summary || analysisResult.dimensions.objective.summary}
+${analysisResult.purposeSection?.hypotheses?.map((h) => `- [Hypothesis] ${h}`).join('\n') || ''}
 
-## 1. Objective & Research Scope
-${analysisResult.dimensions.objective.summary}
-${analysisResult.dimensions.objective.bulletPoints.map((p) => `- ${p}`).join('\n')}
+## 03. RESEARCH GAP AND HOW THE GAP EXTRACTED FROM REFERENCES
+${analysisResult.researchGapSection?.summary || analysisResult.dimensions.researchGap.summary}
+${analysisResult.researchGapSection?.extractedFromReferences?.map(
+  (r) => `\n### Reference: ${r.reference}\n- Prior Baseline: ${r.priorFindingOrAssumption}\n- Extracted Gap: ${r.extractedGapOrVoid}`
+).join('\n') || ''}
 
-## 2. Research Gap & Prior Limitations
-${analysisResult.dimensions.researchGap.summary}
-${analysisResult.dimensions.researchGap.bulletPoints.map((p) => `- ${p}`).join('\n')}
+## 04. HOW TO ACHIEVE THE RESULTS (METHODS, INSTRUMENTS, FACILITIES)
+${analysisResult.methodsAndFacilitiesSection?.summary || analysisResult.dimensions.methodology.summary}
+### Facilities & Instruments:
+${analysisResult.methodsAndFacilitiesSection?.facilitiesAndInstruments?.map((f) => `- ${f}`).join('\n') || ''}
+### Standards: ${analysisResult.methodsAndFacilitiesSection?.testingStandards?.join(', ') || 'N/A'}
+### Solvers: ${analysisResult.methodsAndFacilitiesSection?.computationalSolvers?.join(', ') || 'N/A'}
 
-## 3. Methodology & Experimental Framework
-${analysisResult.dimensions.methodology.summary}
-${analysisResult.dimensions.methodology.bulletPoints.map((p) => `- ${p}`).join('\n')}
+## 05. RESULTS
+${analysisResult.resultsSection?.summary || analysisResult.dimensions.findings.summary}
+${analysisResult.resultsSection?.quantitativeMetrics?.map((m) => `- ${m}`).join('\n') || ''}
 
-## 4. Key Findings & Quantitative Discoveries
-${analysisResult.dimensions.findings.summary}
-${analysisResult.dimensions.findings.bulletPoints.map((p) => `- ${p}`).join('\n')}
+## 06. PROPOSE FUTURE DIRECTIONS
+${analysisResult.futureDirectionsSection?.summary || analysisResult.dimensions.futureGaps.summary}
+${analysisResult.futureDirectionsSection?.highPriorityRoadmap?.map((r) => `- [Roadmap] ${r}`).join('\n') || ''}
+${analysisResult.futureDirectionsSection?.unresolvedQuestions?.map((q) => `- [Unresolved] ${q}`).join('\n') || ''}
 
-## 5. Future Gaps & Open Directions
-${analysisResult.dimensions.futureGaps.summary}
-${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\n')}
+## 07. REPLICATION & VALIDATION BENCHMARK PACKAGE (APPENDIX)
+${analysisResult.validationPackage?.summary || 'Standardized benchmark package for independent replication and validation.'}
+
+### Specimen Geometrical Dimensions:
+${analysisResult.validationPackage?.geometricalDimensions?.map((g) => `- ${g.feature}: ${g.dimension} (Tol: ${g.tolerance || '±0.05 mm'}) - ${g.notes || ''}`).join('\n') || 'N/A'}
+
+### Material Constitutive Constants:
+${analysisResult.validationPackage?.materialProperties?.map((m) => `- ${m.name} (${m.symbol}): ${m.value} ${m.unit} [${m.description || ''}]`).join('\n') || 'N/A'}
+
+### Boundary Conditions & Kinematics:
+${analysisResult.validationPackage?.boundaryConditions?.map((b) => `- ${b.region} [${b.type}]: ${b.formulation} (DOF: ${b.degreesOfFreedom})`).join('\n') || 'N/A'}
+
+### Mesh & FEA Discretization:
+- Element Type: ${analysisResult.validationPackage?.meshAndDiscretization?.elementType || 'C3D8R'}
+- Mesh Size: ${analysisResult.validationPackage?.meshAndDiscretization?.characteristicMeshSize || '0.5 mm'}
+- Formulation: ${analysisResult.validationPackage?.meshAndDiscretization?.formulation || 'Enhanced hourglass stiffness'}
+
+### Benchmarks & Acceptance Criteria:
+${analysisResult.validationPackage?.validationBenchmarks?.map((vb) => `- ${vb.targetMetric}: Expected ${vb.expectedBenchmarkValue} (Tol: ${vb.experimentalErrorTolerance}) - ${vb.acceptanceCriterion}`).join('\n') || 'N/A'}
+
+### Verification Script (${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}):
+\`\`\`${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}
+${analysisResult.validationPackage?.executableVerificationScript?.code || '# Verification script'}
+\`\`\`
 `;
 
       const uploadRes = await saveAnalysisToDrive(
@@ -261,7 +311,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
         googleToken
       );
 
-      onNotify?.(`✅ Saved analysis report to Google Drive! File ID: ${uploadRes.id.slice(0, 10)}...`);
+      onNotify?.(`✅ Saved 6-section report to Google Drive! File ID: ${uploadRes.id.slice(0, 10)}...`);
     } catch (err: any) {
       console.error('Failed to save to Drive:', err);
       onNotify?.('Failed to upload report to Google Drive.', true);
@@ -276,7 +326,6 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
     setFileNameDisplay(item.name);
     setPdfFile(new File([new Blob()], item.name, { type: 'application/pdf' }));
 
-    // Load appropriate paper content
     if (item.id.includes('fgm')) {
       setPaperText(SAMPLE_PAPERS[0].text);
     } else if (item.id.includes('antiprism')) {
@@ -363,13 +412,50 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
     e.preventDefault();
   };
 
-  const handleLoadSample = (sample: typeof SAMPLE_PAPERS[0]) => {
+  const toggleSamplePaperSelection = (id: string) => {
+    setSelectedSampleIds((prev) => {
+      if (prev.includes(id)) {
+        if (prev.length === 1) return prev; // Keep at least one
+        return prev.filter((item) => item !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleLoadSingleSample = (sample: typeof SAMPLE_PAPERS[0]) => {
+    setSelectedSampleIds([sample.id]);
     setActiveTab('paste');
     setPaperText(sample.text);
     setFileNameDisplay(sample.title);
     setPdfFile(null);
     setPdfBase64('');
     onNotify?.(`Loaded sample: ${sample.title}`);
+  };
+
+  const handleAnalyzeSelectedSamples = () => {
+    const chosen = SAMPLE_PAPERS.filter((p) => selectedSampleIds.includes(p.id));
+    if (chosen.length === 0) return;
+
+    setActiveTab('paste');
+    const combinedText = chosen
+      .map((p, idx) => `=== MANUSCRIPT ${idx + 1}: ${p.title} ===\n${p.text}`)
+      .join('\n\n');
+
+    setPaperText(combinedText);
+    const multiTitle =
+      chosen.length === 1
+        ? chosen[0].title
+        : `Comparative Synthesis: ${chosen.map((c) => c.title).join(' & ')}`;
+    setFileNameDisplay(multiTitle);
+    setPdfFile(null);
+    setPdfBase64('');
+
+    onNotify?.(
+      chosen.length === 1
+        ? `Loaded ${chosen[0].title}`
+        : `Loaded ${chosen.length} chosen manuscripts for comparative synthesis!`
+    );
   };
 
   const handleClear = () => {
@@ -381,7 +467,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
     onNotify?.('Cleared inputs');
   };
 
-  // Robust Analysis Execution with Zero-Failure Fallback
+  // Robust Analysis Execution with Zero-Failure Fallback and 6 Sections
   const runAnalysis = async () => {
     const hasInput =
       (activeTab === 'upload' && (pdfBase64 || pdfFile)) ||
@@ -395,15 +481,15 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
     }
 
     setIsAnalyzing(true);
-    setAnalysisProgress('Initializing Academic Review Engine...');
+    setAnalysisProgress('Initializing Academic 6-Section Review Engine...');
 
     try {
       const progressTimer1 = setTimeout(() => {
-        setAnalysisProgress('Scanning manuscript layout & constitutive formulas...');
+        setAnalysisProgress('Scanning manuscript references & experimental facilities...');
       }, 700);
 
       const progressTimer2 = setTimeout(() => {
-        setAnalysisProgress('Decomposing into 5 Core Academic Dimensions...');
+        setAnalysisProgress('Extracting research gaps, methods, and quantitative results...');
       }, 1600);
 
       let successData: PaperAnalysisResult | null = null;
@@ -442,7 +528,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
       }
 
       setAnalysisResult(successData);
-      onNotify?.('✅ Academic paper analysis successfully generated!');
+      onNotify?.('✅ Academic paper analysis successfully generated into all 6 sections!');
 
       // Smooth scroll to results
       setTimeout(() => {
@@ -450,7 +536,6 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
       }, 200);
     } catch (err: any) {
       console.error('Analysis failed:', err);
-      // Last-ditch guaranteed recovery
       const recovered = generateClientSidePaperAnalysis(
         paperText,
         fileNameDisplay || pdfFile?.name || '',
@@ -465,95 +550,297 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((p) => `- ${p}`).join('\
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async (lang: PDFExportLanguage = 'en') => {
     if (!analysisResult) return;
     setIsExportingPDF(true);
+    setExportingLang(lang);
     try {
-      exportPaperAnalysisToPDF(analysisResult);
-      onNotify?.('✅ Analysis PDF successfully exported and downloaded!');
+      const label =
+        lang === 'en'
+          ? 'English (Vector PDF)'
+          : lang === 'fa'
+          ? 'Persian / فارسی (RTL PDF)'
+          : 'Bilingual / دوزبانه (Dual Report PDF)';
+      onNotify?.(`Generating 6-Section ${label} with publication typography...`);
+      await exportPaperAnalysisToPDF(analysisResult, lang);
+      onNotify?.(`✅ ${label} successfully exported and downloaded!`);
     } catch (err: any) {
       console.error('PDF export failed:', err);
       onNotify?.('Failed to generate PDF export.', true);
     } finally {
       setIsExportingPDF(false);
+      setExportingLang(null);
     }
   };
 
   const handleCopyMarkdown = () => {
     if (!analysisResult) return;
-    const md = `# ${analysisResult.paperTitle}
-*Authors:* ${analysisResult.authors}
-*Venue:* ${analysisResult.journalOrConference || 'Scientific Literature'} (${analysisResult.publicationYear || '2025'})
 
-## Executive Summary
-${analysisResult.executiveSummary}
+    let md = '';
+    if (displayLanguage === 'fa' && faAnalysis) {
+      md = `# ۱. نام مقالات انتخاب شده
+${faAnalysis.paperNameSection?.title}
+نویسندگان: ${faAnalysis.paperNameSection?.authors}
+نشریه یا کنفرانس: ${faAnalysis.paperNameSection?.journalOrConference} (${faAnalysis.paperNameSection?.publicationYear})
+استناد: ${faAnalysis.paperNameSection?.citation}
 
-## Critical Takeaway
-${analysisResult.criticalTakeaway}
+---
+
+# ۲. هدف مقالات
+${faAnalysis.purposeSection?.summary}
+دامنه مهندسی: ${faAnalysis.purposeSection?.engineeringScope}
+فرضیه‌های بنیادین:
+${faAnalysis.purposeSection?.hypotheses?.map((h) => `- ${h}`).join('\n')}
 
 ---
 
-### Dimension 1: Objective & Scope
-${analysisResult.dimensions.objective.summary}
-${analysisResult.dimensions.objective.bulletPoints.map((b) => `- ${b}`).join('\n')}
+# ۳. شکاف پژوهشی و نحوه استخراج آن از مراجع
+${faAnalysis.researchGapSection?.summary}
 
-### Dimension 2: Research Gap & Novelty
-${analysisResult.dimensions.researchGap.summary}
-${analysisResult.dimensions.researchGap.bulletPoints.map((b) => `- ${b}`).join('\n')}
-
-### Dimension 3: Methodology & Experimental Framework
-${analysisResult.dimensions.methodology.summary}
-${analysisResult.dimensions.methodology.bulletPoints.map((b) => `- ${b}`).join('\n')}
-
-### Dimension 4: Key Findings & Quantitative Metrics
-${analysisResult.dimensions.findings.summary}
-${analysisResult.dimensions.findings.bulletPoints.map((p) => `- ${p}`).join('\n')}
-
-### Dimension 5: Future Gaps & Next Steps
-${analysisResult.dimensions.futureGaps.summary}
-${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\n')}
+### استخراج مرجع به مرجع:
+${faAnalysis.researchGapSection?.extractedFromReferences?.map(
+  (r) => `- **مرجع:** ${r.reference}\n  - فرضیه پیشین: ${r.priorFindingOrAssumption}\n  - خلأ استخراج شده: ${r.extractedGapOrVoid}`
+).join('\n')}
 
 ---
-*Analyzed by SWID-SHRK Academic Paper Analyzer (Google Gemini)*
+
+# ۴. نحوه دستیابی به نتایج (روش‌ها، ابزارها، استانداردها و امکانات آزمایشگاهی)
+${faAnalysis.methodsAndFacilitiesSection?.summary}
+- تجهیزات آزمایشگاهی: ${faAnalysis.methodsAndFacilitiesSection?.facilitiesAndInstruments?.join(', ')}
+- استانداردهای آزمون: ${faAnalysis.methodsAndFacilitiesSection?.testingStandards?.join(', ')}
+- حل‌کننده‌های محاسباتی: ${faAnalysis.methodsAndFacilitiesSection?.computationalSolvers?.join(', ')}
+- مواد و نمونه‌ها: ${faAnalysis.methodsAndFacilitiesSection?.specimensAndMaterials?.join(', ')}
+
+---
+
+# ۵. نتایج
+${faAnalysis.resultsSection?.summary}
+یافته‌های کمی و فیزیکی:
+${faAnalysis.resultsSection?.quantitativeMetrics?.map((m) => `- ${m}`).join('\n')}
+
+---
+
+# ۶. پیشنهاد مسیرهای پژوهشی آینده
+${faAnalysis.futureDirectionsSection?.summary}
+نقشه راه اولویت‌دار:
+${faAnalysis.futureDirectionsSection?.highPriorityRoadmap?.map((r) => `- ${r}`).join('\n')}
+پرسش‌های باز:
+${faAnalysis.futureDirectionsSection?.unresolvedQuestions?.map((q) => `? ${q}`).join('\n')}
+
+---
+
+# ۷. پیوست: بسته اعتبارسنجی و بازتولید آکادمیک
+${faAnalysis.validationPackage?.summary || 'داده‌های لازم جهت اعتبارسنجی و شبیه‌سازی مستقل.'}
+
+### ابعاد هندسی نمونه آزمون:
+${faAnalysis.validationPackage?.geometricalDimensions?.map((g) => `- ${g.feature}: ${g.dimension} (تلورانس: ${g.tolerance || '±0.05 mm'}) - ${g.notes || ''}`).join('\n')}
+
+### ثابت‌های بنیادی ماده:
+${faAnalysis.validationPackage?.materialProperties?.map((m) => `- ${m.name} (${m.symbol}): ${m.value} ${m.unit} [${m.description || ''}]`).join('\n')}
+
+### شرایط مرزی و قیدهای سینماتیکی:
+${faAnalysis.validationPackage?.boundaryConditions?.map((b) => `- موقعیت: ${b.region} [نوع: ${b.type}] | فرمول: ${b.formulation} | درجات آزادی: ${b.degreesOfFreedom}`).join('\n')}
+
+### اسکریپت راستی‌آزمایی محاسباتی (${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}):
+\`\`\`${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}
+${analysisResult.validationPackage?.executableVerificationScript?.code || '# Verification script'}
+\`\`\`
+
+---
+*تحلیل شده توسط آزمایشگاه تحقیقاتی مکانیک و هوافضا SWID-SHRK (۶ بخش آکادمیک + پیوست اعتبارسنجی)*
 `;
+    } else if (displayLanguage === 'bilingual' && faAnalysis) {
+      md = `# 01. NAME OF THE CHOSEN PAPERS / ۱. نام مقالات انتخاب شده
+EN: ${analysisResult.paperTitle} (${analysisResult.authors})
+FA: ${faAnalysis.paperNameSection.title} (${faAnalysis.paperNameSection.authors})
+
+---
+
+# 02. PURPOSE OF THE PAPERS / ۲. هدف مقالات
+[EN] ${analysisResult.purposeSection?.summary}
+[FA] ${faAnalysis.purposeSection?.summary}
+
+---
+
+# 03. RESEARCH GAP EXTRACTED FROM REFERENCES / ۳. شکاف پژوهشی و استخراج از مراجع
+[EN] ${analysisResult.researchGapSection?.summary}
+[FA] ${faAnalysis.researchGapSection?.summary}
+
+Reference Voids:
+${analysisResult.researchGapSection?.extractedFromReferences?.map(
+  (r, i) => `[Ref ${i + 1}] ${r.reference}\n- Prior: ${r.priorFindingOrAssumption}\n- Void: ${r.extractedGapOrVoid}\n- FA Void: ${faAnalysis.researchGapSection?.extractedFromReferences?.[i]?.extractedGapOrVoid || ''}`
+).join('\n\n')}
+
+---
+
+# 04. HOW TO ACHIEVE RESULTS (METHODS, INSTRUMENTS, FACILITIES) / ۴. نحوه دستیابی به نتایج
+Facilities: ${analysisResult.methodsAndFacilitiesSection?.facilitiesAndInstruments?.join(' | ')}
+Solvers: ${analysisResult.methodsAndFacilitiesSection?.computationalSolvers?.join(' | ')}
+
+---
+
+# 05. RESULTS / ۵. نتایج
+[EN] ${analysisResult.resultsSection?.summary}
+[FA] ${faAnalysis.resultsSection?.summary}
+${analysisResult.resultsSection?.quantitativeMetrics?.map((m) => `- ${m}`).join('\n')}
+
+---
+
+# 06. PROPOSE FUTURE DIRECTIONS / ۶. پیشنهاد مسیرهای آینده
+[EN] ${analysisResult.futureDirectionsSection?.summary}
+[FA] ${faAnalysis.futureDirectionsSection?.summary}
+
+---
+
+# 07. REPLICATION & VALIDATION BENCHMARK PACKAGE / ۷. بسته بازتولید و اعتبارسنجی
+[EN] ${analysisResult.validationPackage?.summary}
+[FA] ${faAnalysis.validationPackage?.summary}
+
+Dimensions & Tolerances:
+${analysisResult.validationPackage?.geometricalDimensions?.map((g) => `- ${g.feature}: ${g.dimension} (Tol: ${g.tolerance})`).join('\n')}
+
+Material Constants:
+${analysisResult.validationPackage?.materialProperties?.map((m) => `- ${m.name} (${m.symbol}): ${m.value} ${m.unit}`).join('\n')}
+
+Boundary Conditions:
+${analysisResult.validationPackage?.boundaryConditions?.map((b) => `- ${b.region} [${b.type}]: ${b.formulation} (DOF: ${b.degreesOfFreedom})`).join('\n')}
+
+\`\`\`${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}
+${analysisResult.validationPackage?.executableVerificationScript?.code || '# Verification script'}
+\`\`\`
+
+---
+*SWID-SHRK Bilingual 6-Section Academic Paper Evaluation & Validation Benchmark*
+`;
+    } else {
+      md = `# 01. NAME OF THE CHOSEN PAPERS
+**Title:** ${analysisResult.paperTitle}
+**Authors:** ${analysisResult.authors}
+**Venue:** ${analysisResult.journalOrConference || 'Scientific Literature'} (${analysisResult.publicationYear || '2025'})
+**Citation:** ${analysisResult.paperNameSection?.citation || analysisResult.paperTitle}
+
+---
+
+# 02. PURPOSE OF THE PAPERS
+${analysisResult.purposeSection?.summary || analysisResult.executiveSummary}
+
+**Engineering Scope:** ${analysisResult.purposeSection?.engineeringScope}
+
+**Central Hypotheses & Targets:**
+${analysisResult.purposeSection?.hypotheses?.map((h) => `- ${h}`).join('\n')}
+
+---
+
+# 03. RESEARCH GAP AND HOW THE GAP EXTRACTED FROM THE REFERENCES
+${analysisResult.researchGapSection?.summary}
+
+### Reference-by-Reference Void Deconstruction:
+${analysisResult.researchGapSection?.extractedFromReferences?.map(
+  (r) => `* **Reference:** ${r.reference}\n  * Prior Baseline / Assumption: ${r.priorFindingOrAssumption}\n  * Extracted Research Gap: ${r.extractedGapOrVoid}`
+).join('\n\n')}
+
+---
+
+# 04. HOW TO ACHIEVE THE RESULTS (METHODS, INSTRUMENTS, FACILITIES AND SO ON..)
+${analysisResult.methodsAndFacilitiesSection?.summary}
+
+**Hardware & Laboratory Facilities:**
+${analysisResult.methodsAndFacilitiesSection?.facilitiesAndInstruments?.map((f) => `- ${f}`).join('\n')}
+
+**Testing Standards:** ${analysisResult.methodsAndFacilitiesSection?.testingStandards?.join('  |  ')}
+**Computational Solvers:** ${analysisResult.methodsAndFacilitiesSection?.computationalSolvers?.join('  |  ')}
+**Materials / Specimens:** ${analysisResult.methodsAndFacilitiesSection?.specimensAndMaterials?.join('  |  ')}
+
+---
+
+# 05. RESULTS
+${analysisResult.resultsSection?.summary}
+
+**Quantitative Performance Metrics & Mechanisms:**
+${analysisResult.resultsSection?.quantitativeMetrics?.map((m) => `- ${m}`).join('\n')}
+
+---
+
+# 06. PROPOSE FUTURE DIRECTIONS
+${analysisResult.futureDirectionsSection?.summary}
+
+**High-Priority Research Roadmap:**
+${analysisResult.futureDirectionsSection?.highPriorityRoadmap?.map((r) => `- ${r}`).join('\n')}
+
+**Unresolved Scientific Questions & Boundary Limits:**
+${analysisResult.futureDirectionsSection?.unresolvedQuestions?.map((q) => `? ${q}`).join('\n')}
+
+---
+
+# 07. REPLICATION & VALIDATION BENCHMARK PACKAGE (APPENDIX)
+${analysisResult.validationPackage?.summary}
+
+### Specimen Geometrical Dimensions:
+${analysisResult.validationPackage?.geometricalDimensions?.map((g) => `- ${g.feature}: ${g.dimension} (Tol: ${g.tolerance || '±0.05 mm'}) - ${g.notes || ''}`).join('\n')}
+
+### Material Constitutive Constants:
+${analysisResult.validationPackage?.materialProperties?.map((m) => `- ${m.name} (${m.symbol}): ${m.value} ${m.unit} [${m.description || ''}]`).join('\n')}
+
+### Boundary Conditions & Kinematics:
+${analysisResult.validationPackage?.boundaryConditions?.map((b) => `- ${b.region} [${b.type}]: ${b.formulation} (DOF: ${b.degreesOfFreedom})`).join('\n')}
+
+### Discretization & Mesh:
+- Element Type: ${analysisResult.validationPackage?.meshAndDiscretization?.elementType}
+- Characteristic Mesh Size: ${analysisResult.validationPackage?.meshAndDiscretization?.characteristicMeshSize}
+- Formulation: ${analysisResult.validationPackage?.meshAndDiscretization?.formulation}
+
+### Validation Benchmarks & Acceptance Criteria:
+${analysisResult.validationPackage?.validationBenchmarks?.map((vb) => `- ${vb.targetMetric}: Expected ${vb.expectedBenchmarkValue} (Tol: ${vb.experimentalErrorTolerance}) - ${vb.acceptanceCriterion}`).join('\n')}
+
+### Executable Verification Script (${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}):
+\`\`\`${analysisResult.validationPackage?.executableVerificationScript?.language || 'python'}
+${analysisResult.validationPackage?.executableVerificationScript?.code}
+\`\`\`
+
+---
+*Deconstructed by SWID-SHRK Academic Paper Analyzer (Google Gemini)*
+`;
+    }
 
     navigator.clipboard.writeText(md).then(() => {
       setCopiedMarkdown(true);
-      onNotify?.('Copied full academic analysis Markdown to clipboard');
+      onNotify?.(
+        `Copied ${displayLanguage === 'fa' ? 'Persian' : displayLanguage === 'bilingual' ? 'bilingual' : 'English'} 6-section Markdown to clipboard`
+      );
       setTimeout(() => setCopiedMarkdown(false), 2500);
     });
   };
 
   return (
     <div className="space-y-10 text-base leading-relaxed">
-      {/* Header Banner with Larger Typography */}
+      {/* Header Banner */}
       <div className="relative overflow-hidden rounded-2xl dark:bg-gradient-to-r dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 border dark:border-zinc-800 border-sky-800 p-6 sm:p-9 text-white shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3.5 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider dark:bg-[#00ff41]/10 bg-sky-500/20 text-[#00ff41] border dark:border-[#00ff41]/40 border-sky-400/40">
               <Sparkles className="w-4 h-4 text-[#00ff41]" />
-              <span>Gemini Academic Engine &amp; Cloud Sync</span>
+              <span>Exact 6-Section Academic Deconstruction</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-orbitron tracking-wide text-white leading-tight">
-              Paper Analyzer <span className="text-[#00b8ff]">&amp; 5-D Decomposition</span>
+              Paper Analyzer <span className="text-[#00b8ff]">&amp; 6 Academic Sections</span>
             </h1>
             <p className="text-slate-200 dark:text-zinc-200 font-mono text-sm sm:text-base leading-relaxed">
-              Upload manuscripts, sync from <strong>Google Drive</strong> or <strong>OneDrive</strong>, or paste text. Deconstruct research papers across the <strong>5 core academic dimensions</strong> (Objective, Research Gap, Methodology, Findings, and Future Gaps). Export formatted peer-review briefs as downloadable PDFs with <strong>jsPDF</strong>.
+              Upload single manuscripts, compare multiple selected papers, or sync with <strong>Google Drive</strong> and <strong>OneDrive</strong>. Directly deconstructs research into the <strong>6 exact sections</strong>: Paper Name, Purpose, Research Gap extracted from References, Methods &amp; Facilities, Results, and Future Directions. Export ready-to-publish reports in <strong>English</strong>, <strong>Persian (فارسی)</strong>, or <strong>Bilingual (دوزبانه)</strong> PDFs.
             </p>
           </div>
 
           <div className="flex flex-wrap sm:flex-col gap-3 flex-none font-mono text-xs sm:text-sm">
             <div className="px-4 py-2.5 rounded-lg bg-black/50 border border-white/10 flex items-center gap-2.5">
               <Compass className="w-4 h-4 text-sky-400" />
-              <span>5 Core Dimensions</span>
+              <span>6 Rigorous Academic Sections</span>
             </div>
             <div className="px-4 py-2.5 rounded-lg bg-black/50 border border-white/10 flex items-center gap-2.5">
-              <Cloud className="w-4 h-4 text-[#00ff41]" />
-              <span>Google Drive &amp; OneDrive</span>
+              <BookOpen className="w-4 h-4 text-amber-400" />
+              <span>Reference Void Extraction</span>
             </div>
             <div className="px-4 py-2.5 rounded-lg bg-black/50 border border-white/10 flex items-center gap-2.5">
-              <Download className="w-4 h-4 text-amber-400" />
-              <span>One-Click jsPDF Export</span>
+              <Wrench className="w-4 h-4 text-[#00ff41]" />
+              <span>Instruments &amp; Facilities Audit</span>
             </div>
           </div>
         </div>
@@ -574,7 +861,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
         {/* Left Column: Upload / Cloud Sync / Paste controls */}
         <div className="lg:col-span-7 space-y-6">
           <div className="dark:bg-[#0c0c0e] bg-white rounded-xl border dark:border-zinc-800 border-slate-200 p-5 sm:p-7 shadow-md transition-colors">
-            {/* Input Mode Selector with Google Drive & OneDrive */}
+            {/* Input Mode Selector */}
             <div className="flex flex-wrap items-center justify-between border-b dark:border-zinc-800 border-slate-200 pb-4 mb-6 gap-2">
               <div className="flex flex-wrap gap-2 font-mono text-xs sm:text-sm font-bold">
                 <button
@@ -672,7 +959,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                           {fileNameDisplay || pdfFile?.name}
                         </p>
                         <p className="font-mono text-xs sm:text-sm dark:text-zinc-400 text-slate-500 mt-1">
-                          {pdfFile?.size ? `${(pdfFile.size / 1024 / 1024).toFixed(2)} MB • ` : ''}Ready for 5-dimension evaluation
+                          {pdfFile?.size ? `${(pdfFile.size / 1024 / 1024).toFixed(2)} MB • ` : ''}Ready for 6-section academic decomposition
                         </p>
                       </div>
                       <p className="text-xs sm:text-sm text-sky-500 hover:underline">Click or drop another PDF to replace</p>
@@ -876,7 +1163,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                 <textarea
                   value={paperText}
                   onChange={(e) => setPaperText(e.target.value)}
-                  placeholder="Paste manuscript text here (Title, Abstract, Introduction, Methodology, Results, or full preprint body)..."
+                  placeholder="Paste manuscript text here (Title, Abstract, Introduction, References, Methodology, Results, or multiple papers)..."
                   rows={9}
                   className="w-full p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-300 font-mono text-xs sm:text-sm dark:text-white text-slate-900 focus:outline-none focus:ring-2 dark:focus:ring-[#00ff41] focus:ring-sky-500 transition-all resize-y"
                 />
@@ -894,15 +1181,16 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
             <div className="mt-6 pt-5 border-t dark:border-zinc-800 border-slate-200 space-y-4">
               <div>
                 <label className="block text-xs sm:text-sm font-mono font-bold dark:text-zinc-200 text-slate-700 mb-2">
-                  Specialized Analytical Focus:
+                  Analytical Focus &amp; Decomposition Protocol:
                 </label>
                 <select
                   value={focusArea}
                   onChange={(e) => setFocusArea(e.target.value)}
                   className="w-full sm:w-auto px-4 py-2.5 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-700 border-slate-300 font-mono text-xs sm:text-sm dark:text-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 >
-                  <option value="general">Comprehensive Academic Rigor (All 5 Dimensions)</option>
-                  <option value="experimental">Experimental Testing Protocols &amp; Standards (ASTM/ISO)</option>
+                  <option value="general">Comprehensive 6-Section Rigor (All Sections)</option>
+                  <option value="references">Deep Reference Void Analysis (Section 3 Focus)</option>
+                  <option value="experimental">Experimental Testing Protocols, Facilities &amp; ASTM Standards</option>
                   <option value="computational">Computational FEA/CFD, Discretization &amp; Solvers</option>
                   <option value="fracture">Fracture Mechanics, SIFs &amp; Cyclic Fatigue Life</option>
                   <option value="metamaterials">Cellular Metamaterials, Origami &amp; Energy Absorption</option>
@@ -926,12 +1214,12 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                 {isAnalyzing ? (
                   <>
                     <RefreshCw className="w-5 h-5 animate-spin text-[#00ff41]" />
-                    <span>{analysisProgress || 'Decomposing Manuscript...'}</span>
+                    <span>{analysisProgress || 'Decomposing Manuscript into 6 Sections...'}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5 text-black" />
-                    <span>Analyze Paper with Gemini (5 Dimensions)</span>
+                    <span>Deconstruct Paper into 6 Academic Sections</span>
                   </>
                 )}
               </button>
@@ -939,67 +1227,124 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
           </div>
         </div>
 
-        {/* Right Column: SWID-SHRK Sample Pre-Loads & Instructions */}
+        {/* Right Column: Multi-Paper Selection & Guide */}
         <div className="lg:col-span-5 space-y-4">
           <div className="dark:bg-[#0c0c0e] bg-white rounded-xl border dark:border-zinc-800 border-slate-200 p-5 sm:p-7 shadow-md">
-            <h3 className="font-orbitron font-bold text-sm sm:text-base dark:text-white text-slate-900 flex items-center gap-2 mb-3">
-              <Bookmark className="w-4 h-4 text-[#00b8ff]" />
-              <span>Quick-Load Sample Papers</span>
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-orbitron font-bold text-sm sm:text-base dark:text-white text-slate-900 flex items-center gap-2">
+                <Bookmark className="w-4 h-4 text-[#00b8ff]" />
+                <span>Single or Multi-Paper Synthesis</span>
+              </h3>
+              <span className="text-[11px] font-mono dark:text-zinc-400 text-slate-500">
+                {selectedSampleIds.length} chosen
+              </span>
+            </div>
+
             <p className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 mb-4 leading-relaxed">
-              Don't have a PDF ready? Load peer-reviewed manuscript excerpts from the SWID-SHRK laboratory to test the 5-dimension engine immediately:
+              Select one or multiple peer-reviewed papers below to synthesize together across the 6 academic dimensions:
             </p>
 
             <div className="space-y-3">
-              {SAMPLE_PAPERS.map((sample) => (
-                <div
-                  key={sample.id}
-                  onClick={() => handleLoadSample(sample)}
-                  className="group p-4 rounded-lg border dark:border-zinc-800 border-slate-200 hover:border-sky-500 dark:hover:border-[#00ff41] dark:bg-zinc-900/60 bg-slate-50 cursor-pointer transition-all hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-mono uppercase tracking-wider px-2.5 py-0.5 rounded dark:bg-sky-950/60 bg-sky-100 text-sky-400 dark:text-sky-300 font-bold">
-                      {sample.category}
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#00ff41] group-hover:translate-x-1 transition-all" />
+              {SAMPLE_PAPERS.map((sample) => {
+                const isChecked = selectedSampleIds.includes(sample.id);
+                return (
+                  <div
+                    key={sample.id}
+                    className={`group p-3.5 rounded-lg border transition-all ${
+                      isChecked
+                        ? 'dark:border-[#00ff41] border-emerald-500 dark:bg-zinc-900 bg-emerald-50/40 shadow-sm'
+                        : 'dark:border-zinc-800 border-slate-200 dark:bg-zinc-900/60 bg-slate-50 hover:border-sky-400'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div
+                        onClick={() => toggleSamplePaperSelection(sample.id)}
+                        className="flex items-start gap-2.5 cursor-pointer flex-1 min-w-0"
+                      >
+                        <button
+                          type="button"
+                          className="mt-0.5 text-slate-400 hover:text-[#00ff41] transition-colors"
+                        >
+                          {isChecked ? (
+                            <CheckSquare className="w-4 h-4 text-[#00ff41]" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded dark:bg-sky-950/60 bg-sky-100 text-sky-400 dark:text-sky-300 font-bold">
+                            {sample.category}
+                          </span>
+                          <h4 className="font-mono font-bold text-xs sm:text-sm dark:text-white text-slate-900 mt-1 line-clamp-1 group-hover:text-sky-500 transition-colors">
+                            {sample.title}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleLoadSingleSample(sample)}
+                        title="Load only this paper"
+                        className="text-xs font-mono text-sky-400 hover:underline flex-none pt-1"
+                      >
+                        Load Solo
+                      </button>
+                    </div>
+
+                    <p className="text-xs font-mono dark:text-zinc-400 text-slate-500 mt-2 line-clamp-2 leading-relaxed pl-6">
+                      {sample.summary}
+                    </p>
                   </div>
-                  <h4 className="font-mono font-bold text-xs sm:text-sm dark:text-white text-slate-900 mt-2 line-clamp-1 group-hover:text-sky-600 dark:group-hover:text-[#00ff41] transition-colors">
-                    {sample.title}
-                  </h4>
-                  <p className="text-xs font-mono dark:text-zinc-400 text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    {sample.summary}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            <div className="mt-4 pt-3 border-t dark:border-zinc-800 border-slate-200">
+              <button
+                type="button"
+                onClick={handleAnalyzeSelectedSamples}
+                className="w-full py-2.5 px-4 rounded-lg font-mono text-xs sm:text-sm font-bold bg-[#00b8ff] hover:bg-sky-400 text-black flex items-center justify-center gap-2 cursor-pointer shadow transition-all"
+              >
+                <Layers className="w-4 h-4" />
+                <span>
+                  {selectedSampleIds.length > 1
+                    ? `Synthesize ${selectedSampleIds.length} Selected Papers`
+                    : 'Load Chosen Paper into Editor'}
+                </span>
+              </button>
             </div>
           </div>
 
-          {/* 5 Core Academic Dimensions Guide */}
+          {/* Exact 6 Sections Schema Card */}
           <div className="dark:bg-[#0c0c0e] bg-white rounded-xl border dark:border-zinc-800 border-slate-200 p-5 sm:p-6 shadow-md font-mono text-xs sm:text-sm space-y-3">
             <h4 className="font-bold uppercase tracking-wider dark:text-zinc-200 text-slate-800 flex items-center gap-2">
-              <Compass className="w-4 h-4 text-amber-400" />
-              <span>The 5 Core Academic Dimensions:</span>
+              <Compass className="w-4 h-4 text-[#00ff41]" />
+              <span>The Exact 6 Academic Sections:</span>
             </h4>
-            <div className="space-y-2.5 text-xs sm:text-sm dark:text-zinc-300 text-slate-600 leading-relaxed">
+            <div className="space-y-2 text-xs sm:text-sm dark:text-zinc-300 text-slate-600 leading-relaxed">
               <div className="flex items-start gap-2">
-                <span className="font-bold text-sky-400 flex-none">1. Objective:</span>
-                <span>Central research question, hypotheses, engineering scope, and target systems.</span>
+                <span className="font-bold text-sky-400 flex-none">1. Paper Name:</span>
+                <span>Title, authors, venue, publication year, and academic citation.</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-bold text-amber-400 flex-none">2. Research Gap:</span>
-                <span>Theoretical voids and empirical shortcomings of prior published literature.</span>
+                <span className="font-bold text-blue-400 flex-none">2. Purpose:</span>
+                <span>Central research aim, engineering scope, and testable hypotheses.</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-bold text-purple-400 flex-none">3. Methodology:</span>
-                <span>Testing rigs, ASTM standards, Abaqus FEA formulations, elements, and constitutive models.</span>
+                <span className="font-bold text-amber-400 flex-none">3. Research Gap:</span>
+                <span>How the void was extracted reference-by-reference from prior works.</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-bold text-[#00ff41] flex-none">4. Findings:</span>
-                <span>Measured quantitative results, stress/strain thresholds, SEA values, and failure modes.</span>
+                <span className="font-bold text-purple-400 flex-none">4. How to Achieve:</span>
+                <span>Methods, experimental hardware, testing standards, facilities &amp; solvers.</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-bold text-pink-400 flex-none">5. Future Gaps:</span>
-                <span>Unresolved questions, scaling hurdles, and recommended doctoral/postdoctoral next steps.</span>
+                <span className="font-bold text-emerald-400 flex-none">5. Results:</span>
+                <span>Measured quantitative metrics, SEA values, and physical failure modes.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-pink-400 flex-none">6. Future Directions:</span>
+                <span>High-priority doctoral roadmap, PINNs, and unresolved boundaries.</span>
               </div>
             </div>
           </div>
@@ -1010,39 +1355,132 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
       {analysisResult && (
         <div ref={resultsRef} className="space-y-8 pt-6">
           {/* Paper Overview Meta Card */}
-          <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 p-6 sm:p-9 shadow-xl">
+          <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 p-6 sm:p-9 shadow-xl space-y-6">
+            {/* Multilingual View Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl dark:bg-zinc-900/90 bg-slate-100 border dark:border-zinc-800 border-slate-300">
+              <div className="flex items-center gap-2.5">
+                <Languages className="w-5 h-5 text-[#00ff41]" />
+                <span className="font-mono font-bold text-xs sm:text-sm dark:text-white text-slate-900">
+                  Academic Report Language / زبان گزارش علمی:
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg dark:bg-black/60 bg-white border dark:border-zinc-800 border-slate-300">
+                <button
+                  type="button"
+                  onClick={() => setDisplayLanguage('en')}
+                  className={`px-3 py-1.5 rounded-md font-mono text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    displayLanguage === 'en'
+                      ? 'bg-sky-500 text-white shadow'
+                      : 'dark:text-zinc-400 text-slate-600 hover:text-white'
+                  }`}
+                >
+                  <span>🇬🇧</span>
+                  <span>English (EN)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisplayLanguage('fa')}
+                  className={`px-3 py-1.5 rounded-md font-mono text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    displayLanguage === 'fa'
+                      ? 'bg-emerald-500 text-black shadow font-extrabold'
+                      : 'dark:text-zinc-400 text-slate-600 hover:text-white'
+                  }`}
+                >
+                  <span>🇮🇷</span>
+                  <span>فارسی (FA)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisplayLanguage('bilingual')}
+                  className={`px-3 py-1.5 rounded-md font-mono text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    displayLanguage === 'bilingual'
+                      ? 'bg-[#00ff41] text-black shadow font-extrabold'
+                      : 'dark:text-zinc-400 text-slate-600 hover:text-white'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Bilingual (EN + FA)</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b dark:border-zinc-800 border-slate-200">
               <div className="space-y-3.5 max-w-4xl">
                 <div className="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm font-mono">
                   <span className="px-3 py-1 rounded bg-[#00ff41]/10 text-[#00ff41] border border-[#00ff41]/30 font-bold">
-                    {analysisResult.modelUsed.toUpperCase()}
+                    6-SECTION DECOMPOSITION
                   </span>
                   <span className="dark:text-zinc-300 text-slate-600">
-                    Source: {analysisResult.sourceType === 'pdf' ? `PDF (${analysisResult.fileName || 'Uploaded File'})` : 'Pasted Manuscript'}
+                    Model: {analysisResult.modelUsed}
                   </span>
                   <span className="dark:text-zinc-600 text-slate-300">•</span>
                   <span className="dark:text-zinc-300 text-slate-600">
                     {new Date(analysisResult.analyzedAt).toLocaleDateString()}
                   </span>
+                  {analysisResult.paperNameSection?.paperList && analysisResult.paperNameSection.paperList.length > 1 && (
+                    <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30">
+                      Comparative Multi-Paper ({analysisResult.paperNameSection.paperList.length} Papers)
+                    </span>
+                  )}
                 </div>
 
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-orbitron dark:text-white text-slate-900 leading-snug">
-                  {analysisResult.paperTitle}
-                </h2>
-
-                <p className="font-mono text-xs sm:text-sm dark:text-zinc-200 text-slate-700 italic">
-                  <strong>Authors:</strong> {analysisResult.authors}
-                </p>
-
-                {analysisResult.journalOrConference && (
-                  <p className="font-mono text-xs sm:text-sm dark:text-zinc-300 text-slate-600">
-                    <strong>Target / Venue:</strong> {analysisResult.journalOrConference} ({analysisResult.publicationYear || '2025'})
-                  </p>
+                {/* Dynamic Title based on Language */}
+                {displayLanguage === 'en' && (
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-orbitron dark:text-white text-slate-900 leading-snug">
+                    {analysisResult.paperTitle}
+                  </h2>
                 )}
 
+                {displayLanguage === 'fa' && (
+                  <h2
+                    className="text-xl sm:text-2xl md:text-3xl font-extrabold dark:text-white text-slate-900 leading-snug text-right"
+                    dir="rtl"
+                    style={{ fontFamily: "'Vazirmatn', system-ui, sans-serif" }}
+                  >
+                    {faAnalysis?.paperNameSection?.title || analysisResult.paperTitle}
+                  </h2>
+                )}
+
+                {displayLanguage === 'bilingual' && (
+                  <div className="space-y-2">
+                    <h2 className="text-xl sm:text-2xl font-extrabold font-orbitron dark:text-white text-slate-900 leading-snug">
+                      {analysisResult.paperTitle}
+                    </h2>
+                    <h3
+                      className="text-lg sm:text-xl font-bold dark:text-sky-300 text-sky-800 leading-snug text-right pt-1 border-t dark:border-zinc-800 border-slate-200"
+                      dir="rtl"
+                      style={{ fontFamily: "'Vazirmatn', system-ui, sans-serif" }}
+                    >
+                      {faAnalysis?.paperNameSection?.title}
+                    </h3>
+                  </div>
+                )}
+
+                {/* Authors and Venue */}
+                <div
+                  className={`space-y-1 font-mono text-xs sm:text-sm ${
+                    displayLanguage === 'fa' ? 'text-right' : ''
+                  }`}
+                  dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
+                >
+                  <p className="dark:text-zinc-200 text-slate-700 italic">
+                    <strong>{displayLanguage === 'fa' ? 'نویسندگان:' : 'Authors:'}</strong>{' '}
+                    {displayLanguage === 'fa'
+                      ? faAnalysis?.paperNameSection?.authors || analysisResult.authors
+                      : analysisResult.authors}
+                  </p>
+
+                  <p className="dark:text-zinc-300 text-slate-600">
+                    <strong>{displayLanguage === 'fa' ? 'نشریه یا مرجع:' : 'Target / Venue:'}</strong>{' '}
+                    {displayLanguage === 'fa'
+                      ? `${faAnalysis?.paperNameSection?.journalOrConference || 'ادبیات معتبر علمی'} (${faAnalysis?.paperNameSection?.publicationYear || '۲۰۲۵'})`
+                      : `${analysisResult.journalOrConference || 'Scientific Literature'} (${analysisResult.publicationYear || '2025'})`}
+                  </p>
+                </div>
+
                 {analysisResult.keywords && analysisResult.keywords.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-1.5">
-                    {analysisResult.keywords.map((kw, idx) => (
+                  <div className={`flex flex-wrap gap-2 pt-1.5 ${displayLanguage === 'fa' ? 'justify-end' : ''}`}>
+                    {(displayLanguage === 'fa' && faAnalysis ? faAnalysis.keywords : analysisResult.keywords).map((kw, idx) => (
                       <span
                         key={idx}
                         className="px-2.5 py-1 rounded text-xs font-mono dark:bg-zinc-800 bg-slate-100 dark:text-sky-400 text-sky-700 border dark:border-zinc-700 border-slate-200"
@@ -1052,34 +1490,85 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                     ))}
                   </div>
                 )}
-
-                {analysisResult.apiKeyMessage && (
-                  <div className="mt-3 p-3.5 rounded-xl dark:bg-amber-950/30 bg-amber-50 border dark:border-amber-700/50 border-amber-300 text-xs sm:text-sm font-mono text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-none" />
-                    <span>{analysisResult.apiKeyMessage}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Action Buttons: PDF Export with jsPDF, Google Drive Save, & Copy Markdown */}
-              <div className="flex flex-col sm:flex-row md:flex-col gap-3 flex-none font-mono text-xs sm:text-sm">
-                <button
-                  type="button"
-                  onClick={handleExportPDF}
-                  disabled={isExportingPDF}
-                  className="px-5 py-3 rounded-xl font-bold bg-[#00b8ff] hover:bg-sky-400 text-black flex items-center justify-center gap-2.5 shadow-lg shadow-sky-500/20 active:scale-95 transition-all cursor-pointer"
-                  title="Download Formatted PDF report via jsPDF"
-                >
-                  <Download className="w-4 h-4 text-black" />
-                  <span>{isExportingPDF ? 'Generating PDF...' : 'Export PDF (jsPDF)'}</span>
-                </button>
+              {/* Action Buttons: 3 PDF Exports, Google Drive, & Markdown */}
+              <div className="flex flex-col gap-3 flex-none font-mono text-xs sm:text-sm min-w-[210px]">
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold dark:text-zinc-400 text-slate-500 uppercase tracking-wider block">
+                    Export Formatted PDF:
+                  </span>
+
+                  {/* 1. English PDF */}
+                  <button
+                    type="button"
+                    onClick={() => handleExportPDF('en')}
+                    disabled={isExportingPDF}
+                    className="w-full px-4 py-2.5 rounded-xl font-bold bg-[#00b8ff] hover:bg-sky-400 text-black flex items-center justify-between gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                    title="Export English Vector PDF"
+                  >
+                    <span className="flex items-center gap-2">
+                      {exportingLang === 'en' ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      ) : (
+                        <Download className="w-4 h-4 text-black" />
+                      )}
+                      <span>🇬🇧 English PDF</span>
+                    </span>
+                    <span className="text-[10px] bg-black/20 text-black px-1.5 py-0.5 rounded font-mono font-bold">
+                      Vector
+                    </span>
+                  </button>
+
+                  {/* 2. Persian PDF */}
+                  <button
+                    type="button"
+                    onClick={() => handleExportPDF('fa')}
+                    disabled={isExportingPDF}
+                    className="w-full px-4 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-black flex items-center justify-between gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                    title="Export Persian (Farsi) RTL PDF"
+                  >
+                    <span className="flex items-center gap-2">
+                      {exportingLang === 'fa' ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      ) : (
+                        <Download className="w-4 h-4 text-black" />
+                      )}
+                      <span>🇮🇷 فارسی PDF</span>
+                    </span>
+                    <span className="text-[10px] bg-black/20 text-black px-1.5 py-0.5 rounded font-mono font-bold">
+                      RTL Vazir
+                    </span>
+                  </button>
+
+                  {/* 3. Bilingual PDF */}
+                  <button
+                    type="button"
+                    onClick={() => handleExportPDF('bilingual')}
+                    disabled={isExportingPDF}
+                    className="w-full px-4 py-2.5 rounded-xl font-bold bg-[#00ff41] hover:bg-[#00e676] text-black flex items-center justify-between gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                    title="Export Dual Language Bilingual PDF (EN + FA)"
+                  >
+                    <span className="flex items-center gap-2">
+                      {exportingLang === 'bilingual' ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      ) : (
+                        <Globe className="w-4 h-4 text-black" />
+                      )}
+                      <span>🌐 Bilingual PDF</span>
+                    </span>
+                    <span className="text-[10px] bg-black/20 text-black px-1.5 py-0.5 rounded font-mono font-bold">
+                      Dual
+                    </span>
+                  </button>
+                </div>
 
                 {googleUser && (
                   <button
                     type="button"
                     onClick={handleSaveToGoogleDrive}
                     disabled={isSavingToDrive}
-                    className="px-5 py-3 rounded-xl font-bold dark:bg-emerald-950/70 bg-emerald-50 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-[#00ff41] border border-emerald-500/50 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl font-bold dark:bg-emerald-950/70 bg-emerald-50 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-[#00ff41] border border-emerald-500/50 flex items-center justify-center gap-2 transition-all cursor-pointer"
                     title="Save formatted brief directly to Google Drive"
                   >
                     <Save className="w-4 h-4" />
@@ -1090,7 +1579,7 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                 <button
                   type="button"
                   onClick={handleCopyMarkdown}
-                  className="px-5 py-3 rounded-xl font-bold dark:bg-zinc-800 bg-slate-100 hover:dark:bg-zinc-700 hover:bg-slate-200 dark:text-white text-slate-800 border dark:border-zinc-700 border-slate-300 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl font-bold dark:bg-zinc-800 bg-slate-100 hover:dark:bg-zinc-700 hover:bg-slate-200 dark:text-white text-slate-800 border dark:border-zinc-700 border-slate-300 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   {copiedMarkdown ? (
                     <>
@@ -1100,411 +1589,926 @@ ${analysisResult.dimensions.futureGaps.bulletPoints.map((b) => `- ${b}`).join('\
                   ) : (
                     <>
                       <Copy className="w-4 h-4" />
-                      <span>Copy Markdown</span>
+                      <span>Copy 6-Section MD</span>
                     </>
                   )}
                 </button>
               </div>
             </div>
-
-            {/* Executive Summary & Critical Takeaway */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-7">
-              <div className="p-5 rounded-xl dark:bg-zinc-900/70 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2.5">
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-mono font-bold dark:text-zinc-200 text-slate-800 uppercase tracking-wider">
-                  <Compass className="w-4 h-4 text-[#00b8ff]" />
-                  <span>Executive Research Summary</span>
-                </div>
-                <p className="font-mono text-xs sm:text-sm dark:text-zinc-200 text-slate-700 leading-relaxed">
-                  {analysisResult.executiveSummary}
-                </p>
-              </div>
-
-              <div className="p-5 rounded-xl dark:bg-emerald-950/20 bg-emerald-50 border dark:border-[#00ff41]/40 border-emerald-300 space-y-2.5">
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-mono font-bold text-emerald-700 dark:text-[#00ff41] uppercase tracking-wider">
-                  <CheckCircle2 className="w-4 h-4 text-[#00ff41]" />
-                  <span>Critical Takeaway</span>
-                </div>
-                <p className="font-mono text-xs sm:text-sm dark:text-zinc-100 text-slate-900 leading-relaxed font-semibold">
-                  "{analysisResult.criticalTakeaway}"
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Dimension Selector Tabs */}
+          {/* Section Filter Tabs */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b dark:border-zinc-800 border-slate-200 pb-3">
-            <div className="flex flex-wrap gap-2.5 font-mono text-xs sm:text-sm font-bold">
+            <div className="flex flex-wrap gap-2 font-mono text-xs sm:text-sm font-bold">
               <button
                 type="button"
-                onClick={() => setSelectedDimension('all')}
+                onClick={() => setSelectedSection('all')}
                 className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-                  selectedDimension === 'all'
+                  selectedSection === 'all'
                     ? 'dark:bg-white bg-slate-900 text-black dark:text-black font-extrabold shadow'
                     : 'dark:text-zinc-300 text-slate-600 hover:text-white'
                 }`}
               >
-                All 5 Dimensions
+                All 6 Sections
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedDimension('objective')}
-                className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-                  selectedDimension === 'objective'
+                onClick={() => setSelectedSection('name')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  selectedSection === 'name'
                     ? 'bg-sky-500 text-white font-extrabold shadow'
                     : 'dark:text-zinc-300 text-slate-600 hover:text-sky-400'
                 }`}
               >
-                1. Objective
+                1. Paper Name
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedDimension('researchGap')}
-                className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-                  selectedDimension === 'researchGap'
-                    ? 'bg-amber-500 text-white font-extrabold shadow'
+                onClick={() => setSelectedSection('purpose')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  selectedSection === 'purpose'
+                    ? 'bg-blue-600 text-white font-extrabold shadow'
+                    : 'dark:text-zinc-300 text-slate-600 hover:text-blue-400'
+                }`}
+              >
+                2. Purpose
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedSection('gap')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  selectedSection === 'gap'
+                    ? 'bg-amber-500 text-black font-extrabold shadow'
                     : 'dark:text-zinc-300 text-slate-600 hover:text-amber-400'
                 }`}
               >
-                2. Research Gap
+                3. Research Gap &amp; References
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedDimension('methodology')}
-                className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-                  selectedDimension === 'methodology'
+                onClick={() => setSelectedSection('methods')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  selectedSection === 'methods'
                     ? 'bg-purple-600 text-white font-extrabold shadow'
                     : 'dark:text-zinc-300 text-slate-600 hover:text-purple-400'
                 }`}
               >
-                3. Methodology
+                4. Methods &amp; Facilities
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedDimension('findings')}
-                className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-                  selectedDimension === 'findings'
+                onClick={() => setSelectedSection('results')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  selectedSection === 'results'
                     ? 'bg-emerald-500 text-black font-extrabold shadow'
                     : 'dark:text-zinc-300 text-slate-600 hover:text-emerald-400'
                 }`}
               >
-                4. Findings
+                5. Results
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedDimension('futureGaps')}
-                className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-                  selectedDimension === 'futureGaps'
+                onClick={() => setSelectedSection('future')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  selectedSection === 'future'
                     ? 'bg-pink-600 text-white font-extrabold shadow'
                     : 'dark:text-zinc-300 text-slate-600 hover:text-pink-400'
                 }`}
               >
-                5. Future Gaps
+                6. Future Directions
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedSection('validation')}
+                className={`px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  selectedSection === 'validation'
+                    ? 'bg-[#00ff41] text-black font-extrabold shadow'
+                    : 'dark:text-zinc-300 text-slate-600 hover:text-[#00ff41]'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>Validation Package</span>
               </button>
             </div>
 
             <div className="text-xs sm:text-sm font-mono dark:text-zinc-400 text-slate-500 hidden sm:block">
-              5-Dimension Academic Rigor Decomposition
+              6 Sections + Academic Validation Appendix
             </div>
           </div>
 
-          {/* Dimension Cards with Expanded Readability */}
-          <div className="space-y-6">
-            {/* DIMENSION 1: OBJECTIVE */}
-            {(selectedDimension === 'all' || selectedDimension === 'objective') && (
+          {/* THE EXACT 6 ACADEMIC SECTIONS */}
+          <div className="space-y-8">
+            {/* ==================================================== */}
+            {/* 1. NAME OF THE CHOSEN PAPERS */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'name') && (
               <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 overflow-hidden shadow-lg transition-colors">
                 <div className="px-6 sm:px-8 py-5 dark:bg-sky-950/40 bg-sky-100 border-b dark:border-sky-800/50 border-sky-200 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg bg-sky-500 text-white flex items-center justify-center font-bold text-sm">
-                      1
+                      01
                     </span>
                     <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-sky-950">
-                      Objective &amp; Research Scope
+                      {displayLanguage === 'fa'
+                        ? '۱. نام مقالات انتخاب شده'
+                        : displayLanguage === 'bilingual'
+                        ? '01. Name of the Chosen Papers / ۱. نام مقالات انتخاب شده'
+                        : '01. Name of the Chosen Papers'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-sky-600 dark:text-sky-400 font-bold">
-                    Primary Aim &amp; Hypotheses
+                    Manuscript Identity &amp; Citation
                   </span>
                 </div>
 
-                <div className="p-6 sm:p-8 space-y-6">
-                  <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
-                    {analysisResult.dimensions.objective.summary}
-                  </p>
+                <div className="p-6 sm:p-8 space-y-5">
+                  <div className="p-5 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-3">
+                    <div className="font-mono text-sm sm:text-base font-bold dark:text-white text-slate-900">
+                      {displayLanguage === 'fa' && faAnalysis
+                        ? faAnalysis.paperNameSection.title
+                        : analysisResult.paperTitle}
+                    </div>
+                    <div className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 space-y-1">
+                      <p>
+                        <strong>Authors:</strong>{' '}
+                        {displayLanguage === 'fa' && faAnalysis
+                          ? faAnalysis.paperNameSection.authors
+                          : analysisResult.authors}
+                      </p>
+                      <p>
+                        <strong>Venue / Year:</strong>{' '}
+                        {analysisResult.journalOrConference || 'Scientific Literature'} (
+                        {analysisResult.publicationYear || '2025'})
+                      </p>
+                    </div>
 
-                  <div className="space-y-3">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-sky-500">
-                      Core Research Targets &amp; Postulates:
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {analysisResult.dimensions.objective.bulletPoints.map((point, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-3 p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono"
-                        >
-                          <div className="w-2 h-2 rounded-full bg-sky-400 mt-1.5 flex-none" />
-                          <span className="dark:text-zinc-200 text-slate-700 leading-relaxed">{point}</span>
-                        </div>
-                      ))}
+                    <div className="p-3 rounded-lg dark:bg-sky-950/30 bg-sky-50 border dark:border-sky-800/40 border-sky-200 text-xs sm:text-sm font-mono text-sky-700 dark:text-sky-300">
+                      <strong>Standard Citation:</strong>{' '}
+                      {displayLanguage === 'fa' && faAnalysis
+                        ? faAnalysis.paperNameSection.citation
+                        : analysisResult.paperNameSection?.citation ||
+                          `${analysisResult.authors} (${analysisResult.publicationYear || '2025'}). "${analysisResult.paperTitle}". ${analysisResult.journalOrConference || 'Peer-Reviewed Literature'}.`}
                     </div>
                   </div>
 
-                  {analysisResult.dimensions.objective.subsections?.map((sub, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 sm:p-5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800/80 border-slate-200 space-y-2"
-                    >
-                      <h5 className="text-xs sm:text-sm font-mono font-bold dark:text-sky-400 text-sky-700">
-                        {sub.subtitle}
-                      </h5>
-                      <ul className="space-y-1.5">
-                        {sub.content.map((item, itemIdx) => (
-                          <li key={itemIdx} className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 leading-relaxed">
-                            • {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                  {/* Multi-Paper Breakdown Table if multiple */}
+                  {analysisResult.paperNameSection?.paperList &&
+                    analysisResult.paperNameSection.paperList.length > 1 && (
+                      <div className="space-y-2.5">
+                        <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-sky-400">
+                          Included Manuscripts in Comparative Synthesis:
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {analysisResult.paperNameSection.paperList.map((p, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3.5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800 border-slate-200 flex items-center justify-between text-xs sm:text-sm font-mono"
+                            >
+                              <div className="space-y-0.5">
+                                <span className="font-bold dark:text-white text-slate-900">
+                                  {idx + 1}. {p.title}
+                                </span>
+                                <div className="dark:text-zinc-400 text-slate-600 text-xs">
+                                  Authors: {p.authors} • Year: {p.year || '2025'}
+                                </div>
+                              </div>
+                              <span className="px-2 py-0.5 rounded text-[11px] bg-sky-500/20 text-sky-400 font-bold">
+                                Indexed
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             )}
 
-            {/* DIMENSION 2: RESEARCH GAP */}
-            {(selectedDimension === 'all' || selectedDimension === 'researchGap') && (
+            {/* ==================================================== */}
+            {/* 2. PURPOSE OF THE PAPERS */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'purpose') && (
+              <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 overflow-hidden shadow-lg transition-colors">
+                <div className="px-6 sm:px-8 py-5 dark:bg-blue-950/40 bg-blue-100 border-b dark:border-blue-800/50 border-blue-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                      02
+                    </span>
+                    <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-blue-950">
+                      {displayLanguage === 'fa'
+                        ? '۲. هدف مقالات'
+                        : displayLanguage === 'bilingual'
+                        ? '02. Purpose of the Papers / ۲. هدف مقالات'
+                        : '02. Purpose of the Papers'}
+                    </h3>
+                  </div>
+                  <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
+                    Aims, Scope &amp; Hypotheses
+                  </span>
+                </div>
+
+                <div className="p-6 sm:p-8 space-y-6">
+                  {/* Summary */}
+                  {displayLanguage === 'en' && (
+                    <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
+                      {analysisResult.purposeSection?.summary || analysisResult.dimensions.objective.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'fa' && (
+                    <p
+                      className="font-sans text-sm sm:text-base dark:text-zinc-100 text-slate-900 leading-relaxed text-right"
+                      dir="rtl"
+                      style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                    >
+                      {faAnalysis?.purposeSection?.summary || analysisResult.dimensions.objective.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'bilingual' && (
+                    <div className="space-y-3">
+                      <p className="font-mono text-sm dark:text-zinc-200 text-slate-800 leading-relaxed">
+                        {analysisResult.purposeSection?.summary}
+                      </p>
+                      <p
+                        className="font-sans text-sm dark:text-zinc-100 text-slate-900 leading-relaxed text-right pt-2 border-t dark:border-zinc-800 border-slate-200"
+                        dir="rtl"
+                        style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                      >
+                        {faAnalysis?.purposeSection?.summary}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Engineering Scope */}
+                  {analysisResult.purposeSection?.engineeringScope && (
+                    <div className="p-4 rounded-xl dark:bg-blue-950/20 bg-blue-50 border dark:border-blue-800/40 border-blue-200 text-xs sm:text-sm font-mono">
+                      <span className="font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                        Target Engineering Scope:
+                      </span>
+                      <span className="dark:text-zinc-200 text-slate-800">
+                        {displayLanguage === 'fa' && faAnalysis
+                          ? faAnalysis.purposeSection.engineeringScope
+                          : analysisResult.purposeSection.engineeringScope}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Hypotheses */}
+                  {analysisResult.purposeSection?.hypotheses && analysisResult.purposeSection.hypotheses.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-blue-400">
+                        {displayLanguage === 'fa' ? 'فرضیه‌های علمی بنیادین:' : 'Central Scientific Hypotheses & Targets:'}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {analysisResult.purposeSection.hypotheses.map((hyp, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm"
+                          >
+                            <div className="flex items-start gap-3 font-mono">
+                              <Target className="w-4 h-4 text-blue-400 mt-0.5 flex-none" />
+                              <span className="dark:text-zinc-200 text-slate-700 leading-relaxed">
+                                {displayLanguage === 'fa' && faAnalysis?.purposeSection?.hypotheses[idx]
+                                  ? faAnalysis.purposeSection.hypotheses[idx]
+                                  : hyp}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ==================================================== */}
+            {/* 3. RESEARCH GAP AND HOW EXTRACTED FROM REFERENCES */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'gap') && (
               <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 overflow-hidden shadow-lg transition-colors">
                 <div className="px-6 sm:px-8 py-5 dark:bg-amber-950/40 bg-amber-100 border-b dark:border-amber-800/50 border-amber-200 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg bg-amber-500 text-black flex items-center justify-center font-bold text-sm">
-                      2
+                      03
                     </span>
                     <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-amber-950">
-                      Research Gap &amp; Prior Limitations
+                      {displayLanguage === 'fa'
+                        ? '۳. شکاف پژوهشی و نحوه استخراج آن از مراجع'
+                        : displayLanguage === 'bilingual'
+                        ? '03. Research Gap & Reference Void Extraction / ۳. شکاف پژوهشی'
+                        : '03. Research Gap & Reference Extraction'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
-                    Literature Voids &amp; Novelty
+                    Citation-by-Citation Void Breakdown
                   </span>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-6">
-                  <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
-                    {analysisResult.dimensions.researchGap.summary}
-                  </p>
+                  {/* Summary */}
+                  {displayLanguage === 'en' && (
+                    <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
+                      {analysisResult.researchGapSection?.summary || analysisResult.dimensions.researchGap.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'fa' && (
+                    <p
+                      className="font-sans text-sm sm:text-base dark:text-zinc-100 text-slate-900 leading-relaxed text-right"
+                      dir="rtl"
+                      style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                    >
+                      {faAnalysis?.researchGapSection?.summary || analysisResult.dimensions.researchGap.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'bilingual' && (
+                    <div className="space-y-3">
+                      <p className="font-mono text-sm dark:text-zinc-200 text-slate-800 leading-relaxed">
+                        {analysisResult.researchGapSection?.summary}
+                      </p>
+                      <p
+                        className="font-sans text-sm dark:text-zinc-100 text-slate-900 leading-relaxed text-right pt-2 border-t dark:border-zinc-800 border-slate-200"
+                        dir="rtl"
+                        style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                      >
+                        {faAnalysis?.researchGapSection?.summary}
+                      </p>
+                    </div>
+                  )}
 
-                  <div className="space-y-3">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-amber-500">
-                      Shortcomings in Preceding Literature:
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {analysisResult.dimensions.researchGap.bulletPoints.map((point, idx) => (
+                  {/* Reference-by-Reference Decomposition Cards */}
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-amber-400" />
+                        <span>
+                          {displayLanguage === 'fa'
+                            ? 'واکاوی استخراج خلأ علمی از مقالات و مراجع پیشین:'
+                            : 'How Gaps Were Extracted from Prior Published References:'}
+                        </span>
+                      </h4>
+                    </div>
+
+                    <div className="space-y-3">
+                      {(analysisResult.researchGapSection?.extractedFromReferences || []).map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-3 p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono"
+                          className="p-4 sm:p-5 rounded-xl dark:bg-amber-950/15 bg-amber-50/70 border dark:border-amber-800/40 border-amber-300 space-y-2.5 transition-all"
                         >
-                          <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-none" />
-                          <span className="dark:text-zinc-200 text-slate-700 leading-relaxed">{point}</span>
+                          <div className="flex items-center justify-between gap-2 border-b dark:border-amber-900/40 border-amber-200 pb-2">
+                            <span className="font-mono font-bold text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+                              [Ref {idx + 1}] {item.reference}
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold uppercase">
+                              Prior Void
+                            </span>
+                          </div>
+
+                          <div className="text-xs sm:text-sm font-mono space-y-1.5">
+                            <div className="dark:text-zinc-300 text-slate-700">
+                              <strong className="text-slate-500 dark:text-zinc-400">Prior Finding / Baseline:</strong>{' '}
+                              {item.priorFindingOrAssumption}
+                            </div>
+                            <div className="dark:text-[#00ff41] text-emerald-800 font-semibold">
+                              <strong className="text-amber-600 dark:text-amber-400">Extracted Research Gap:</strong>{' '}
+                              {item.extractedGapOrVoid}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
-
-                  {analysisResult.dimensions.researchGap.subsections?.map((sub, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 sm:p-5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800/80 border-slate-200 space-y-2"
-                    >
-                      <h5 className="text-xs sm:text-sm font-mono font-bold dark:text-amber-400 text-amber-700">
-                        {sub.subtitle}
-                      </h5>
-                      <ul className="space-y-1.5">
-                        {sub.content.map((item, itemIdx) => (
-                          <li key={itemIdx} className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 leading-relaxed">
-                            • {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
 
-            {/* DIMENSION 3: METHODOLOGY */}
-            {(selectedDimension === 'all' || selectedDimension === 'methodology') && (
+            {/* ==================================================== */}
+            {/* 4. HOW TO ACHIEVE RESULTS (METHODS, INSTRUMENTS, FACILITIES) */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'methods') && (
               <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 overflow-hidden shadow-lg transition-colors">
                 <div className="px-6 sm:px-8 py-5 dark:bg-purple-950/40 bg-purple-100 border-b dark:border-purple-800/50 border-purple-200 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
-                      3
+                      04
                     </span>
                     <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-purple-950">
-                      Methodology &amp; Experimental Framework
+                      {displayLanguage === 'fa'
+                        ? '۴. نحوه دستیابی به نتایج: روش‌ها، ابزارها، تجهیزات و امکانات آزمایشگاهی'
+                        : displayLanguage === 'bilingual'
+                        ? '04. How to Achieve Results (Methods, Facilities) / ۴. نحوه دستیابی'
+                        : '04. How to Achieve the Results (Methods, Instruments, Facilities)'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-purple-600 dark:text-purple-400 font-bold">
-                    Testing Protocols &amp; FEA Solvers
+                    Experimental Rigs &amp; Solvers
                   </span>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-6">
-                  <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
-                    {analysisResult.dimensions.methodology.summary}
-                  </p>
+                  {/* Summary */}
+                  {displayLanguage === 'en' && (
+                    <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
+                      {analysisResult.methodsAndFacilitiesSection?.summary || analysisResult.dimensions.methodology.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'fa' && (
+                    <p
+                      className="font-sans text-sm sm:text-base dark:text-zinc-100 text-slate-900 leading-relaxed text-right"
+                      dir="rtl"
+                      style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                    >
+                      {faAnalysis?.methodsAndFacilitiesSection?.summary || analysisResult.dimensions.methodology.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'bilingual' && (
+                    <div className="space-y-3">
+                      <p className="font-mono text-sm dark:text-zinc-200 text-slate-800 leading-relaxed">
+                        {analysisResult.methodsAndFacilitiesSection?.summary}
+                      </p>
+                      <p
+                        className="font-sans text-sm dark:text-zinc-100 text-slate-900 leading-relaxed text-right pt-2 border-t dark:border-zinc-800 border-slate-200"
+                        dir="rtl"
+                        style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                      >
+                        {faAnalysis?.methodsAndFacilitiesSection?.summary}
+                      </p>
+                    </div>
+                  )}
 
-                  <div className="space-y-3">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-purple-400">
-                      Testing Standards, Specimens &amp; Computational Solvers:
+                  {/* Hardware & Instruments Badges */}
+                  <div className="space-y-2.5">
+                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
+                      <Wrench className="w-4 h-4 text-purple-400" />
+                      <span>Experimental Hardware, Instruments &amp; Facilities:</span>
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {analysisResult.dimensions.methodology.bulletPoints.map((point, idx) => (
+                    <div className="flex flex-wrap gap-2">
+                      {(analysisResult.methodsAndFacilitiesSection?.facilitiesAndInstruments || []).map((fac, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-3 p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono"
+                          className="px-3.5 py-2 rounded-lg dark:bg-purple-950/30 bg-purple-50 border dark:border-purple-800/40 border-purple-200 text-xs sm:text-sm font-mono text-purple-800 dark:text-purple-300 font-medium"
                         >
-                          <div className="w-2 h-2 rounded-full bg-purple-400 mt-1.5 flex-none" />
-                          <span className="dark:text-zinc-200 text-slate-700 leading-relaxed">{point}</span>
+                          • {fac}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {analysisResult.dimensions.methodology.subsections?.map((sub, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 sm:p-5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800/80 border-slate-200 space-y-2"
-                    >
-                      <h5 className="text-xs sm:text-sm font-mono font-bold dark:text-purple-400 text-purple-700">
-                        {sub.subtitle}
-                      </h5>
-                      <ul className="space-y-1.5">
-                        {sub.content.map((item, itemIdx) => (
-                          <li key={itemIdx} className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 leading-relaxed">
-                            • {item}
-                          </li>
+                  {/* Standards & Solvers Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-400">
+                        Testing Standards:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(analysisResult.methodsAndFacilitiesSection?.testingStandards || []).map((std, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 rounded text-xs font-mono dark:bg-zinc-800 bg-slate-200 dark:text-zinc-200 text-slate-800 font-bold"
+                          >
+                            {std}
+                          </span>
                         ))}
-                      </ul>
+                      </div>
                     </div>
-                  ))}
+
+                    <div className="p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-400">
+                        Computational Solvers &amp; Formulations:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(analysisResult.methodsAndFacilitiesSection?.computationalSolvers || []).map((sol, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 rounded text-xs font-mono dark:bg-zinc-800 bg-slate-200 dark:text-zinc-200 text-slate-800 font-bold"
+                          >
+                            {sol}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* DIMENSION 4: FINDINGS */}
-            {(selectedDimension === 'all' || selectedDimension === 'findings') && (
+            {/* ==================================================== */}
+            {/* 5. RESULTS */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'results') && (
               <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 overflow-hidden shadow-lg transition-colors">
                 <div className="px-6 sm:px-8 py-5 dark:bg-emerald-950/40 bg-emerald-100 border-b dark:border-emerald-800/50 border-emerald-200 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center font-bold text-sm">
-                      4
+                      05
                     </span>
                     <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-emerald-950">
-                      Key Findings &amp; Quantitative Discoveries
+                      {displayLanguage === 'fa'
+                        ? '۵. نتایج و دستاوردهای کمی'
+                        : displayLanguage === 'bilingual'
+                        ? '05. Results / ۵. نتایج'
+                        : '05. Results'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-emerald-600 dark:text-[#00ff41] font-bold">
-                    Empirical Values &amp; Mechanisms
+                    Empirical Values &amp; Physical Mechanisms
                   </span>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-6">
-                  <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
-                    {analysisResult.dimensions.findings.summary}
-                  </p>
+                  {/* Summary */}
+                  {displayLanguage === 'en' && (
+                    <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
+                      {analysisResult.resultsSection?.summary || analysisResult.dimensions.findings.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'fa' && (
+                    <p
+                      className="font-sans text-sm sm:text-base dark:text-zinc-100 text-slate-900 leading-relaxed text-right"
+                      dir="rtl"
+                      style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                    >
+                      {faAnalysis?.resultsSection?.summary || analysisResult.dimensions.findings.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'bilingual' && (
+                    <div className="space-y-3">
+                      <p className="font-mono text-sm dark:text-zinc-200 text-slate-800 leading-relaxed">
+                        {analysisResult.resultsSection?.summary}
+                      </p>
+                      <p
+                        className="font-sans text-sm dark:text-zinc-100 text-slate-900 leading-relaxed text-right pt-2 border-t dark:border-zinc-800 border-slate-200"
+                        dir="rtl"
+                        style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                      >
+                        {faAnalysis?.resultsSection?.summary}
+                      </p>
+                    </div>
+                  )}
 
+                  {/* Quantitative Discoveries */}
                   <div className="space-y-3">
                     <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-emerald-500">
-                      Quantitative Discoveries &amp; Performance Metrics:
+                      {displayLanguage === 'fa'
+                        ? 'شاخص‌های کمی و سازوکارهای اثبات‌شده:'
+                        : 'Key Quantitative Performance Metrics & Discoveries:'}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {analysisResult.dimensions.findings.bulletPoints.map((point, idx) => (
+                      {(analysisResult.resultsSection?.quantitativeMetrics || []).map((metric, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-3 p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono"
+                          className="p-4 rounded-xl dark:bg-emerald-950/20 bg-emerald-50 border dark:border-emerald-800/40 border-emerald-300 text-xs sm:text-sm font-mono flex items-start gap-3"
                         >
-                          <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 flex-none" />
-                          <span className="dark:text-zinc-200 text-slate-700 leading-relaxed">{point}</span>
+                          <BarChart3 className="w-4 h-4 text-[#00ff41] mt-0.5 flex-none" />
+                          <span className="dark:text-zinc-200 text-slate-800 leading-relaxed font-medium">
+                            {displayLanguage === 'fa' && faAnalysis?.resultsSection?.quantitativeMetrics[idx]
+                              ? faAnalysis.resultsSection.quantitativeMetrics[idx]
+                              : metric}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
-
-                  {analysisResult.dimensions.findings.subsections?.map((sub, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 sm:p-5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800/80 border-slate-200 space-y-2"
-                    >
-                      <h5 className="text-xs sm:text-sm font-mono font-bold dark:text-emerald-400 text-emerald-700">
-                        {sub.subtitle}
-                      </h5>
-                      <ul className="space-y-1.5">
-                        {sub.content.map((item, itemIdx) => (
-                          <li key={itemIdx} className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 leading-relaxed">
-                            • {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
 
-            {/* DIMENSION 5: FUTURE GAPS */}
-            {(selectedDimension === 'all' || selectedDimension === 'futureGaps') && (
+            {/* ==================================================== */}
+            {/* 6. PROPOSE FUTURE DIRECTIONS */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'future') && (
               <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border dark:border-zinc-800 border-slate-200 overflow-hidden shadow-lg transition-colors">
                 <div className="px-6 sm:px-8 py-5 dark:bg-pink-950/40 bg-pink-100 border-b dark:border-pink-800/50 border-pink-200 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg bg-pink-600 text-white flex items-center justify-center font-bold text-sm">
-                      5
+                      06
                     </span>
                     <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-pink-950">
-                      Future Gaps &amp; Open Directions
+                      {displayLanguage === 'fa'
+                        ? '۶. پیشنهاد مسیرهای پژوهشی آینده'
+                        : displayLanguage === 'bilingual'
+                        ? '06. Propose Future Directions / ۶. مسیرهای آینده'
+                        : '06. Propose Future Directions'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-pink-600 dark:text-pink-400 font-bold">
-                    Actionable Next Research Steps
+                    Doctoral Roadmap &amp; Open Questions
                   </span>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-6">
-                  <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
-                    {analysisResult.dimensions.futureGaps.summary}
-                  </p>
+                  {/* Summary */}
+                  {displayLanguage === 'en' && (
+                    <p className="font-mono text-sm sm:text-base dark:text-zinc-200 text-slate-800 leading-relaxed">
+                      {analysisResult.futureDirectionsSection?.summary || analysisResult.dimensions.futureGaps.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'fa' && (
+                    <p
+                      className="font-sans text-sm sm:text-base dark:text-zinc-100 text-slate-900 leading-relaxed text-right"
+                      dir="rtl"
+                      style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                    >
+                      {faAnalysis?.futureDirectionsSection?.summary || analysisResult.dimensions.futureGaps.summary}
+                    </p>
+                  )}
+                  {displayLanguage === 'bilingual' && (
+                    <div className="space-y-3">
+                      <p className="font-mono text-sm dark:text-zinc-200 text-slate-800 leading-relaxed">
+                        {analysisResult.futureDirectionsSection?.summary}
+                      </p>
+                      <p
+                        className="font-sans text-sm dark:text-zinc-100 text-slate-900 leading-relaxed text-right pt-2 border-t dark:border-zinc-800 border-slate-200"
+                        dir="rtl"
+                        style={{ fontFamily: "'Vazirmatn', sans-serif" }}
+                      >
+                        {faAnalysis?.futureDirectionsSection?.summary}
+                      </p>
+                    </div>
+                  )}
 
+                  {/* High Priority Roadmap */}
                   <div className="space-y-3">
                     <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-pink-400">
-                      Unresolved Technical Questions &amp; Roadmap:
+                      {displayLanguage === 'fa'
+                        ? 'نقشه راه پژوهش‌های تکمیلی و اولویت‌دار:'
+                        : 'High-Priority Doctoral & Postdoctoral Research Roadmap:'}
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {analysisResult.dimensions.futureGaps.bulletPoints.map((point, idx) => (
+                    <div className="space-y-2.5">
+                      {(analysisResult.futureDirectionsSection?.highPriorityRoadmap || []).map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-3 p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono"
+                          className="p-4 rounded-xl dark:bg-pink-950/20 bg-pink-50 border dark:border-pink-800/40 border-pink-200 text-xs sm:text-sm font-mono flex items-start gap-3"
                         >
-                          <div className="w-2 h-2 rounded-full bg-pink-400 mt-1.5 flex-none" />
-                          <span className="dark:text-zinc-200 text-slate-700 leading-relaxed">{point}</span>
+                          <ArrowRight className="w-4 h-4 text-pink-400 mt-0.5 flex-none" />
+                          <span className="dark:text-zinc-200 text-slate-800 leading-relaxed font-medium">
+                            {displayLanguage === 'fa' && faAnalysis?.futureDirectionsSection?.highPriorityRoadmap[idx]
+                              ? faAnalysis.futureDirectionsSection.highPriorityRoadmap[idx]
+                              : item}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {analysisResult.dimensions.futureGaps.subsections?.map((sub, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 sm:p-5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800/80 border-slate-200 space-y-2"
-                    >
-                      <h5 className="text-xs sm:text-sm font-mono font-bold dark:text-pink-400 text-pink-700">
-                        {sub.subtitle}
-                      </h5>
-                      <ul className="space-y-1.5">
-                        {sub.content.map((item, itemIdx) => (
-                          <li key={itemIdx} className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 leading-relaxed">
-                            • {item}
-                          </li>
+                  {/* Unresolved Questions */}
+                  {(analysisResult.futureDirectionsSection?.unresolvedQuestions || []).length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-rose-400">
+                        {displayLanguage === 'fa'
+                          ? 'پرسش‌های باز و مرزهای تعمیم سازه:'
+                          : 'Open Scientific Questions & Scaling Boundaries:'}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {analysisResult.futureDirectionsSection.unresolvedQuestions.map((q, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono flex items-start gap-2.5"
+                          >
+                            <HelpCircle className="w-4 h-4 text-rose-400 mt-0.5 flex-none" />
+                            <span className="dark:text-zinc-300 text-slate-700 leading-relaxed">
+                              {displayLanguage === 'fa' && faAnalysis?.futureDirectionsSection?.unresolvedQuestions[idx]
+                                ? faAnalysis.futureDirectionsSection.unresolvedQuestions[idx]
+                                : q}
+                            </span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
-                  ))}
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ==================================================== */}
+            {/* APPENDIX: ACADEMIC VALIDATION & REPLICATION PACKAGE  */}
+            {/* ==================================================== */}
+            {(selectedSection === 'all' || selectedSection === 'validation') && analysisResult.validationPackage && (
+              <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border-2 dark:border-[#00ff41]/60 border-emerald-500 overflow-hidden shadow-2xl transition-colors">
+                <div className="px-6 sm:px-8 py-5 dark:bg-emerald-950/40 bg-emerald-100 border-b dark:border-[#00ff41]/40 border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-[#00ff41] text-black flex items-center justify-center font-bold text-sm">
+                      <Wrench className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-emerald-950">
+                        {displayLanguage === 'fa'
+                          ? 'پیوست تخصصی: بسته اعتبارسنجی و بازتولید محاسباتی و تجربی'
+                          : displayLanguage === 'bilingual'
+                          ? 'Validation & Replication Appendix / پیوست اعتبارسنجی'
+                          : 'Appendix: Academic Replication & Validation Package'}
+                      </h3>
+                      <p className="text-xs font-mono dark:text-zinc-400 text-slate-600">
+                        {displayLanguage === 'fa'
+                          ? 'ابعاد هندسی دقیق، خواص رفتاری مواد، شرایط مرزی، فرمولاسیون مش و کد اعتبارسنجی'
+                          : 'Exact geometrical dimensions, material constants, boundary conditions, discretization controls & executable code'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider bg-black/60 text-[#00ff41] border border-[#00ff41]/40 self-start sm:self-auto">
+                    Full Validation Kit
+                  </span>
+                </div>
+
+                <div className="p-6 sm:p-8 space-y-8">
+                  {/* Summary Box */}
+                  <div className="p-4 sm:p-5 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200">
+                    <p className={`font-mono text-xs sm:text-sm dark:text-zinc-200 text-slate-800 leading-relaxed ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                      <strong>{displayLanguage === 'fa' ? 'دامنه بازتولید:' : 'Replication Scope:'}</strong>{' '}
+                      {displayLanguage === 'fa' && faAnalysis?.validationPackage
+                        ? faAnalysis.validationPackage.summary
+                        : analysisResult.validationPackage.summary}
+                    </p>
+                  </div>
+
+                  {/* A.1. Geometrical Dimensions Table */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                        <Compass className="w-4 h-4" />
+                        <span>
+                          {displayLanguage === 'fa'
+                            ? 'A.1. ابعاد هندسی نمونه و دامنه حل (Geometrical Dimensions & Tolerances):'
+                            : 'A.1. Specimen & Domain Geometrical Dimensions:'}
+                        </span>
+                      </h4>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl border dark:border-zinc-800 border-slate-200">
+                      <table className="w-full text-xs sm:text-sm font-mono text-left">
+                        <thead className="dark:bg-zinc-900/90 bg-slate-100 text-sky-500 font-bold border-b dark:border-zinc-800 border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-4">Feature / Region</th>
+                            <th className="py-2.5 px-4">Dimension</th>
+                            <th className="py-2.5 px-4">Tolerance</th>
+                            <th className="py-2.5 px-4">Description / Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y dark:divide-zinc-800 divide-slate-200">
+                          {analysisResult.validationPackage.geometricalDimensions.map((geo, idx) => (
+                            <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
+                              <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{geo.feature}</td>
+                              <td className="py-2.5 px-4 font-bold text-sky-400">{geo.dimension}</td>
+                              <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{geo.tolerance || '-'}</td>
+                              <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{geo.notes || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* A.2. Material Properties Table */}
+                  <div className="space-y-3">
+                    <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                      <Cpu className="w-4 h-4" />
+                      <span>
+                        {displayLanguage === 'fa'
+                          ? 'A.2. ثوابت رفتاری و مکانیکی مواد (Constitutive Material Constants):'
+                          : 'A.2. Constitutive Material Constants & Parameters:'}
+                      </span>
+                    </h4>
+
+                    <div className="overflow-x-auto rounded-xl border dark:border-zinc-800 border-slate-200">
+                      <table className="w-full text-xs sm:text-sm font-mono text-left">
+                        <thead className="dark:bg-zinc-900/90 bg-slate-100 text-emerald-500 font-bold border-b dark:border-zinc-800 border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-4">Material Parameter</th>
+                            <th className="py-2.5 px-4">Symbol</th>
+                            <th className="py-2.5 px-4">Value &amp; Unit</th>
+                            <th className="py-2.5 px-4">Mechanical Role</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y dark:divide-zinc-800 divide-slate-200">
+                          {analysisResult.validationPackage.materialProperties.map((mat, idx) => (
+                            <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
+                              <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{mat.name}</td>
+                              <td className="py-2.5 px-4 font-bold text-emerald-400">{mat.symbol}</td>
+                              <td className="py-2.5 px-4 font-bold dark:text-zinc-200 text-slate-800">{mat.value} {mat.unit}</td>
+                              <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{mat.description || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* A.3. Boundary Conditions */}
+                  <div className="space-y-3">
+                    <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      <span>
+                        {displayLanguage === 'fa'
+                          ? 'A.3. شرایط مرزی و سینماتیک بارگذاری (Boundary Conditions & Kinematics):'
+                          : 'A.3. Boundary Conditions & Loading Kinematics:'}
+                      </span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {analysisResult.validationPackage.boundaryConditions.map((bc, idx) => (
+                        <div key={idx} className="p-4 rounded-xl dark:bg-amber-950/15 bg-amber-50/70 border dark:border-amber-800/40 border-amber-300 space-y-1.5 font-mono text-xs sm:text-sm">
+                          <div className="flex items-center justify-between border-b dark:border-amber-900/40 border-amber-200 pb-1.5">
+                            <span className="font-bold dark:text-white text-slate-900">{bc.region}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 uppercase">{bc.type}</span>
+                          </div>
+                          <div className="text-amber-800 dark:text-amber-300 font-medium">
+                            <strong>Formulation:</strong> {bc.formulation}
+                          </div>
+                          <div className="dark:text-zinc-400 text-slate-600 text-xs">
+                            <strong>DOFs:</strong> {bc.degreesOfFreedom}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* A.4. Mesh & Solver Controls */}
+                  <div className="p-5 rounded-xl dark:bg-purple-950/20 bg-purple-50 border dark:border-purple-800/40 border-purple-200 space-y-2.5 font-mono text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 text-purple-400 font-bold uppercase tracking-wider">
+                      <Cpu className="w-4 h-4" />
+                      <span>A.4. Finite Element Mesh &amp; Discretization Settings:</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm dark:text-zinc-200 text-slate-800">
+                      <div><strong>Element Type:</strong> {analysisResult.validationPackage.meshAndDiscretization.elementType}</div>
+                      <div><strong>Characteristic Mesh Size:</strong> {analysisResult.validationPackage.meshAndDiscretization.characteristicMeshSize}</div>
+                      <div><strong>Formulation:</strong> {analysisResult.validationPackage.meshAndDiscretization.formulation}</div>
+                      <div><strong>Step Time / Increment:</strong> {analysisResult.validationPackage.meshAndDiscretization.stepTime || 'Adaptive'}</div>
+                    </div>
+                  </div>
+
+                  {/* A.5. Validation Benchmarks */}
+                  <div className="space-y-3">
+                    <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-emerald-500 flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>
+                        {displayLanguage === 'fa'
+                          ? 'A.5. معیارهای پذیرش اعتبارسنجی (Validation Acceptance Benchmarks):'
+                          : 'A.5. Validation Acceptance Benchmarks & Target Values:'}
+                      </span>
+                    </h4>
+
+                    <div className="overflow-x-auto rounded-xl border dark:border-zinc-800 border-slate-200">
+                      <table className="w-full text-xs sm:text-sm font-mono text-left">
+                        <thead className="dark:bg-zinc-900/90 bg-slate-100 text-emerald-500 font-bold border-b dark:border-zinc-800 border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-4">Validation Metric</th>
+                            <th className="py-2.5 px-4">Expected Target</th>
+                            <th className="py-2.5 px-4">Error Tolerance</th>
+                            <th className="py-2.5 px-4">Acceptance Criterion</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y dark:divide-zinc-800 divide-slate-200">
+                          {analysisResult.validationPackage.validationBenchmarks.map((vb, idx) => (
+                            <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
+                              <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{vb.targetMetric}</td>
+                              <td className="py-2.5 px-4 font-bold text-emerald-400">{vb.expectedBenchmarkValue}</td>
+                              <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{vb.experimentalErrorTolerance}</td>
+                              <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{vb.acceptanceCriterion}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* A.6. Executable Verification Script */}
+                  {analysisResult.validationPackage.executableVerificationScript && (
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-[#00ff41] flex items-center gap-2">
+                          <FileCode className="w-4 h-4" />
+                          <span>
+                            {displayLanguage === 'fa'
+                              ? `A.6. اسکریپت کد اعتبارسنجی محاسباتی (${analysisResult.validationPackage.executableVerificationScript.language.toUpperCase()}):`
+                              : `A.6. Executable Verification Script (${analysisResult.validationPackage.executableVerificationScript.language.toUpperCase()}):`}
+                          </span>
+                        </h4>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(analysisResult.validationPackage.executableVerificationScript.code);
+                            setCopiedScript(true);
+                            onNotify?.('Copied verification script to clipboard!');
+                            setTimeout(() => setCopiedScript(false), 2500);
+                          }}
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black border border-[#00ff41]/50 flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
+                        >
+                          {copiedScript ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedScript ? 'Copied Code!' : 'Copy Verification Script'}</span>
+                        </button>
+                      </div>
+
+                      <div className="relative rounded-xl overflow-hidden border dark:border-zinc-800 border-slate-300 bg-[#050505]">
+                        <div className="px-4 py-2 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-400">
+                          <span>{analysisResult.validationPackage.executableVerificationScript.title}</span>
+                          <span className="text-[#00ff41] font-bold">READY TO RUN</span>
+                        </div>
+                        <pre className="p-4 sm:p-5 text-xs sm:text-sm font-mono text-emerald-400 overflow-x-auto leading-relaxed select-all">
+                          <code>{analysisResult.validationPackage.executableVerificationScript.code}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

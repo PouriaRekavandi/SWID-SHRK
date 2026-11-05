@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { FontSizeToggle } from './FontSizeToggle';
-import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2, FileSearch } from 'lucide-react';
+import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2, FileSearch, ExternalLink } from 'lucide-react';
+import { useCelestial } from '../context/CelestialContext';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
 
@@ -20,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleFullFit
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { activeBodyKey, activeInfo, advanceToNextBody, handleEarthClick } = useCelestial();
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
@@ -124,6 +126,37 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
           )}
+
+          {/* Celestial Orbit Object Quick Toggle & Earth Analyzer Trigger */}
+          <button
+            type="button"
+            onClick={() => {
+              if (activeBodyKey === 'earth') {
+                handleEarthClick(onSelectTab);
+              } else {
+                advanceToNextBody();
+              }
+            }}
+            className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
+              activeBodyKey === 'earth'
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-[0_0_14px_rgba(6,182,212,0.4)] animate-pulse'
+                : activeBodyKey === 'blackhole'
+                ? 'bg-amber-500/10 text-amber-300 border-amber-500/40 hover:bg-amber-500/20'
+                : 'dark:bg-zinc-900 bg-slate-100 text-zinc-300 border-zinc-700/60 hover:text-white'
+            }`}
+            title={
+              activeBodyKey === 'earth'
+                ? 'Earth Active: Click to select Analyzer & open in new tab ↗'
+                : `${activeInfo.name} (Orbit ${activeInfo.orderIndex}/9): Click to step to next celestial body`
+            }
+            aria-label="Celestial Object Toggle"
+          >
+            <span className="text-sm leading-none">{activeInfo.astronomicalSymbol}</span>
+            <span className="hidden xl:inline">
+              {activeBodyKey === 'blackhole' ? 'Singularity' : activeInfo.name.split(' ')[0]}
+            </span>
+            {activeBodyKey === 'earth' && <ExternalLink className="w-3 h-3 text-cyan-300" />}
+          </button>
 
           {/* Interactive Font Sizer Toggle */}
           <FontSizeToggle />

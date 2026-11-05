@@ -19,6 +19,7 @@
     "@google/genai": "^2.30.0",
     "express": "^4.21.2",
     "firebase": "^13.2.0",
+    "html2canvas": "^1.4.1",
     "jpeg-js": "^0.4.4",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.58.0",

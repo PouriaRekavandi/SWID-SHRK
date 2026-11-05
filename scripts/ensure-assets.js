@@ -121,7 +121,7 @@ function ensureAssets() {
   if (fs.existsSync(logoPng)) {
     try {
       const stats = fs.statSync(logoPng);
-      if (stats.size > 100000) {
+      if (stats.size > 20000) {
         // Quick verify first 25 pixels for transparency
         const buffer = fs.readFileSync(logoPng);
         const parsed = PNG.sync.read(buffer);

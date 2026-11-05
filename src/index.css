@@ -620,3 +620,129 @@
   clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 
+/* Celestial Solar System & Planetary Animations */
+@keyframes celestialOrbitMoon {
+  0% {
+    transform: rotate(0deg) translateX(120px) rotate(0deg) scale(0.85);
+    z-index: 10;
+    opacity: 0.8;
+  }
+  25% {
+    transform: rotate(90deg) translateX(120px) rotate(-90deg) scale(1.15);
+    z-index: 35;
+    opacity: 1;
+  }
+  50% {
+    transform: rotate(180deg) translateX(120px) rotate(-180deg) scale(0.9);
+    z-index: 35;
+    opacity: 0.9;
+  }
+  75% {
+    transform: rotate(270deg) translateX(120px) rotate(-270deg) scale(0.7);
+    z-index: 5;
+    opacity: 0.6;
+  }
+  100% {
+    transform: rotate(360deg) translateX(120px) rotate(-360deg) scale(0.85);
+    z-index: 10;
+    opacity: 0.8;
+  }
+}
+
+@keyframes celestialCloudDrift {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes solarProminence {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 15px rgba(255, 140, 0, 0.9));
+  }
+  50% {
+    transform: scale(1.08) rotate(2deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 25px rgba(255, 200, 0, 1));
+  }
+}
+
+@keyframes jupiterVortex {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes saturnRingsWobble {
+  0%, 100% {
+    transform: rotate(-24deg) scale(1.35, 0.42);
+  }
+  50% {
+    transform: rotate(-23deg) scale(1.37, 0.44);
+  }
+}
+
+@keyframes celestialMorph {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.88);
+    filter: brightness(2) blur(8px);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+    filter: brightness(1.4) blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1) blur(0px);
+  }
+}
+
+@keyframes solarFlareBlast {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+    box-shadow: 0 0 40px 20px rgba(255, 220, 80, 0.95);
+  }
+  60% {
+    transform: scale(1.8);
+    opacity: 0.8;
+    box-shadow: 0 0 90px 40px rgba(255, 140, 0, 0.7);
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+    box-shadow: 0 0 120px 60px rgba(255, 60, 0, 0);
+  }
+}
+
+.animate-celestial-morph {
+  animation: celestialMorph 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-celestial-moon {
+  animation: celestialOrbitMoon 9s linear infinite;
+}
+
+.animate-solar-prominence {
+  animation: solarProminence 4s ease-in-out infinite;
+}
+
+.animate-jupiter-vortex {
+  animation: jupiterVortex 16s linear infinite;
+}
+
+.animate-saturn-rings {
+  animation: saturnRingsWobble 8s ease-in-out infinite;
+}
+
+

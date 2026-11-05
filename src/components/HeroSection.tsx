@@ -270,7 +270,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
           <BlackHoleLogoCrest
             externalGenesisKey={genesisKey}
             onMaterializingChange={setIsMaterializing}
-            className="w-full max-w-[480px] sm:max-w-[540px]"
+            className="w-full max-w-[560px] sm:max-w-[640px]"
+            onSelectTab={onSelectTab}
           />
         </div>
 

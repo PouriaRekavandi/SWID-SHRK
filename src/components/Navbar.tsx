@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { FontSizeToggle } from './FontSizeToggle';
 import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot, Users, MessageSquare, Maximize2, Minimize2, FileSearch } from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
@@ -123,6 +124,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
           )}
+
+          {/* Interactive Font Sizer Toggle */}
+          <FontSizeToggle />
 
           {/* Theme Switcher Toggle */}
           <ThemeSwitcher />

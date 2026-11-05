@@ -25,11 +25,30 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    font-size: 16.5px; /* Enhanced base font size for monospace optical readability */
+  }
+
+  html.font-scale-sm {
+    font-size: 15px;
+  }
+
+  html.font-scale-md {
+    font-size: 16.5px;
+  }
+
+  html.font-scale-lg {
+    font-size: 18px;
+  }
+
+  html.font-scale-xl {
+    font-size: 19.5px;
   }
 
   body {
     background-color: var(--bg);
     font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+    line-height: 1.65;
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;

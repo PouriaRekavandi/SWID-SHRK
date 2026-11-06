@@ -15,9 +15,15 @@
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
+    "@types/pako": "^2.0.4",
     "express": "^4.21.2",
+    "firebase": "^13.2.0",
+    "html2canvas": "^1.4.1",
     "jpeg-js": "^0.4.4",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.58.0",
+    "pako": "^3.0.3",
+    "pdfjs-dist": "^6.5.438",
     "pngjs": "^7.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

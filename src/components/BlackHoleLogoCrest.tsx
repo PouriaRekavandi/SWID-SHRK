@@ -334,7 +334,6 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
           {/* Orbit Timeline Rail: All 10 Celestial Bodies */}
           <div className="flex-1 flex items-center justify-around gap-1 overflow-x-auto no-scrollbar py-1">
             {CELESTIAL_ORDER.map((key) => {
-              const body = useCelestial.name ? null : null; // typing check
               const isActive = key === activeBodyKey;
               return (
                 <button

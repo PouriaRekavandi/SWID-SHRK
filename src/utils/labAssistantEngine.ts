@@ -7,6 +7,7 @@ import {
   INITIAL_STUDENTS,
   INITIAL_TEAM_MEMBERS,
 } from '../data/initialData';
+import { VideoTutorial } from '../types';
 
 export interface GroundingSource {
   title: string;
@@ -56,7 +57,7 @@ export function generateLabAssistantResponse(
     text += `The SWID-SHRK Research Lab, directed by **Pouria Hejazi Rekavandi**, provides two comprehensive, step-by-step video tutorial series for modeling high-efficiency energy-absorbing **AntiPrism** cellular metamaterials in Abaqus/CAE:\n\n`;
 
     text += `#### 1. 🏗️ Strut Antiprism Modeling Series (4-Part Complete HD Guide)\n`;
-    STRUT_ANTIPRISM_VIDEOS.forEach((v) => {
+    STRUT_ANTIPRISM_VIDEOS.forEach((v: VideoTutorial) => {
       text += `* **Part ${v.part}: ${v.title.replace('Strut Antiprism Modeling — ', '')}** (${v.duration})\n`;
       text += `  • *Focus*: ${v.description}\n`;
       text += `  • 🔗 [Watch / Download Video (Google Drive)](${v.url})\n`;
@@ -64,7 +65,7 @@ export function generateLabAssistantResponse(
     text += `\n📁 **Access all Strut files & video archives:** [Strut Antiprism Google Drive Folder](${GOOGLE_DRIVE_STRUT_FOLDER})\n\n`;
 
     text += `#### 2. 📄 Plate / Folded Origami Antiprism Modeling Series (2-Part Guide)\n`;
-    PLATE_ANTIPRISM_VIDEOS.forEach((v) => {
+    PLATE_ANTIPRISM_VIDEOS.forEach((v: VideoTutorial) => {
       text += `* **Part ${v.part}: ${v.title.replace('Plate Antiprism Modeling — ', '')}** (${v.duration})\n`;
       text += `  • *Focus*: ${v.description}\n`;
       text += `  • 🔗 [Watch / Download Video (Google Drive)](${v.url})\n`;

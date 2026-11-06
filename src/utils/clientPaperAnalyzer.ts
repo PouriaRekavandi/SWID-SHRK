@@ -99,6 +99,10 @@ export function generateClientSidePaperAnalysis(
       'Key recommendations for future investigations include assessing long-term coupled environmental durability and expanding the modeling framework to multi-scale structural assemblies.',
     highPriorityRoadmap: data.highPriorityRoadmap,
     unresolvedQuestions: data.unresolvedQuestions,
+    scalingRoadblocks: [
+      'High computational overhead in micro-scale resolved meshes',
+      'Manufacturing tolerance sensitivity in physical specimens'
+    ],
     bulletPoints: [
       'Investigate environmental aging, thermal cycling, and oxidation under extended operational lifespans.',
       'Develop Physics-Informed Neural Network (PINN) surrogates for real-time digital twin monitoring.',

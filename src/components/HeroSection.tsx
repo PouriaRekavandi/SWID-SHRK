@@ -2,8 +2,7 @@ import React from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { ArrowRight, GraduationCap, PlayCircle, Bot, Sparkles } from 'lucide-react';
-import logoTransparent from '../assets/logo_transparent.png';
-import logoFallback from '../assets/logo.jpg';
+import { BlackHoleLogoCrest } from './BlackHoleLogoCrest';
 
 interface HeroSectionProps {
   onSelectTab: (tab: TabKey) => void;
@@ -24,40 +23,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
         <div className="absolute inset-0 dark:bg-[repeating-linear-gradient(to_bottom,rgba(255,255,255,0.02)_0_1px,transparent_1px_3px)] bg-[repeating-linear-gradient(to_bottom,rgba(0,0,0,0.015)_0_1px,transparent_1px_3px)]" />
       </div>
 
-      {/* Pure Transparent Logo Crest (No Circle Border, No Background Photo) */}
-      <div className="relative z-10 flex flex-col items-center mb-6">
-        <div className="relative flex items-center justify-center w-[250px] sm:w-[320px] md:w-[380px] aspect-square group transition-all duration-300">
-          <img
-            src={logoTransparent}
-            alt="SWID-SHRK Research Group Crest Logo"
-            className="w-full h-full object-contain select-none animate-logo-fade-in transition-transform duration-500 group-hover:scale-105 drop-shadow-[0_4px_16px_rgba(0,184,255,0.35)] dark:drop-shadow-[0_0_24px_rgba(0,184,255,0.65)] dark:brightness-110"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = logoFallback;
-            }}
-          />
-
-          {/* Twinkling Sparkles on Crest */}
-          <span
-            className="absolute w-[4px] h-[4px] bg-white rounded-full pointer-events-none z-20 shadow-[0_0_5px_2px_#fff,0_0_9px_3px_rgba(190,240,255,0.8),0_0_15px_5px_rgba(0,184,255,0.5)] animate-[twinkle_2s_infinite_ease-in-out_0.2s]"
-            style={{ top: '16%', left: '49%' }}
-          />
-          <span
-            className="absolute w-[4px] h-[4px] bg-white rounded-full pointer-events-none z-20 shadow-[0_0_5px_2px_#fff,0_0_9px_3px_rgba(190,240,255,0.8),0_0_15px_5px_rgba(0,184,255,0.5)] animate-[twinkle_3.5s_infinite_ease-in-out_0.5s]"
-            style={{ top: '45%', left: '16%' }}
-          />
-          <span
-            className="absolute w-[4px] h-[4px] bg-white rounded-full pointer-events-none z-20 shadow-[0_0_5px_2px_#fff,0_0_9px_3px_rgba(190,240,255,0.8),0_0_15px_5px_rgba(0,184,255,0.5)] animate-[twinkle_2.8s_infinite_ease-in-out_0.8s]"
-            style={{ top: '38%', left: '83%' }}
-          />
-          <span
-            className="absolute w-[4px] h-[4px] bg-white rounded-full pointer-events-none z-20 shadow-[0_0_5px_2px_#fff,0_0_9px_3px_rgba(190,240,255,0.8),0_0_15px_5px_rgba(0,184,255,0.5)] animate-[twinkle_4s_infinite_ease-in-out_1.1s]"
-            style={{ top: '72%', left: '22%' }}
-          />
-          <span
-            className="absolute w-[4px] h-[4px] bg-white rounded-full pointer-events-none z-20 shadow-[0_0_5px_2px_#fff,0_0_9px_3px_rgba(190,240,255,0.8),0_0_15px_5px_rgba(0,184,255,0.5)] animate-[twinkle_2.5s_infinite_ease-in-out_1.4s]"
-            style={{ top: '82%', left: '52%' }}
-          />
-        </div>
+      {/* Central Black Hole Crest & Interactive Solar Orbit Engine */}
+      <div className="relative z-10 flex flex-col items-center mb-6 w-full max-w-3xl">
+        <BlackHoleLogoCrest onSelectTab={onSelectTab} />
       </div>
 
       {/* Main Titles */}

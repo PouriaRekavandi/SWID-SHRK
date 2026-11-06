@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
-import { Menu, X, Layers, BookOpen, GraduationCap, Wrench, PlayCircle, Mail, Home, Bot } from 'lucide-react';
+import { useCelestial } from '../context/CelestialContext';
+import {
+  Menu,
+  X,
+  Layers,
+  BookOpen,
+  GraduationCap,
+  Wrench,
+  PlayCircle,
+  Mail,
+  Home,
+  Bot,
+  FileText,
+  MessageSquare,
+  Users,
+} from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
 
@@ -12,14 +27,16 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { activeBodyKey, activeInfo, advanceToNextBody, handleEarthClick } = useCelestial();
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
-    { key: 'chat', label: 'AI Assistant', icon: <Bot className="w-4 h-4" /> },
-    { key: 'research', label: 'Research Areas', icon: <Layers className="w-4 h-4" /> },
+    { key: 'analyzer', label: 'Paper Analyzer', icon: <FileText className="w-4 h-4" /> },
+    { key: 'qa', label: 'Engineering Q&A', icon: <MessageSquare className="w-4 h-4" /> },
+    { key: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
+    { key: 'research', label: 'Research', icon: <Layers className="w-4 h-4" /> },
     { key: 'publications', label: 'Publications', icon: <BookOpen className="w-4 h-4" /> },
-    { key: 'students', label: 'Thesis Registry', icon: <GraduationCap className="w-4 h-4" /> },
-    { key: 'gear', label: 'Lab Gear', icon: <Wrench className="w-4 h-4" /> },
+    { key: 'students', label: 'Theses', icon: <GraduationCap className="w-4 h-4" /> },
     { key: 'abaqus', label: 'Abaqus_Sims', icon: <PlayCircle className="w-4 h-4" /> },
     { key: 'contact', label: 'Connect', icon: <Mail className="w-4 h-4" /> },
   ];
@@ -81,8 +98,39 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
           })}
         </div>
 
-        {/* Right Actions: Theme Switcher & Mobile Menu */}
+        {/* Right Actions: Celestial Indicator, Theme Switcher & Mobile Menu */}
         <div className="flex items-center gap-2">
+          {/* Celestial Orbit Indicator Button */}
+          <button
+            onClick={() => {
+              if (activeBodyKey === 'earth') {
+                handleEarthClick(onSelectTab);
+              } else {
+                advanceToNextBody();
+              }
+            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition-all cursor-pointer ${
+              activeBodyKey === 'earth'
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.4)] animate-pulse'
+                : activeBodyKey === 'blackhole'
+                ? 'dark:bg-amber-950/40 bg-amber-50 dark:text-amber-300 text-amber-700 border-amber-500/40 hover:border-amber-400'
+                : 'dark:bg-zinc-900 bg-slate-100 dark:border-zinc-700 border-slate-300 dark:text-zinc-200 text-slate-800 hover:border-[#00ff41]'
+            }`}
+            title={
+              activeBodyKey === 'earth'
+                ? 'Earth Active — Click to open Paper Analyzer in a new tab!'
+                : `Active Celestial Body: ${activeInfo.name} — Click to step to next orbit`
+            }
+          >
+            <span className="text-sm select-none">{activeInfo.astronomicalSymbol}</span>
+            <span className="hidden sm:inline font-orbitron text-[11px]">{activeInfo.name}</span>
+            {activeBodyKey === 'earth' && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-400 text-black font-extrabold hidden md:inline shadow-[0_0_8px_rgba(6,182,212,0.6)]">
+                ANALYZER ↗
+              </span>
+            )}
+          </button>
+
           {/* Theme Switcher Toggle */}
           <ThemeSwitcher />
 

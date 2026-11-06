@@ -36,10 +36,20 @@ import {
   Sliders,
   Target,
   FileSpreadsheet,
+  Plus,
+  Trash2,
+  Edit3,
+  SlidersHorizontal,
 } from 'lucide-react';
-import { PaperAnalysisResult } from '../types';
+import {
+  PaperAnalysisResult,
+  ValidationPackage,
+  GeometricPropertyItem,
+  MaterialPropertyItem,
+  BoundaryConditionItem,
+} from '../types';
 import { exportPaperAnalysisToPDF, PDFExportLanguage } from '../utils/pdfExporter';
-import { translateAnalysisToPersian } from '../utils/persianTranslator';
+import { translateAnalysisToPersian, fetchServerPersianTranslation } from '../utils/persianTranslator';
 import {
   initAuth,
   googleSignIn,
@@ -106,6 +116,54 @@ Traumatic brain injury (TBI) induced by rapid rotational angular acceleration re
   },
 ];
 
+const MATERIAL_PRESETS = [
+  {
+    label: 'Ti-6Al-4V Titanium',
+    props: [
+      { name: "Young's Modulus", symbol: 'E', value: '114.0', unit: 'GPa', description: 'Elastic stiffness' },
+      { name: 'Yield Strength', symbol: 'σ_y', value: '880.0', unit: 'MPa', description: 'Plastic onset threshold' },
+      { name: "Poisson's Ratio", symbol: 'ν', value: '0.342', unit: '-', description: 'Lateral contraction ratio' },
+      { name: 'Mass Density', symbol: 'ρ', value: '4430.0', unit: 'kg/m³', description: 'Material mass density' },
+    ],
+  },
+  {
+    label: 'Al 7075-T6 Aerospace Alloy',
+    props: [
+      { name: "Young's Modulus", symbol: 'E', value: '71.7', unit: 'GPa', description: 'Elastic modulus' },
+      { name: 'Yield Strength', symbol: 'σ_y', value: '503.0', unit: 'MPa', description: 'Yield limit' },
+      { name: "Poisson's Ratio", symbol: 'ν', value: '0.33', unit: '-', description: 'Lateral contraction ratio' },
+      { name: 'Mass Density', symbol: 'ρ', value: '2810.0', unit: 'kg/m³', description: 'Mass density' },
+    ],
+  },
+  {
+    label: 'AISI 4340 High-Strength Steel',
+    props: [
+      { name: "Young's Modulus", symbol: 'E', value: '205.0', unit: 'GPa', description: 'Elastic modulus' },
+      { name: 'Yield Strength', symbol: 'σ_y', value: '1100.0', unit: 'MPa', description: 'High tensile yield limit' },
+      { name: "Poisson's Ratio", symbol: 'ν', value: '0.29', unit: '-', description: 'Poisson ratio' },
+      { name: 'Mass Density', symbol: 'ρ', value: '7850.0', unit: 'kg/m³', description: 'Mass density' },
+    ],
+  },
+  {
+    label: 'PA-12 SLS Polymer',
+    props: [
+      { name: "Young's Modulus", symbol: 'E', value: '1.65', unit: 'GPa', description: 'Sintered polymer stiffness' },
+      { name: 'Yield Strength', symbol: 'σ_y', value: '48.0', unit: 'MPa', description: 'Effective crushing onset' },
+      { name: "Poisson's Ratio", symbol: 'ν', value: '0.40', unit: '-', description: 'Poisson ratio' },
+      { name: 'Mass Density', symbol: 'ρ', value: '1010.0', unit: 'kg/m³', description: 'Mass density' },
+    ],
+  },
+  {
+    label: 'Brain Viscoelastic Parenchyma',
+    props: [
+      { name: 'Initial Shear Modulus', symbol: 'μ_0', value: '1.24', unit: 'kPa', description: 'Modified Ogden potential' },
+      { name: 'Bulk Modulus', symbol: 'K', value: '2.19', unit: 'GPa', description: 'Near-incompressible bulk stiffness' },
+      { name: 'Short Relaxation Time', symbol: 'τ_1', value: '5.2', unit: 'ms', description: 'High-strain-rate relaxation' },
+      { name: 'Axonal Strain Threshold', symbol: 'γ_crit', value: '0.18', unit: '-', description: 'Axonal injury onset limit' },
+    ],
+  },
+];
+
 type SectionTabKey = 'all' | 'name' | 'purpose' | 'gap' | 'methods' | 'results' | 'future' | 'validation';
 
 export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
@@ -132,11 +190,43 @@ export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
   // Multi-paper selection state
   const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>(['sample-fgm']);
 
+  // Server-powered and local fallback Persian translation state
+  const [serverFaAnalysis, setServerFaAnalysis] = useState<PaperAnalysisResult | null>(null);
+  const [isTranslatingServer, setIsTranslatingServer] = useState<boolean>(false);
+
   // High-fidelity academic Persian translation memoized
   const faAnalysis = useMemo(() => {
     if (!analysisResult) return null;
-    return translateAnalysisToPersian(analysisResult);
-  }, [analysisResult]);
+    return serverFaAnalysis || translateAnalysisToPersian(analysisResult);
+  }, [analysisResult, serverFaAnalysis]);
+
+  // Asynchronously request full AI translation from Gemini for complete, natural Persian
+  useEffect(() => {
+    if (!analysisResult) {
+      setServerFaAnalysis(null);
+      return;
+    }
+
+    let isMounted = true;
+    setIsTranslatingServer(true);
+
+    fetchServerPersianTranslation(analysisResult)
+      .then((translated) => {
+        if (isMounted && translated) {
+          setServerFaAnalysis(translated);
+        }
+      })
+      .catch((err) => {
+        console.warn('Academic Persian translation note:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsTranslatingServer(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [analysisResult?.id]);
 
   // Google Drive Cloud State
   const [googleUser, setGoogleUser] = useState<any>(null);
@@ -153,6 +243,137 @@ export const PaperAnalyzer: React.FC<PaperAnalyzerProps> = ({ onNotify }) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Interactive Validation Protocol Editor State
+  const [isEditingValidation, setIsEditingValidation] = useState<boolean>(false);
+
+  const updateValidationPackage = (updater: (prev: ValidationPackage) => ValidationPackage) => {
+    setAnalysisResult((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        validationPackage: updater(prev.validationPackage),
+      };
+    });
+  };
+
+  const handleUpdateGeometry = (idx: number, field: keyof GeometricPropertyItem, value: string) => {
+    updateValidationPackage((prev) => {
+      const list = [...prev.geometricalDimensions];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, geometricalDimensions: list };
+    });
+  };
+
+  const handleAddGeometryRow = () => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      geometricalDimensions: [
+        ...prev.geometricalDimensions,
+        { feature: 'New Feature / Gauge Zone', dimension: '10.0 mm', tolerance: '±0.05 mm', notes: 'Defined test dimension' },
+      ],
+    }));
+  };
+
+  const handleRemoveGeometryRow = (idx: number) => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      geometricalDimensions: prev.geometricalDimensions.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleUpdateMaterial = (idx: number, field: keyof MaterialPropertyItem, value: string) => {
+    updateValidationPackage((prev) => {
+      const list = [...prev.materialProperties];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, materialProperties: list };
+    });
+  };
+
+  const handleAddMaterialRow = () => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      materialProperties: [
+        ...prev.materialProperties,
+        { name: 'Custom Parameter', symbol: 'P_c', value: '100.0', unit: 'MPa', description: 'Constitutive parameter' },
+      ],
+    }));
+  };
+
+  const handleRemoveMaterialRow = (idx: number) => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      materialProperties: prev.materialProperties.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleApplyMaterialPreset = (presetProps: typeof MATERIAL_PRESETS[0]['props']) => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      materialProperties: [...presetProps],
+    }));
+    onNotify?.('Applied material preset to Validation Protocol!');
+  };
+
+  const handleUpdateBoundary = (idx: number, field: keyof BoundaryConditionItem, value: string) => {
+    updateValidationPackage((prev) => {
+      const list = [...prev.boundaryConditions];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, boundaryConditions: list };
+    });
+  };
+
+  const handleAddBoundaryRow = () => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      boundaryConditions: [
+        ...prev.boundaryConditions,
+        { region: 'Support Boundary', type: 'Fixed / Constrained', formulation: 'U1=U2=U3=0', degreesOfFreedom: 'Restrained' },
+      ],
+    }));
+  };
+
+  const handleRemoveBoundaryRow = (idx: number) => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      boundaryConditions: prev.boundaryConditions.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleUpdateMeshSettings = (field: 'elementType' | 'characteristicMeshSize' | 'formulation' | 'stepTime', value: string) => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      meshAndDiscretization: {
+        ...prev.meshAndDiscretization,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleUpdateBenchmark = (idx: number, field: 'targetMetric' | 'expectedBenchmarkValue' | 'experimentalErrorTolerance' | 'acceptanceCriterion', value: string) => {
+    updateValidationPackage((prev) => {
+      const list = [...prev.validationBenchmarks];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, validationBenchmarks: list };
+    });
+  };
+
+  const handleAddBenchmarkRow = () => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      validationBenchmarks: [
+        ...prev.validationBenchmarks,
+        { targetMetric: 'Numerical vs Experimental Error', expectedBenchmarkValue: 'Discrepancy < 3.0%', experimentalErrorTolerance: '± 2.0%', acceptanceCriterion: 'R² ≥ 0.985' },
+      ],
+    }));
+  };
+
+  const handleRemoveBenchmarkRow = (idx: number) => {
+    updateValidationPackage((prev) => ({
+      ...prev,
+      validationBenchmarks: prev.validationBenchmarks.filter((_, i) => i !== idx),
+    }));
+  };
 
   // Initialize Firebase Auth listener for Google Drive
   useEffect(() => {
@@ -734,7 +955,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code || '# Ver
     } else if (displayLanguage === 'bilingual' && faAnalysis) {
       md = `# 01. NAME OF THE CHOSEN PAPERS / ۱. نام مقالات انتخاب شده
 EN: ${analysisResult.paperTitle} (${analysisResult.authors})
-FA: ${faAnalysis.paperNameSection.title} (${faAnalysis.paperNameSection.authors})
+FA: ${faAnalysis.paperNameSection?.title || analysisResult.paperTitle} (${faAnalysis.paperNameSection?.authors || analysisResult.authors})
 
 ---
 
@@ -1722,7 +1943,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-white'
                 }`}
               >
-                All 6 Sections
+                {displayLanguage === 'fa' ? 'تمام ۶ بخش' : 'All 6 Sections'}
               </button>
               <button
                 type="button"
@@ -1733,7 +1954,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-sky-400'
                 }`}
               >
-                1. Paper Name
+                {displayLanguage === 'fa' ? '۱. نام مقاله' : '1. Paper Name'}
               </button>
               <button
                 type="button"
@@ -1744,7 +1965,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-blue-400'
                 }`}
               >
-                2. Purpose
+                {displayLanguage === 'fa' ? '۲. اهداف تحقیق' : '2. Purpose'}
               </button>
               <button
                 type="button"
@@ -1755,7 +1976,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-amber-400'
                 }`}
               >
-                3. Research Gap &amp; References
+                {displayLanguage === 'fa' ? '۳. شکاف پژوهش و مراجع' : '3. Research Gap & References'}
               </button>
               <button
                 type="button"
@@ -1766,7 +1987,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-purple-400'
                 }`}
               >
-                4. Methods &amp; Facilities
+                {displayLanguage === 'fa' ? '۴. روش‌ها و تجهیزات' : '4. Methods & Facilities'}
               </button>
               <button
                 type="button"
@@ -1777,7 +1998,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-emerald-400'
                 }`}
               >
-                5. Results
+                {displayLanguage === 'fa' ? '۵. دستاوردها' : '5. Results'}
               </button>
               <button
                 type="button"
@@ -1788,7 +2009,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     : 'dark:text-zinc-300 text-slate-600 hover:text-pink-400'
                 }`}
               >
-                6. Future Directions
+                {displayLanguage === 'fa' ? '۶. مسیرهای آینده' : '6. Future Directions'}
               </button>
               <button
                 type="button"
@@ -1800,12 +2021,14 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                 }`}
               >
                 <Wrench className="w-3.5 h-3.5" />
-                <span>Validation Package</span>
+                <span>{displayLanguage === 'fa' ? 'پروتکل اعتبارسنجی' : 'Validation Package'}</span>
               </button>
             </div>
 
             <div className="text-xs sm:text-sm font-mono dark:text-zinc-400 text-slate-500 hidden sm:block">
-              6 Sections + Academic Validation Appendix
+              {displayLanguage === 'fa'
+                ? '۶ بخش اصلی استاندارد + پیوست پروتکل اعتبارسنجی'
+                : '6 Sections + Academic Validation Appendix'}
             </div>
           </div>
 
@@ -1830,35 +2053,36 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-sky-600 dark:text-sky-400 font-bold">
-                    Manuscript Identity &amp; Citation
+                    {displayLanguage === 'fa' ? 'شناسه و استناد مقاله' : 'Manuscript Identity & Citation'}
                   </span>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-5">
-                  <div className="p-5 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-3">
+                  <div className={`p-5 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-3 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                     <div className="font-mono text-sm sm:text-base font-bold dark:text-white text-slate-900">
                       {displayLanguage === 'fa' && faAnalysis
-                        ? faAnalysis.paperNameSection.title
+                        ? (faAnalysis.paperNameSection?.title || analysisResult.paperTitle)
                         : analysisResult.paperTitle}
                     </div>
                     <div className="text-xs sm:text-sm font-mono dark:text-zinc-300 text-slate-600 space-y-1">
                       <p>
-                        <strong>Authors:</strong>{' '}
+                        <strong>{displayLanguage === 'fa' ? 'نویسندگان:' : 'Authors:'}</strong>{' '}
                         {displayLanguage === 'fa' && faAnalysis
-                          ? faAnalysis.paperNameSection.authors
+                          ? (faAnalysis.paperNameSection?.authors || analysisResult.authors)
                           : analysisResult.authors}
                       </p>
                       <p>
-                        <strong>Venue / Year:</strong>{' '}
-                        {analysisResult.journalOrConference || 'Scientific Literature'} (
-                        {analysisResult.publicationYear || '2025'})
+                        <strong>{displayLanguage === 'fa' ? 'نشریه یا کنفرانس / سال:' : 'Venue / Year:'}</strong>{' '}
+                        {displayLanguage === 'fa' && faAnalysis
+                          ? `${faAnalysis.paperNameSection?.journalOrConference || 'ادبیات معتبر علمی'} (${faAnalysis.paperNameSection?.publicationYear || '۲۰۲۵'})`
+                          : `${analysisResult.journalOrConference || 'Scientific Literature'} (${analysisResult.publicationYear || '2025'})`}
                       </p>
                     </div>
 
                     <div className="p-3 rounded-lg dark:bg-sky-950/30 bg-sky-50 border dark:border-sky-800/40 border-sky-200 text-xs sm:text-sm font-mono text-sky-700 dark:text-sky-300">
-                      <strong>Standard Citation:</strong>{' '}
+                      <strong>{displayLanguage === 'fa' ? 'استناد استاندارد دانشگاهی:' : 'Standard Citation:'}</strong>{' '}
                       {displayLanguage === 'fa' && faAnalysis
-                        ? faAnalysis.paperNameSection.citation
+                        ? (faAnalysis.paperNameSection?.citation || analysisResult.paperTitle)
                         : analysisResult.paperNameSection?.citation ||
                           `${analysisResult.authors} (${analysisResult.publicationYear || '2025'}). "${analysisResult.paperTitle}". ${analysisResult.journalOrConference || 'Peer-Reviewed Literature'}.`}
                     </div>
@@ -1869,24 +2093,27 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     analysisResult.paperNameSection.paperList.length > 1 && (
                       <div className="space-y-2.5">
                         <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-sky-400">
-                          Included Manuscripts in Comparative Synthesis:
+                          {displayLanguage === 'fa' ? 'مقالات بررسی‌شده در ارزیابی تطبیقی:' : 'Included Manuscripts in Comparative Synthesis:'}
                         </h4>
                         <div className="grid grid-cols-1 gap-2.5">
                           {analysisResult.paperNameSection.paperList.map((p, idx) => (
                             <div
                               key={idx}
-                              className="p-3.5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800 border-slate-200 flex items-center justify-between text-xs sm:text-sm font-mono"
+                              className={`p-3.5 rounded-lg dark:bg-zinc-900/60 bg-slate-50 border dark:border-zinc-800 border-slate-200 flex items-center justify-between text-xs sm:text-sm font-mono ${displayLanguage === 'fa' ? 'text-right' : ''}`}
+                              dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
                             >
                               <div className="space-y-0.5">
                                 <span className="font-bold dark:text-white text-slate-900">
-                                  {idx + 1}. {p.title}
+                                  {idx + 1}. {displayLanguage === 'fa' && faAnalysis?.paperNameSection?.paperList?.[idx] ? faAnalysis.paperNameSection.paperList[idx].title : p.title}
                                 </span>
                                 <div className="dark:text-zinc-400 text-slate-600 text-xs">
-                                  Authors: {p.authors} • Year: {p.year || '2025'}
+                                  {displayLanguage === 'fa'
+                                    ? `نویسندگان: ${displayLanguage === 'fa' && faAnalysis?.paperNameSection?.paperList?.[idx] ? faAnalysis.paperNameSection.paperList[idx].authors : p.authors} • سال: ${p.year || '۲۰۲۵'}`
+                                    : `Authors: ${p.authors} • Year: ${p.year || '2025'}`}
                                 </div>
                               </div>
                               <span className="px-2 py-0.5 rounded text-[11px] bg-sky-500/20 text-sky-400 font-bold">
-                                Indexed
+                                {displayLanguage === 'fa' ? 'نمایه شده' : 'Indexed'}
                               </span>
                             </div>
                           ))}
@@ -1916,7 +2143,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
-                    Aims, Scope &amp; Hypotheses
+                    {displayLanguage === 'fa' ? 'اهداف، دامنه و فرضیات' : 'Aims, Scope & Hypotheses'}
                   </span>
                 </div>
 
@@ -1953,13 +2180,13 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* Engineering Scope */}
                   {analysisResult.purposeSection?.engineeringScope && (
-                    <div className="p-4 rounded-xl dark:bg-blue-950/20 bg-blue-50 border dark:border-blue-800/40 border-blue-200 text-xs sm:text-sm font-mono">
+                    <div className={`p-4 rounded-xl dark:bg-blue-950/20 bg-blue-50 border dark:border-blue-800/40 border-blue-200 text-xs sm:text-sm font-mono ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                       <span className="font-bold text-blue-400 uppercase tracking-wider block mb-1">
-                        Target Engineering Scope:
+                        {displayLanguage === 'fa' ? 'دامنه مهندسی هدف:' : 'Target Engineering Scope:'}
                       </span>
                       <span className="dark:text-zinc-200 text-slate-800">
                         {displayLanguage === 'fa' && faAnalysis
-                          ? faAnalysis.purposeSection.engineeringScope
+                          ? (faAnalysis.purposeSection?.engineeringScope || analysisResult.purposeSection.engineeringScope)
                           : analysisResult.purposeSection.engineeringScope}
                       </span>
                     </div>
@@ -1968,14 +2195,15 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                   {/* Hypotheses */}
                   {analysisResult.purposeSection?.hypotheses && analysisResult.purposeSection.hypotheses.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-blue-400">
-                        {displayLanguage === 'fa' ? 'فرضیه‌های علمی بنیادین:' : 'Central Scientific Hypotheses & Targets:'}
+                      <h4 className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-blue-400 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                        {displayLanguage === 'fa' ? 'فرضیه‌های علمی بنیادین و اهداف پژوهش:' : 'Central Scientific Hypotheses & Targets:'}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                         {analysisResult.purposeSection.hypotheses.map((hyp, idx) => (
                           <div
                             key={idx}
-                            className="p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm"
+                            className={`p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm ${displayLanguage === 'fa' ? 'text-right' : ''}`}
+                            dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
                           >
                             <div className="flex items-start gap-3 font-mono">
                               <Target className="w-4 h-4 text-blue-400 mt-0.5 flex-none" />
@@ -2006,14 +2234,14 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     </span>
                     <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-amber-950">
                       {displayLanguage === 'fa'
-                        ? '۳. شکاف پژوهشی و نحوه استخراج آن از مراجع'
+                        ? '۳. شکاف پژوهشی و تحلیل مراجع پیشین'
                         : displayLanguage === 'bilingual'
                         ? '03. Research Gap & Reference Void Extraction / ۳. شکاف پژوهشی'
                         : '03. Research Gap & Reference Extraction'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
-                    Citation-by-Citation Void Breakdown
+                    {displayLanguage === 'fa' ? 'واکاوی مرجع‌به‌مرجع خلاهای علمی' : 'Citation-by-Citation Void Breakdown'}
                   </span>
                 </div>
 
@@ -2051,7 +2279,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                   {/* Reference-by-Reference Decomposition Cards */}
                   <div className="space-y-3.5">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                      <h4 className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                         <BookOpen className="w-4 h-4 text-amber-400" />
                         <span>
                           {displayLanguage === 'fa'
@@ -2062,32 +2290,36 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     </div>
 
                     <div className="space-y-3">
-                      {(analysisResult.researchGapSection?.extractedFromReferences || []).map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 sm:p-5 rounded-xl dark:bg-amber-950/15 bg-amber-50/70 border dark:border-amber-800/40 border-amber-300 space-y-2.5 transition-all"
-                        >
-                          <div className="flex items-center justify-between gap-2 border-b dark:border-amber-900/40 border-amber-200 pb-2">
-                            <span className="font-mono font-bold text-xs sm:text-sm text-amber-800 dark:text-amber-300">
-                              [Ref {idx + 1}] {item.reference}
-                            </span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold uppercase">
-                              Prior Void
-                            </span>
-                          </div>
+                      {(analysisResult.researchGapSection?.extractedFromReferences || []).map((item, idx) => {
+                        const refItem = (displayLanguage === 'fa' && faAnalysis?.researchGapSection?.extractedFromReferences?.[idx]) || item;
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-4 sm:p-5 rounded-xl dark:bg-amber-950/15 bg-amber-50/70 border dark:border-amber-800/40 border-amber-300 space-y-2.5 transition-all ${displayLanguage === 'fa' ? 'text-right' : ''}`}
+                            dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
+                          >
+                            <div className="flex items-center justify-between gap-2 border-b dark:border-amber-900/40 border-amber-200 pb-2">
+                              <span className="font-mono font-bold text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+                                {displayLanguage === 'fa' ? `[مرجع ${idx + 1}]` : `[Ref ${idx + 1}]`} {refItem.reference}
+                              </span>
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold uppercase">
+                                {displayLanguage === 'fa' ? 'خلأ پیشین' : 'Prior Void'}
+                              </span>
+                            </div>
 
-                          <div className="text-xs sm:text-sm font-mono space-y-1.5">
-                            <div className="dark:text-zinc-300 text-slate-700">
-                              <strong className="text-slate-500 dark:text-zinc-400">Prior Finding / Baseline:</strong>{' '}
-                              {item.priorFindingOrAssumption}
-                            </div>
-                            <div className="dark:text-[#00ff41] text-emerald-800 font-semibold">
-                              <strong className="text-amber-600 dark:text-amber-400">Extracted Research Gap:</strong>{' '}
-                              {item.extractedGapOrVoid}
+                            <div className="text-xs sm:text-sm font-mono space-y-1.5">
+                              <div className="dark:text-zinc-300 text-slate-700">
+                                <strong className="text-slate-500 dark:text-zinc-400">{displayLanguage === 'fa' ? 'فرضیه یا یافته پیشین:' : 'Prior Finding / Baseline:'}</strong>{' '}
+                                {refItem.priorFindingOrAssumption}
+                              </div>
+                              <div className="dark:text-[#00ff41] text-emerald-800 font-semibold">
+                                <strong className="text-amber-600 dark:text-amber-400">{displayLanguage === 'fa' ? 'خلأ علمی استخراج‌شده:' : 'Extracted Research Gap:'}</strong>{' '}
+                                {refItem.extractedGapOrVoid}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -2113,7 +2345,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-purple-600 dark:text-purple-400 font-bold">
-                    Experimental Rigs &amp; Solvers
+                    {displayLanguage === 'fa' ? 'تجهیزات و حل‌کننده‌های محاسباتی' : 'Experimental Rigs & Solvers'}
                   </span>
                 </div>
 
@@ -2150,12 +2382,12 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* Hardware & Instruments Badges */}
                   <div className="space-y-2.5">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
+                    <h4 className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                       <Wrench className="w-4 h-4 text-purple-400" />
-                      <span>Experimental Hardware, Instruments &amp; Facilities:</span>
+                      <span>{displayLanguage === 'fa' ? 'تجهیزات، ابزارآلات و سخت‌افزارهای آزمایشگاهی:' : 'Experimental Hardware, Instruments & Facilities:'}</span>
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {(analysisResult.methodsAndFacilitiesSection?.facilitiesAndInstruments || []).map((fac, idx) => (
+                    <div className={`flex flex-wrap gap-2 ${displayLanguage === 'fa' ? 'justify-end' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                      {((displayLanguage === 'fa' && faAnalysis ? faAnalysis.methodsAndFacilitiesSection?.facilitiesAndInstruments : analysisResult.methodsAndFacilitiesSection?.facilitiesAndInstruments) || []).map((fac, idx) => (
                         <div
                           key={idx}
                           className="px-3.5 py-2 rounded-lg dark:bg-purple-950/30 bg-purple-50 border dark:border-purple-800/40 border-purple-200 text-xs sm:text-sm font-mono text-purple-800 dark:text-purple-300 font-medium"
@@ -2168,12 +2400,12 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* Standards & Solvers Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2">
+                    <div className={`p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                       <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-400">
-                        Testing Standards:
+                        {displayLanguage === 'fa' ? 'استانداردهای آزمون:' : 'Testing Standards:'}
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(analysisResult.methodsAndFacilitiesSection?.testingStandards || []).map((std, idx) => (
+                      <div className={`flex flex-wrap gap-1.5 ${displayLanguage === 'fa' ? 'justify-end' : ''}`}>
+                        {((displayLanguage === 'fa' && faAnalysis ? faAnalysis.methodsAndFacilitiesSection?.testingStandards : analysisResult.methodsAndFacilitiesSection?.testingStandards) || []).map((std, idx) => (
                           <span
                             key={idx}
                             className="px-2.5 py-1 rounded text-xs font-mono dark:bg-zinc-800 bg-slate-200 dark:text-zinc-200 text-slate-800 font-bold"
@@ -2184,12 +2416,12 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2">
+                    <div className={`p-4 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 space-y-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                       <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-400">
-                        Computational Solvers &amp; Formulations:
+                        {displayLanguage === 'fa' ? 'حل‌کننده‌ها و فرمولاسیون‌های محاسباتی:' : 'Computational Solvers & Formulations:'}
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(analysisResult.methodsAndFacilitiesSection?.computationalSolvers || []).map((sol, idx) => (
+                      <div className={`flex flex-wrap gap-1.5 ${displayLanguage === 'fa' ? 'justify-end' : ''}`}>
+                        {((displayLanguage === 'fa' && faAnalysis ? faAnalysis.methodsAndFacilitiesSection?.computationalSolvers : analysisResult.methodsAndFacilitiesSection?.computationalSolvers) || []).map((sol, idx) => (
                           <span
                             key={idx}
                             className="px-2.5 py-1 rounded text-xs font-mono dark:bg-zinc-800 bg-slate-200 dark:text-zinc-200 text-slate-800 font-bold"
@@ -2218,12 +2450,12 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                       {displayLanguage === 'fa'
                         ? '۵. نتایج و دستاوردهای کمی'
                         : displayLanguage === 'bilingual'
-                        ? '05. Results / ۵. نتایج'
-                        : '05. Results'}
+                        ? '05. Results & Quantitative Findings / ۵. نتایج'
+                        : '05. Results & Quantitative Findings'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-emerald-600 dark:text-[#00ff41] font-bold">
-                    Empirical Values &amp; Physical Mechanisms
+                    {displayLanguage === 'fa' ? 'دستاوردهای کمی و فیزیک شکست' : 'Empirical Values & Physical Mechanisms'}
                   </span>
                 </div>
 
@@ -2260,22 +2492,21 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* Quantitative Discoveries */}
                   <div className="space-y-3">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-emerald-500">
+                    <h4 className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-emerald-500 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                       {displayLanguage === 'fa'
-                        ? 'شاخص‌های کمی و سازوکارهای اثبات‌شده:'
+                        ? 'شاخص‌های کمی عملکرد و کشفیات مکانیکی:'
                         : 'Key Quantitative Performance Metrics & Discoveries:'}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {(analysisResult.resultsSection?.quantitativeMetrics || []).map((metric, idx) => (
+                      {((displayLanguage === 'fa' && faAnalysis ? faAnalysis.resultsSection?.quantitativeMetrics : analysisResult.resultsSection?.quantitativeMetrics) || []).map((metric, idx) => (
                         <div
                           key={idx}
-                          className="p-4 rounded-xl dark:bg-emerald-950/20 bg-emerald-50 border dark:border-emerald-800/40 border-emerald-300 text-xs sm:text-sm font-mono flex items-start gap-3"
+                          className={`p-4 rounded-xl dark:bg-emerald-950/20 bg-emerald-50 border dark:border-emerald-800/40 border-emerald-300 text-xs sm:text-sm font-mono flex items-start gap-3 ${displayLanguage === 'fa' ? 'text-right' : ''}`}
+                          dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
                         >
                           <BarChart3 className="w-4 h-4 text-[#00ff41] mt-0.5 flex-none" />
                           <span className="dark:text-zinc-200 text-slate-800 leading-relaxed font-medium">
-                            {displayLanguage === 'fa' && faAnalysis?.resultsSection?.quantitativeMetrics[idx]
-                              ? faAnalysis.resultsSection.quantitativeMetrics[idx]
-                              : metric}
+                            {metric}
                           </span>
                         </div>
                       ))}
@@ -2299,12 +2530,12 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                       {displayLanguage === 'fa'
                         ? '۶. پیشنهاد مسیرهای پژوهشی آینده'
                         : displayLanguage === 'bilingual'
-                        ? '06. Propose Future Directions / ۶. مسیرهای آینده'
+                        ? '06. Future Directions / ۶. مسیرهای آینده'
                         : '06. Propose Future Directions'}
                     </h3>
                   </div>
                   <span className="text-xs sm:text-sm font-mono uppercase tracking-wider text-pink-600 dark:text-pink-400 font-bold">
-                    Doctoral Roadmap &amp; Open Questions
+                    {displayLanguage === 'fa' ? 'نقشه راه دکتری و پژوهش‌های تکمیلی' : 'Doctoral Roadmap & Open Questions'}
                   </span>
                 </div>
 
@@ -2341,22 +2572,21 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* High Priority Roadmap */}
                   <div className="space-y-3">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-pink-400">
+                    <h4 className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-pink-400 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                       {displayLanguage === 'fa'
-                        ? 'نقشه راه پژوهش‌های تکمیلی و اولویت‌دار:'
+                        ? 'نقشه راه پژوهش‌های تکمیلی و اولویت‌دار دکتری:'
                         : 'High-Priority Doctoral & Postdoctoral Research Roadmap:'}
                     </h4>
                     <div className="space-y-2.5">
-                      {(analysisResult.futureDirectionsSection?.highPriorityRoadmap || []).map((item, idx) => (
+                      {((displayLanguage === 'fa' && faAnalysis ? faAnalysis.futureDirectionsSection?.highPriorityRoadmap : analysisResult.futureDirectionsSection?.highPriorityRoadmap) || []).map((item, idx) => (
                         <div
                           key={idx}
-                          className="p-4 rounded-xl dark:bg-pink-950/20 bg-pink-50 border dark:border-pink-800/40 border-pink-200 text-xs sm:text-sm font-mono flex items-start gap-3"
+                          className={`p-4 rounded-xl dark:bg-pink-950/20 bg-pink-50 border dark:border-pink-800/40 border-pink-200 text-xs sm:text-sm font-mono flex items-start gap-3 ${displayLanguage === 'fa' ? 'text-right' : ''}`}
+                          dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
                         >
-                          <ArrowRight className="w-4 h-4 text-pink-400 mt-0.5 flex-none" />
+                          <ArrowRight className={`w-4 h-4 text-pink-400 mt-0.5 flex-none ${displayLanguage === 'fa' ? 'rotate-180' : ''}`} />
                           <span className="dark:text-zinc-200 text-slate-800 leading-relaxed font-medium">
-                            {displayLanguage === 'fa' && faAnalysis?.futureDirectionsSection?.highPriorityRoadmap[idx]
-                              ? faAnalysis.futureDirectionsSection.highPriorityRoadmap[idx]
-                              : item}
+                            {item}
                           </span>
                         </div>
                       ))}
@@ -2364,24 +2594,23 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                   </div>
 
                   {/* Unresolved Questions */}
-                  {(analysisResult.futureDirectionsSection?.unresolvedQuestions || []).length > 0 && (
+                  {(((displayLanguage === 'fa' && faAnalysis ? faAnalysis.futureDirectionsSection?.unresolvedQuestions : analysisResult.futureDirectionsSection?.unresolvedQuestions) || []).length > 0) && (
                     <div className="space-y-3 pt-2">
-                      <h4 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-rose-400">
+                      <h4 className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-rose-400 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                         {displayLanguage === 'fa'
-                          ? 'پرسش‌های باز و مرزهای تعمیم سازه:'
+                          ? 'پرسش‌های باز علمی و مرزهای تعمیم سازه:'
                           : 'Open Scientific Questions & Scaling Boundaries:'}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                        {analysisResult.futureDirectionsSection.unresolvedQuestions.map((q, idx) => (
+                        {((displayLanguage === 'fa' && faAnalysis ? faAnalysis.futureDirectionsSection?.unresolvedQuestions : analysisResult.futureDirectionsSection?.unresolvedQuestions) || []).map((q, idx) => (
                           <div
                             key={idx}
-                            className="p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono flex items-start gap-2.5"
+                            className={`p-4 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 text-xs sm:text-sm font-mono flex items-start gap-2.5 ${displayLanguage === 'fa' ? 'text-right' : ''}`}
+                            dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}
                           >
                             <HelpCircle className="w-4 h-4 text-rose-400 mt-0.5 flex-none" />
                             <span className="dark:text-zinc-300 text-slate-700 leading-relaxed">
-                              {displayLanguage === 'fa' && faAnalysis?.futureDirectionsSection?.unresolvedQuestions[idx]
-                                ? faAnalysis.futureDirectionsSection.unresolvedQuestions[idx]
-                                : q}
+                              {q}
                             </span>
                           </div>
                         ))}
@@ -2393,78 +2622,216 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
             )}
 
             {/* ==================================================== */}
-            {/* APPENDIX: ACADEMIC VALIDATION & REPLICATION PACKAGE  */}
+            {/* APPENDIX: VALIDATION PROTOCOL & REPLICATION BENCHMARK */}
             {/* ==================================================== */}
             {(selectedSection === 'all' || selectedSection === 'validation') && analysisResult.validationPackage && (
               <div className="dark:bg-[#0c0c0e] bg-white rounded-2xl border-2 dark:border-[#00ff41]/60 border-emerald-500 overflow-hidden shadow-2xl transition-colors">
-                <div className="px-6 sm:px-8 py-5 dark:bg-emerald-950/40 bg-emerald-100 border-b dark:border-[#00ff41]/40 border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="px-6 sm:px-8 py-5 dark:bg-emerald-950/40 bg-emerald-100 border-b dark:border-[#00ff41]/40 border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-[#00ff41] text-black flex items-center justify-center font-bold text-sm">
+                    <span className="w-8 h-8 rounded-lg bg-[#00ff41] text-black flex items-center justify-center font-bold text-sm shadow-md">
                       <Wrench className="w-4 h-4" />
                     </span>
                     <div>
-                      <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-emerald-950">
-                        {displayLanguage === 'fa'
-                          ? 'پیوست تخصصی: بسته اعتبارسنجی و بازتولید محاسباتی و تجربی'
-                          : displayLanguage === 'bilingual'
-                          ? 'Validation & Replication Appendix / پیوست اعتبارسنجی'
-                          : 'Appendix: Academic Replication & Validation Package'}
+                      <h3 className="font-orbitron font-bold text-base sm:text-lg dark:text-white text-emerald-950 flex items-center gap-2">
+                        <span>
+                          {displayLanguage === 'fa'
+                            ? 'پروتکل اعتبارسنجی و بسته بازتولید محاسباتی و تجربی'
+                            : displayLanguage === 'bilingual'
+                            ? 'Validation Protocol & Replication Package / پروتکل اعتبارسنجی'
+                            : 'Validation Protocol & Benchmark Replication Package'}
+                        </span>
                       </h3>
                       <p className="text-xs font-mono dark:text-zinc-400 text-slate-600">
                         {displayLanguage === 'fa'
-                          ? 'ابعاد هندسی دقیق، خواص رفتاری مواد، شرایط مرزی، فرمولاسیون مش و کد اعتبارسنجی'
-                          : 'Exact geometrical dimensions, material constants, boundary conditions, discretization controls & executable code'}
+                          ? 'تنظیم و ویرایش پارامترهای هندسی، خواص رفتاری مواد، شرایط مرزی، فرمولاسیون مش و کد اعتبارسنجی (درج‌شده در پایان فایل PDF)'
+                          : 'Customize material properties, boundary conditions, and simulation settings — placed at the end of generated PDF reports'}
                       </p>
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider bg-black/60 text-[#00ff41] border border-[#00ff41]/40 self-start sm:self-auto">
-                    Full Validation Kit
-                  </span>
+
+                  <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingValidation(!isEditingValidation)}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+                        isEditingValidation
+                          ? 'bg-[#00ff41] text-black ring-2 ring-[#00ff41]/50'
+                          : 'dark:bg-zinc-800 bg-white dark:text-[#00ff41] text-emerald-700 border dark:border-[#00ff41]/40 border-emerald-300 hover:bg-[#00ff41]/10'
+                      }`}
+                      title="Toggle interactive validation parameters editor"
+                    >
+                      {isEditingValidation ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>{displayLanguage === 'fa' ? 'مشاهده پروتکل' : 'View Protocol'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>{displayLanguage === 'fa' ? 'شخصی‌سازی پارامترها' : 'Customize Parameters'}</span>
+                        </>
+                      )}
+                    </button>
+                    <span className="px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider bg-black/60 text-[#00ff41] border border-[#00ff41]/40">
+                      {displayLanguage === 'fa' ? 'پیوست گزارش نهایی PDF' : 'Included in PDF Appendix'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-8">
-                  {/* Summary Box */}
-                  <div className="p-4 sm:p-5 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200">
-                    <p className={`font-mono text-xs sm:text-sm dark:text-zinc-200 text-slate-800 leading-relaxed ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
-                      <strong>{displayLanguage === 'fa' ? 'دامنه بازتولید:' : 'Replication Scope:'}</strong>{' '}
-                      {displayLanguage === 'fa' && faAnalysis?.validationPackage
-                        ? faAnalysis.validationPackage.summary
-                        : analysisResult.validationPackage.summary}
-                    </p>
+                  {/* Informative Banner / Save Notification */}
+                  <div className="p-4 sm:p-5 rounded-xl dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className={`font-mono text-xs sm:text-sm dark:text-zinc-200 text-slate-800 leading-relaxed ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                        <strong>{displayLanguage === 'fa' ? 'دامنه بازتولید:' : 'Replication Scope:'}</strong>{' '}
+                        {displayLanguage === 'fa' && faAnalysis?.validationPackage
+                          ? faAnalysis.validationPackage.summary
+                          : analysisResult.validationPackage.summary}
+                      </p>
+                      <p className="text-[11px] font-mono text-[#00b8ff]">
+                        {displayLanguage === 'fa'
+                          ? '✦ تمامی پارامترهای شخصی‌سازی‌شده زیر به انتهای گزارش‌های دانلودی PDF (انگلیسی، فارسی و دوزبانه) پیوست خواهند شد.'
+                          : '✦ All customized parameters below are automatically attached to the end of the exported PDF reports (English, Persian RTL, and Bilingual).'}
+                      </p>
+                    </div>
+
+                    {isEditingValidation && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingValidation(false);
+                          onNotify?.(displayLanguage === 'fa' ? '✅ پارامترهای پروتکل اعتبارسنجی تأیید و در گزارش PDF اعمال شد!' : '✅ Validation Protocol parameters applied and locked into PDF export!');
+                        }}
+                        className="px-4 py-2 rounded-lg font-mono text-xs font-bold bg-[#00ff41] hover:bg-[#00e676] text-black flex items-center gap-2 shadow-md cursor-pointer flex-none"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>{displayLanguage === 'fa' ? 'تأیید و قفل در PDF' : 'Lock & Apply to PDF'}</span>
+                      </button>
+                    )}
                   </div>
+
+                  {/* Material Preset Selector in Edit Mode */}
+                  {isEditingValidation && (
+                    <div className="p-4 rounded-xl dark:bg-emerald-950/20 bg-emerald-50 border dark:border-emerald-500/30 border-emerald-300 space-y-2.5 font-mono text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+                          <SlidersHorizontal className="w-3.5 h-3.5" />
+                          <span>{displayLanguage === 'fa' ? 'بارگذاری سریع مدل رفتاری ماده:' : 'Quick-Load Constitutive Material Model Preset:'}</span>
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          {displayLanguage === 'fa' ? 'برای تزریق مقادیر استاندارد کلیک کنید' : 'Click to inject verified constants'}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {MATERIAL_PRESETS.map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => handleApplyMaterialPreset(preset.props)}
+                            className="px-2.5 py-1.5 rounded-lg dark:bg-zinc-900 bg-white border dark:border-zinc-700 border-slate-300 dark:text-zinc-200 text-slate-800 hover:border-[#00ff41] dark:hover:text-[#00ff41] text-xs font-mono transition-colors cursor-pointer"
+                          >
+                            + {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* A.1. Geometrical Dimensions Table */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                      <h4 className={`font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-sky-400 flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                         <Compass className="w-4 h-4" />
                         <span>
                           {displayLanguage === 'fa'
-                            ? 'A.1. ابعاد هندسی نمونه و دامنه حل (Geometrical Dimensions & Tolerances):'
+                            ? 'A.1. مشخصات و ابعاد هندسی نمونه و دامنه حل:'
                             : 'A.1. Specimen & Domain Geometrical Dimensions:'}
                         </span>
                       </h4>
+                      {isEditingValidation && (
+                        <button
+                          type="button"
+                          onClick={handleAddGeometryRow}
+                          className="px-2.5 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/40 text-xs font-mono font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>{displayLanguage === 'fa' ? 'افزودن بعد هندسی' : 'Add Dimension'}</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="overflow-x-auto rounded-xl border dark:border-zinc-800 border-slate-200">
-                      <table className="w-full text-xs sm:text-sm font-mono text-left">
+                      <table className={`w-full text-xs sm:text-sm font-mono ${displayLanguage === 'fa' ? 'text-right' : 'text-left'}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                         <thead className="dark:bg-zinc-900/90 bg-slate-100 text-sky-500 font-bold border-b dark:border-zinc-800 border-slate-200">
                           <tr>
-                            <th className="py-2.5 px-4">Feature / Region</th>
-                            <th className="py-2.5 px-4">Dimension</th>
-                            <th className="py-2.5 px-4">Tolerance</th>
-                            <th className="py-2.5 px-4">Description / Notes</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'ویژگی یا ناحیه هندسی' : 'Feature / Region'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'اندازه اسمی' : 'Dimension'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'تلرانس مجاز' : 'Tolerance'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'توضیحات و یادداشت‌ها' : 'Description / Notes'}</th>
+                            {isEditingValidation && <th className="py-2.5 px-2 w-10 text-center">{displayLanguage === 'fa' ? 'عملیات' : 'Action'}</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y dark:divide-zinc-800 divide-slate-200">
-                          {analysisResult.validationPackage.geometricalDimensions.map((geo, idx) => (
-                            <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
-                              <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{geo.feature}</td>
-                              <td className="py-2.5 px-4 font-bold text-sky-400">{geo.dimension}</td>
-                              <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{geo.tolerance || '-'}</td>
-                              <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{geo.notes || '-'}</td>
-                            </tr>
-                          ))}
+                          {analysisResult.validationPackage.geometricalDimensions.map((geo, idx) => {
+                            const displayGeo = (displayLanguage === 'fa' && faAnalysis?.validationPackage?.geometricalDimensions?.[idx]) || geo;
+                            return (
+                              <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
+                                {isEditingValidation ? (
+                                  <>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={geo.feature}
+                                        onChange={(e) => handleUpdateGeometry(idx, 'feature', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white font-mono text-xs focus:ring-1 focus:ring-sky-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={geo.dimension}
+                                        onChange={(e) => handleUpdateGeometry(idx, 'dimension', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-sky-400 font-mono text-xs focus:ring-1 focus:ring-sky-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={geo.tolerance || ''}
+                                        onChange={(e) => handleUpdateGeometry(idx, 'tolerance', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs focus:ring-1 focus:ring-sky-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={geo.notes || ''}
+                                        onChange={(e) => handleUpdateGeometry(idx, 'notes', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs focus:ring-1 focus:ring-sky-500"
+                                      />
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveGeometryRow(idx)}
+                                        className="p-1 rounded text-rose-400 hover:bg-rose-500/20 cursor-pointer"
+                                        title="Delete row"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{displayGeo.feature}</td>
+                                    <td className="py-2.5 px-4 font-bold text-sky-400">{displayGeo.dimension}</td>
+                                    <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{displayGeo.tolerance || '-'}</td>
+                                    <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{displayGeo.notes || '-'}</td>
+                                  </>
+                                )}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -2472,34 +2839,109 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* A.2. Material Properties Table */}
                   <div className="space-y-3">
-                    <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-                      <Cpu className="w-4 h-4" />
-                      <span>
-                        {displayLanguage === 'fa'
-                          ? 'A.2. ثوابت رفتاری و مکانیکی مواد (Constitutive Material Constants):'
-                          : 'A.2. Constitutive Material Constants & Parameters:'}
-                      </span>
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className={`font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-emerald-400 flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                        <Cpu className="w-4 h-4" />
+                        <span>
+                          {displayLanguage === 'fa'
+                            ? 'A.2. ثوابت رفتاری و مشخصات مکانیکی مواد:'
+                            : 'A.2. Constitutive Material Constants & Parameters:'}
+                        </span>
+                      </h4>
+                      {isEditingValidation && (
+                        <button
+                          type="button"
+                          onClick={handleAddMaterialRow}
+                          className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-mono font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>{displayLanguage === 'fa' ? 'افزودن مشخصه ماده' : 'Add Material Property'}</span>
+                        </button>
+                      )}
+                    </div>
 
                     <div className="overflow-x-auto rounded-xl border dark:border-zinc-800 border-slate-200">
-                      <table className="w-full text-xs sm:text-sm font-mono text-left">
+                      <table className={`w-full text-xs sm:text-sm font-mono ${displayLanguage === 'fa' ? 'text-right' : 'text-left'}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                         <thead className="dark:bg-zinc-900/90 bg-slate-100 text-emerald-500 font-bold border-b dark:border-zinc-800 border-slate-200">
                           <tr>
-                            <th className="py-2.5 px-4">Material Parameter</th>
-                            <th className="py-2.5 px-4">Symbol</th>
-                            <th className="py-2.5 px-4">Value &amp; Unit</th>
-                            <th className="py-2.5 px-4">Mechanical Role</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'نام مشخصه ماده' : 'Material Parameter'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'نماد' : 'Symbol'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'مقدار' : 'Value'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'واحد' : 'Unit'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'نقش در مدل رفتاری' : 'Mechanical Role'}</th>
+                            {isEditingValidation && <th className="py-2.5 px-2 w-10 text-center">{displayLanguage === 'fa' ? 'عملیات' : 'Action'}</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y dark:divide-zinc-800 divide-slate-200">
-                          {analysisResult.validationPackage.materialProperties.map((mat, idx) => (
-                            <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
-                              <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{mat.name}</td>
-                              <td className="py-2.5 px-4 font-bold text-emerald-400">{mat.symbol}</td>
-                              <td className="py-2.5 px-4 font-bold dark:text-zinc-200 text-slate-800">{mat.value} {mat.unit}</td>
-                              <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{mat.description || '-'}</td>
-                            </tr>
-                          ))}
+                          {analysisResult.validationPackage.materialProperties.map((mat, idx) => {
+                            const displayMat = (displayLanguage === 'fa' && faAnalysis?.validationPackage?.materialProperties?.[idx]) || mat;
+                            return (
+                              <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
+                                {isEditingValidation ? (
+                                  <>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={mat.name}
+                                        onChange={(e) => handleUpdateMaterial(idx, 'name', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={mat.symbol}
+                                        onChange={(e) => handleUpdateMaterial(idx, 'symbol', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-emerald-400 font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={mat.value}
+                                        onChange={(e) => handleUpdateMaterial(idx, 'value', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={mat.unit}
+                                        onChange={(e) => handleUpdateMaterial(idx, 'unit', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={mat.description || ''}
+                                        onChange={(e) => handleUpdateMaterial(idx, 'description', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveMaterialRow(idx)}
+                                        className="p-1 rounded text-rose-400 hover:bg-rose-500/20 cursor-pointer"
+                                        title="Delete row"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{displayMat.name}</td>
+                                    <td className="py-2.5 px-4 font-bold text-emerald-400">{displayMat.symbol}</td>
+                                    <td className="py-2.5 px-4 font-bold dark:text-zinc-200 text-slate-800">{displayMat.value}</td>
+                                    <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{displayMat.unit}</td>
+                                    <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{displayMat.description || '-'}</td>
+                                  </>
+                                )}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -2507,77 +2949,252 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
 
                   {/* A.3. Boundary Conditions */}
                   <div className="space-y-3">
-                    <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      <span>
-                        {displayLanguage === 'fa'
-                          ? 'A.3. شرایط مرزی و سینماتیک بارگذاری (Boundary Conditions & Kinematics):'
-                          : 'A.3. Boundary Conditions & Loading Kinematics:'}
-                      </span>
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className={`font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-400 flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                        <Target className="w-4 h-4" />
+                        <span>
+                          {displayLanguage === 'fa'
+                            ? 'A.3. شرایط مرزی و سینماتیک بارگذاری:'
+                            : 'A.3. Boundary Conditions & Loading Kinematics:'}
+                        </span>
+                      </h4>
+                      {isEditingValidation && (
+                        <button
+                          type="button"
+                          onClick={handleAddBoundaryRow}
+                          className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 text-xs font-mono font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>{displayLanguage === 'fa' ? 'افزودن شرط مرزی' : 'Add Boundary Condition'}</span>
+                        </button>
+                      )}
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {analysisResult.validationPackage.boundaryConditions.map((bc, idx) => (
-                        <div key={idx} className="p-4 rounded-xl dark:bg-amber-950/15 bg-amber-50/70 border dark:border-amber-800/40 border-amber-300 space-y-1.5 font-mono text-xs sm:text-sm">
-                          <div className="flex items-center justify-between border-b dark:border-amber-900/40 border-amber-200 pb-1.5">
-                            <span className="font-bold dark:text-white text-slate-900">{bc.region}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 uppercase">{bc.type}</span>
+                      {analysisResult.validationPackage.boundaryConditions.map((bc, idx) => {
+                        const displayBc = (displayLanguage === 'fa' && faAnalysis?.validationPackage?.boundaryConditions?.[idx]) || bc;
+                        return (
+                          <div key={idx} className={`p-4 rounded-xl dark:bg-amber-950/15 bg-amber-50/70 border dark:border-amber-800/40 border-amber-300 space-y-2 font-mono text-xs sm:text-sm ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                            {isEditingValidation ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    type="text"
+                                    value={bc.region}
+                                    onChange={(e) => handleUpdateBoundary(idx, 'region', e.target.value)}
+                                    placeholder="Boundary Region"
+                                    className="flex-1 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white font-bold text-xs"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={bc.type}
+                                    onChange={(e) => handleUpdateBoundary(idx, 'type', e.target.value)}
+                                    placeholder="Type"
+                                    className="w-28 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-amber-400 font-bold text-xs"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveBoundaryRow(idx)}
+                                    className="p-1 text-rose-400 hover:bg-rose-500/20 rounded cursor-pointer"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={bc.formulation}
+                                  onChange={(e) => handleUpdateBoundary(idx, 'formulation', e.target.value)}
+                                  placeholder="Formulation e.g. U1=U2=U3=0"
+                                  className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-amber-300 text-xs"
+                                />
+                                <input
+                                  type="text"
+                                  value={bc.degreesOfFreedom}
+                                  onChange={(e) => handleUpdateBoundary(idx, 'degreesOfFreedom', e.target.value)}
+                                  placeholder="Degrees of Freedom"
+                                  className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs"
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between border-b dark:border-amber-900/40 border-amber-200 pb-1.5">
+                                  <span className="font-bold dark:text-white text-slate-900">{displayBc.region}</span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 uppercase">{displayBc.type}</span>
+                                </div>
+                                <div className="text-amber-800 dark:text-amber-300 font-medium">
+                                  <strong>{displayLanguage === 'fa' ? 'فرمول‌بندی ریاضی:' : 'Formulation:'}</strong> {displayBc.formulation}
+                                </div>
+                                <div className="dark:text-zinc-400 text-slate-600 text-xs">
+                                  <strong>{displayLanguage === 'fa' ? 'درجات آزادی مهارشده:' : 'DOFs:'}</strong> {displayBc.degreesOfFreedom}
+                                </div>
+                              </>
+                            )}
                           </div>
-                          <div className="text-amber-800 dark:text-amber-300 font-medium">
-                            <strong>Formulation:</strong> {bc.formulation}
-                          </div>
-                          <div className="dark:text-zinc-400 text-slate-600 text-xs">
-                            <strong>DOFs:</strong> {bc.degreesOfFreedom}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* A.4. Mesh & Solver Controls */}
-                  <div className="p-5 rounded-xl dark:bg-purple-950/20 bg-purple-50 border dark:border-purple-800/40 border-purple-200 space-y-2.5 font-mono text-xs sm:text-sm">
+                  <div className={`p-5 rounded-xl dark:bg-purple-950/20 bg-purple-50 border dark:border-purple-800/40 border-purple-200 space-y-3 font-mono text-xs sm:text-sm ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                     <div className="flex items-center gap-2 text-purple-400 font-bold uppercase tracking-wider">
                       <Cpu className="w-4 h-4" />
-                      <span>A.4. Finite Element Mesh &amp; Discretization Settings:</span>
+                      <span>
+                        {displayLanguage === 'fa'
+                          ? 'A.4. تنظیمات مش‌بندی المان محدود و گسسته‌سازی:'
+                          : 'A.4. Finite Element Mesh & Discretization Settings:'}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm dark:text-zinc-200 text-slate-800">
-                      <div><strong>Element Type:</strong> {analysisResult.validationPackage.meshAndDiscretization.elementType}</div>
-                      <div><strong>Characteristic Mesh Size:</strong> {analysisResult.validationPackage.meshAndDiscretization.characteristicMeshSize}</div>
-                      <div><strong>Formulation:</strong> {analysisResult.validationPackage.meshAndDiscretization.formulation}</div>
-                      <div><strong>Step Time / Increment:</strong> {analysisResult.validationPackage.meshAndDiscretization.stepTime || 'Adaptive'}</div>
-                    </div>
+                    {isEditingValidation ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-zinc-400">Element Type</label>
+                          <input
+                            type="text"
+                            value={analysisResult.validationPackage.meshAndDiscretization.elementType}
+                            onChange={(e) => handleUpdateMeshSettings('elementType', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-purple-300 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-zinc-400">Characteristic Mesh Size</label>
+                          <input
+                            type="text"
+                            value={analysisResult.validationPackage.meshAndDiscretization.characteristicMeshSize}
+                            onChange={(e) => handleUpdateMeshSettings('characteristicMeshSize', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-purple-300 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-zinc-400">Kinematic Formulation</label>
+                          <input
+                            type="text"
+                            value={analysisResult.validationPackage.meshAndDiscretization.formulation}
+                            onChange={(e) => handleUpdateMeshSettings('formulation', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-purple-300 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-zinc-400">Step Time / Increment</label>
+                          <input
+                            type="text"
+                            value={analysisResult.validationPackage.meshAndDiscretization.stepTime || ''}
+                            onChange={(e) => handleUpdateMeshSettings('stepTime', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-purple-300 text-xs"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      (() => {
+                        const displayMesh = (displayLanguage === 'fa' && faAnalysis?.validationPackage?.meshAndDiscretization) || analysisResult.validationPackage.meshAndDiscretization;
+                        return (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm dark:text-zinc-200 text-slate-800">
+                            <div><strong>{displayLanguage === 'fa' ? 'نوع المان:' : 'Element Type:'}</strong> {displayMesh.elementType}</div>
+                            <div><strong>{displayLanguage === 'fa' ? 'اندازه مشخصه مش:' : 'Characteristic Mesh Size:'}</strong> {displayMesh.characteristicMeshSize}</div>
+                            <div><strong>{displayLanguage === 'fa' ? 'فرمول‌بندی سینماتیکی:' : 'Formulation:'}</strong> {displayMesh.formulation}</div>
+                            <div><strong>{displayLanguage === 'fa' ? 'گام زمانی / افزایه حل:' : 'Step Time / Increment:'}</strong> {displayMesh.stepTime || (displayLanguage === 'fa' ? 'تطبیقی' : 'Adaptive')}</div>
+                          </div>
+                        );
+                      })()
+                    )}
                   </div>
 
                   {/* A.5. Validation Benchmarks */}
                   <div className="space-y-3">
-                    <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-emerald-500 flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4" />
-                      <span>
-                        {displayLanguage === 'fa'
-                          ? 'A.5. معیارهای پذیرش اعتبارسنجی (Validation Acceptance Benchmarks):'
-                          : 'A.5. Validation Acceptance Benchmarks & Target Values:'}
-                      </span>
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className={`font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-emerald-500 flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
+                        <BarChart3 className="w-4 h-4" />
+                        <span>
+                          {displayLanguage === 'fa'
+                            ? 'A.5. معیارهای پذیرش اعتبارسنجی و مقادیر هدف:'
+                            : 'A.5. Validation Acceptance Benchmarks & Target Values:'}
+                        </span>
+                      </h4>
+                      {isEditingValidation && (
+                        <button
+                          type="button"
+                          onClick={handleAddBenchmarkRow}
+                          className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-mono font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>{displayLanguage === 'fa' ? 'افزودن معیار اعتبارسنجی' : 'Add Benchmark'}</span>
+                        </button>
+                      )}
+                    </div>
 
                     <div className="overflow-x-auto rounded-xl border dark:border-zinc-800 border-slate-200">
-                      <table className="w-full text-xs sm:text-sm font-mono text-left">
+                      <table className={`w-full text-xs sm:text-sm font-mono ${displayLanguage === 'fa' ? 'text-right' : 'text-left'}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                         <thead className="dark:bg-zinc-900/90 bg-slate-100 text-emerald-500 font-bold border-b dark:border-zinc-800 border-slate-200">
                           <tr>
-                            <th className="py-2.5 px-4">Validation Metric</th>
-                            <th className="py-2.5 px-4">Expected Target</th>
-                            <th className="py-2.5 px-4">Error Tolerance</th>
-                            <th className="py-2.5 px-4">Acceptance Criterion</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'معیار اعتبارسنجی' : 'Validation Metric'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'مقدار هدف بنچمارک' : 'Expected Target'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'تلرانس خطای مجاز' : 'Error Tolerance'}</th>
+                            <th className="py-2.5 px-4">{displayLanguage === 'fa' ? 'ضابطه پذیرش صحت' : 'Acceptance Criterion'}</th>
+                            {isEditingValidation && <th className="py-2.5 px-2 w-10 text-center">{displayLanguage === 'fa' ? 'عملیات' : 'Action'}</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y dark:divide-zinc-800 divide-slate-200">
-                          {analysisResult.validationPackage.validationBenchmarks.map((vb, idx) => (
-                            <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
-                              <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{vb.targetMetric}</td>
-                              <td className="py-2.5 px-4 font-bold text-emerald-400">{vb.expectedBenchmarkValue}</td>
-                              <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{vb.experimentalErrorTolerance}</td>
-                              <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{vb.acceptanceCriterion}</td>
-                            </tr>
-                          ))}
+                          {analysisResult.validationPackage.validationBenchmarks.map((vb, idx) => {
+                            const displayVb = (displayLanguage === 'fa' && faAnalysis?.validationPackage?.validationBenchmarks?.[idx]) || vb;
+                            return (
+                              <tr key={idx} className="dark:hover:bg-zinc-900/40 hover:bg-slate-50 transition-colors">
+                                {isEditingValidation ? (
+                                  <>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={vb.targetMetric}
+                                        onChange={(e) => handleUpdateBenchmark(idx, 'targetMetric', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={vb.expectedBenchmarkValue}
+                                        onChange={(e) => handleUpdateBenchmark(idx, 'expectedBenchmarkValue', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-emerald-400 font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={vb.experimentalErrorTolerance}
+                                        onChange={(e) => handleUpdateBenchmark(idx, 'experimentalErrorTolerance', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2">
+                                      <input
+                                        type="text"
+                                        value={vb.acceptanceCriterion}
+                                        onChange={(e) => handleUpdateBenchmark(idx, 'acceptanceCriterion', e.target.value)}
+                                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                                      />
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveBenchmarkRow(idx)}
+                                        className="p-1 rounded text-rose-400 hover:bg-rose-500/20 cursor-pointer"
+                                        title="Delete benchmark"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-2.5 px-4 font-bold dark:text-white text-slate-900">{displayVb.targetMetric}</td>
+                                    <td className="py-2.5 px-4 font-bold text-emerald-400">{displayVb.expectedBenchmarkValue}</td>
+                                    <td className="py-2.5 px-4 dark:text-zinc-400 text-slate-500">{displayVb.experimentalErrorTolerance}</td>
+                                    <td className="py-2.5 px-4 dark:text-zinc-300 text-slate-600">{displayVb.acceptanceCriterion}</td>
+                                  </>
+                                )}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -2587,7 +3204,7 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                   {analysisResult.validationPackage.executableVerificationScript && (
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <h4 className="font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-[#00ff41] flex items-center gap-2">
+                        <h4 className={`font-mono font-bold text-xs sm:text-sm uppercase tracking-wider text-[#00ff41] flex items-center gap-2 ${displayLanguage === 'fa' ? 'text-right' : ''}`} dir={displayLanguage === 'fa' ? 'rtl' : 'ltr'}>
                           <FileCode className="w-4 h-4" />
                           <span>
                             {displayLanguage === 'fa'
@@ -2601,20 +3218,26 @@ ${analysisResult.validationPackage?.executableVerificationScript?.code}
                           onClick={() => {
                             navigator.clipboard.writeText(analysisResult.validationPackage.executableVerificationScript.code);
                             setCopiedScript(true);
-                            onNotify?.('Copied verification script to clipboard!');
+                            onNotify?.(displayLanguage === 'fa' ? 'اسکریپت اعتبارسنجی در حافظه کپی شد!' : 'Copied verification script to clipboard!');
                             setTimeout(() => setCopiedScript(false), 2500);
                           }}
                           className="px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black border border-[#00ff41]/50 flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
                         >
                           {copiedScript ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedScript ? 'Copied Code!' : 'Copy Verification Script'}</span>
+                          <span>
+                            {copiedScript
+                              ? (displayLanguage === 'fa' ? 'کد کپی شد!' : 'Copied Code!')
+                              : (displayLanguage === 'fa' ? 'کپی اسکریپت اعتبارسنجی' : 'Copy Verification Script')}
+                          </span>
                         </button>
                       </div>
 
                       <div className="relative rounded-xl overflow-hidden border dark:border-zinc-800 border-slate-300 bg-[#050505]">
                         <div className="px-4 py-2 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-400">
                           <span>{analysisResult.validationPackage.executableVerificationScript.title}</span>
-                          <span className="text-[#00ff41] font-bold">READY TO RUN</span>
+                          <span className="text-[#00ff41] font-bold">
+                            {displayLanguage === 'fa' ? 'آماده اجرا • درج‌شده در گزارش PDF' : 'READY TO RUN • INCLUDED IN PDF'}
+                          </span>
                         </div>
                         <pre className="p-4 sm:p-5 text-xs sm:text-sm font-mono text-emerald-400 overflow-x-auto leading-relaxed select-all">
                           <code>{analysisResult.validationPackage.executableVerificationScript.code}</code>

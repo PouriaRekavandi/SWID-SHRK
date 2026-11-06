@@ -166,6 +166,225 @@ Maintain a professional, scholarly, and supportive tone. Provide rigorous scient
     }
   });
 
+  // Dedicated Academic Paper Analysis Endpoint
+  app.post('/api/analyze-paper', async (req: Request, res: Response) => {
+    const { text, pdfBase64, fileName } = req.body || {};
+    if (!text && !pdfBase64) {
+      return res.status(400).json({ error: 'Text or PDF data is required' });
+    }
+
+    const ai = getAIClient();
+    if (!ai) {
+      return res.status(503).json({ error: 'API key not configured' });
+    }
+
+    try {
+      const parts: any[] = [];
+      if (pdfBase64) {
+        const cleanBase64 = pdfBase64.includes(',') ? pdfBase64.split(',')[1] : pdfBase64;
+        parts.push({
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: cleanBase64,
+          },
+        });
+      }
+      if (text) {
+        parts.push({
+          text: `Here is the actual manuscript text extracted from "${fileName || 'uploaded manuscript'}":\n\n${text.slice(0, 45000)}`,
+        });
+      }
+
+      parts.push({
+        text: `You are an expert scientific manuscript analyst at the SWID-SHRK Mechanical & Aerospace Engineering Research Lab at UMBC.
+Thoroughly examine the uploaded paper and extract the exact parameters, data, and references.
+Return ONLY a valid JSON object adhering strictly to the 6 academic sections and validation package.
+
+Output JSON format:
+{
+  "id": "analysis-${Date.now()}",
+  "paperTitle": "Exact Full Title extracted from manuscript",
+  "authors": "All Authors with affiliations",
+  "journalOrConference": "Target journal or conference",
+  "publicationYear": "Publication year",
+  "isMultiPaper": false,
+  "executiveSummary": "Scholarly 3-4 sentence summary of the paper's core contributions",
+  "criticalTakeaway": "Primary novel discovery or engineering milestone",
+  "keywords": ["5-8 technical keywords"],
+  "paperNameSection": {
+    "title": "Exact Title",
+    "authors": "Full Authors list",
+    "journalOrConference": "Venue",
+    "publicationYear": "Year",
+    "citation": "Academic Citation (APA/IEEE)"
+  },
+  "purposeSection": {
+    "summary": "Summary of research aim and scope",
+    "hypotheses": ["Testable scientific hypothesis 1", "Hypothesis 2"],
+    "targetSystems": ["Structural or physical system"],
+    "engineeringScope": "Operational domain",
+    "bulletPoints": ["Core aim 1", "Core aim 2"]
+  },
+  "researchGapSection": {
+    "summary": "How voids were extracted from previous literature",
+    "extractedFromReferences": [
+      {
+        "reference": "Reference Author et al. (Year)",
+        "priorFindingOrAssumption": "What that prior work established",
+        "extractedGapOrVoid": "Exact gap or limitation exposed by this manuscript"
+      }
+    ],
+    "theoreticalVoids": ["Theoretical void 1", "Theoretical void 2"],
+    "bulletPoints": ["Gap bullet 1", "Gap bullet 2"]
+  },
+  "methodsAndFacilitiesSection": {
+    "summary": "Detailed breakdown of experimental rigs, testing standards, and computational solvers",
+    "facilitiesAndInstruments": ["Testing machine, sensor, or characterization facility"],
+    "testingStandards": ["Standard e.g. ASTM, ISO, or laboratory protocol"],
+    "computationalSolvers": ["Solvers e.g. Abaqus/Explicit, Abaqus/Standard, UMAT/VUMAT"],
+    "specimensAndMaterials": ["Specimen dimensions, geometry, material composition"],
+    "bulletPoints": ["Method highlight 1", "Method highlight 2"]
+  },
+  "resultsSection": {
+    "summary": "Quantitative results and physical mechanics",
+    "quantitativeMetrics": ["Numerical metrics with units and percentage deviations"],
+    "mechanismsAndDiscoveries": ["Deformation or failure mechanisms discovered"],
+    "bulletPoints": ["Key result 1", "Key result 2"]
+  },
+  "futureDirectionsSection": {
+    "summary": "Strategic research directions for future studies",
+    "highPriorityRoadmap": ["High priority research path"],
+    "unresolvedQuestions": ["Unresolved open question"],
+    "scalingRoadblocks": ["Computational or fabrication roadblock"],
+    "bulletPoints": ["Future direction 1", "Future direction 2"]
+  },
+  "validationPackage": {
+    "summary": "Independent replication parameters, specimen geometry, material constants, and boundary conditions for this paper",
+    "geometricalDimensions": [
+      {
+        "feature": "Specimen feature or domain",
+        "dimension": "Exact dimension with unit",
+        "tolerance": "Tolerance band",
+        "notes": "Specimen preparation note"
+      }
+    ],
+    "materialProperties": [
+      {
+        "name": "Material parameter (e.g. Young's Modulus, Yield Strength, Poisson's Ratio)",
+        "symbol": "E, sigma_y, nu",
+        "value": "Exact value from manuscript",
+        "unit": "GPa, MPa, etc.",
+        "description": "Constitutive parameter description"
+      }
+    ],
+    "boundaryConditions": [
+      {
+        "region": "Clamped Base / Loading Interface",
+        "type": "Fixed, Displaced, Pressure, Thermal",
+        "formulation": "Boundary equations",
+        "degreesOfFreedom": "Restrained degrees of freedom"
+      }
+    ],
+    "meshAndDiscretization": {
+      "elementType": "Element designation (e.g. C3D8R, C3D20R)",
+      "characteristicMeshSize": "Discretization seed size",
+      "formulation": "Geometric nonlinearity, contact formulation",
+      "stepTime": "Time incrementation"
+    },
+    "validationBenchmarks": [
+      {
+        "targetMetric": "Validation metric",
+        "expectedBenchmarkValue": "Benchmark numerical target",
+        "experimentalErrorTolerance": "Tolerance band",
+        "acceptanceCriterion": "Criteria (e.g. R2 >= 0.98)"
+      }
+    ],
+    "executableVerificationScript": {
+      "language": "python",
+      "title": "Verification and benchmark calculation script",
+      "code": "# Python script to verify model output against published benchmark"
+    }
+  },
+  "dimensions": {
+    "objective": { "title": "Purpose & Objectives", "summary": "", "bulletPoints": [] },
+    "researchGap": { "title": "Research Gap & Reference Analysis", "summary": "", "bulletPoints": [] },
+    "methodology": { "title": "Methods, Facilities & Solvers", "summary": "", "bulletPoints": [] },
+    "findings": { "title": "Quantitative Results & Mechanisms", "summary": "", "bulletPoints": [] },
+    "futureGaps": { "title": "Future Directions & Scaling", "summary": "", "bulletPoints": [] }
+  },
+  "analyzedAt": "${new Date().toISOString()}",
+  "modelUsed": "gemini-3.8-flash",
+  "sourceType": "pdf",
+  "fileName": "${fileName || 'manuscript.pdf'}"
+}
+
+Strictly output ONLY the JSON object without code markdown ticks or conversational text.`
+      });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: [{ role: 'user', parts }],
+        config: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const jsonText = response.text || '{}';
+      const cleanJson = jsonText.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      return res.json(parsed);
+    } catch (apiErr: any) {
+      console.error('Gemini paper analysis error:', apiErr);
+      return res.status(500).json({ error: apiErr.message || 'Failed to analyze paper' });
+    }
+  });
+
+  // Dedicated Complete Academic Persian Translation Endpoint
+  app.post('/api/translate-analysis', async (req: Request, res: Response) => {
+    const { analysis } = req.body || {};
+    if (!analysis) {
+      return res.status(400).json({ error: 'Analysis object is required' });
+    }
+
+    const ai = getAIClient();
+    if (!ai) {
+      return res.status(503).json({ error: 'API key not configured' });
+    }
+
+    try {
+      const prompt = `You are a distinguished professor of Mechanical and Aerospace Engineering and an expert translator of scholarly scientific literature into academic Persian (فارسی تخصصی و دانشگاهی مهندسی مکانیک و هوافضا).
+
+Translate the following 6-section academic paper analysis into 100% pure, fluent, professional academic Persian (Farsi).
+
+CRITICAL INSTRUCTIONS:
+1. Every single prose text, paper title, executive summary, critical takeaway, hypothesis, target system, engineering scope, bullet point, reference extraction (reference, priorFindingOrAssumption, extractedGapOrVoid), theoretical void, facility, testing standard, solver description, specimen, quantitative metric, physical mechanism, future direction roadmap, open question, scaling roadblock, and validation parameter feature/name/description/notes MUST BE COMPLETELY TRANSLATED INTO HIGH-LEVEL SCHOLARLY PERSIAN.
+2. DO NOT leave ANY English sentences, clauses, or untranslated paragraphs. The Persian version must be completely in Persian.
+3. Preserve mathematical symbols, numbers, units, and standard engineering designations (e.g., E, ν, σ_y, GPa, MPa, C3D8R, FEA, Abaqus), but translate all prose and descriptions.
+4. Return ONLY a valid JSON object matching the exact input structure, with all text fields translated into Persian.
+
+Input Analysis JSON:
+${JSON.stringify(analysis, null, 2)}
+
+Strictly output ONLY the valid translated JSON object without markdown code blocks or extra text.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const jsonText = response.text || '{}';
+      const cleanJson = jsonText.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      return res.json(parsed);
+    } catch (err: any) {
+      console.error('Academic translation error:', err);
+      return res.status(500).json({ error: err.message || 'Translation failed' });
+    }
+  });
+
   if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },

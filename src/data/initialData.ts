@@ -1,4 +1,4 @@
-import { Publication, StudentRecord, VideoTutorial } from '../types';
+import { Publication, StudentRecord, VideoTutorial, TeamMember } from '../types';
 
 export const INITIAL_STUDENTS: StudentRecord[] = [
   {
@@ -243,5 +243,63 @@ export const ANTIPRISM_VIDEOS: VideoTutorial[] = [
     url: 'https://github.com/PouriaRekavandi/SWID-SHRK/releases/download/Abaqus/antiprism-tutorial-Part2.mp4',
     description: 'Meshing, dynamic explicit crush solver settings, contact penalty formulations, and energy extraction.',
     duration: 'Part 2'
+  }
+];
+
+export const PLATE_ANTIPRISM_VIDEOS: VideoTutorial[] = ANTIPRISM_VIDEOS;
+export const STRUT_ANTIPRISM_VIDEOS: VideoTutorial[] = ANTIPRISM_VIDEOS;
+export const GOOGLE_DRIVE_PLATE_FOLDER = 'https://drive.google.com';
+export const GOOGLE_DRIVE_STRUT_FOLDER = 'https://drive.google.com';
+
+export const INITIAL_TEAM_MEMBERS: TeamMember[] = [
+  {
+    id: 'pi-pouria',
+    name: 'Dr. Pouria Hejazi Rekavandi',
+    role: 'Principal Investigator & Lab Director',
+    category: 'pi',
+    affiliation: 'University of Maryland, Baltimore County (UMBC)',
+    email: 'pouriarekavandi@gmail.com',
+    researchFocus: ['Multiaxial Fatigue', 'Fracture Mechanics', 'Neural Biomechanics', 'AntiPrism Metamaterials', 'Abaqus CAE'],
+    bio: 'Directing the SWID-SHRK Aerospace and Mechanics Laboratory. Pioneering research in multiaxial thermo-mechanical fatigue, brain trauma viscoelastic constitutive formulations, and energy-absorbing cellular metamaterials.',
+    status: 'Active',
+    joinedYear: '2020',
+    googleScholar: 'https://scholar.google.com/citations?user=pouriarekavandi',
+    linkedin: 'https://www.linkedin.com/in/pouria-hejazi-rekavandi-ph-d-71b56910a/'
+  },
+  {
+    id: 'phd-alireza',
+    name: 'Alireza Karimi',
+    role: 'Doctoral Researcher',
+    category: 'phd',
+    affiliation: 'UMBC Mechanical Engineering',
+    email: 'akarimi1@umbc.edu',
+    researchFocus: ['Neural Biomechanics', 'Traumatic Brain Injury', 'High-Rate Viscoelasticity', 'VUMAT Subroutines'],
+    bio: 'Investigating multiscale strain concentrations across brain parenchyma and grey-white matter interfaces under rotational kinematics.',
+    status: 'Active',
+    joinedYear: '2023'
+  },
+  {
+    id: 'phd-elena',
+    name: 'Elena Rostami',
+    role: 'Doctoral Researcher',
+    category: 'phd',
+    affiliation: 'UMBC Mechanical Engineering',
+    email: 'erostami@umbc.edu',
+    researchFocus: ['3D AntiPrism Metamaterials', 'Shock Wave Dissipation', 'Additive Manufacturing', 'Explicit Dynamic Crush'],
+    bio: 'Developing lightweight energy-absorbing cellular topologies and non-linear crushing formulations for aerospace impact protection.',
+    status: 'Active',
+    joinedYear: '2022'
+  },
+  {
+    id: 'msc-marcus',
+    name: 'Marcus Vance',
+    role: 'Research Associate & Alumni',
+    category: 'alumni',
+    affiliation: 'Johns Hopkins Applied Physics Laboratory',
+    email: 'mvance@umbc.edu',
+    researchFocus: ['Digital Image Correlation', 'Fracture in Cementitious Materials', 'Cohesive Zone Modeling'],
+    bio: 'Focused on high-speed stereo DIC and mixed-mode fracture characterization.',
+    status: 'Alumni',
+    joinedYear: '2023'
   }
 ];

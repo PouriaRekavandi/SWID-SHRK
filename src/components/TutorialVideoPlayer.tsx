@@ -141,14 +141,16 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
     }
   };
 
+  const cues = useMemo(() => activeVttTrack?.cues || [], [activeVttTrack]);
+
   const handlePrevCue = () => {
-    if (!activeVttTrack) return;
+    if (!cues.length) return;
     setCurrentCueIndex((prev) => Math.max(0, prev - 1));
   };
 
   const handleNextCue = () => {
-    if (!activeVttTrack) return;
-    setCurrentCueIndex((prev) => Math.min(activeVttTrack.cues.length - 1, prev + 1));
+    if (!cues.length) return;
+    setCurrentCueIndex((prev) => Math.min(cues.length - 1, prev + 1));
   };
 
   const handleSelectCue = (index: number) => {
@@ -165,9 +167,9 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
   };
 
   const handleCopyTranscript = async () => {
-    if (!activeVttTrack) return;
-    const text = activeVttTrack.cues
-      .map((c, i) => `[${c.startFormatted} --> ${c.endFormatted}] ${c.speaker ? `${c.speaker}: ` : ''}${c.text}`)
+    if (!cues.length) return;
+    const text = cues
+      .map((c) => `[${c.startFormatted} --> ${c.endFormatted}] ${c.speaker ? `${c.speaker}: ` : ''}${c.text}`)
       .join('\n\n');
     try {
       if (navigator.clipboard) {
@@ -185,17 +187,17 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
 
   // Filter cues for transcript drawer
   const filteredCues = useMemo(() => {
-    if (!activeVttTrack) return [];
-    if (!transcriptSearch.trim()) return activeVttTrack.cues;
+    if (!cues.length) return [];
+    if (!transcriptSearch.trim()) return cues;
     const query = transcriptSearch.toLowerCase();
-    return activeVttTrack.cues.filter((cue) =>
+    return cues.filter((cue) =>
       cue.text.toLowerCase().includes(query) ||
       (cue.speaker && cue.speaker.toLowerCase().includes(query)) ||
       cue.startFormatted.includes(query)
     );
-  }, [activeVttTrack, transcriptSearch]);
+  }, [cues, transcriptSearch]);
 
-  const currentCue: VttCue | undefined = activeVttTrack?.cues[currentCueIndex];
+  const currentCue: VttCue | undefined = cues[currentCueIndex];
 
   // Video embed URL
   const embedUrl = video.embedUrl || (video.driveId ? `https://drive.google.com/file/d/${video.driveId}/preview` : video.url);
@@ -344,7 +346,7 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
               </span>
               <span className="text-zinc-600 hidden xs:inline">|</span>
               <span className="text-amber-400 font-bold text-[11px] hidden xs:inline">
-                Cue {currentCueIndex + 1} of {activeVttTrack?.cues.length || 1}
+                Cue {currentCueIndex + 1} of {cues.length || 1}
               </span>
             </div>
 
@@ -362,7 +364,7 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
               <button
                 type="button"
                 onClick={handleNextCue}
-                disabled={!activeVttTrack || currentCueIndex === activeVttTrack.cues.length - 1}
+                disabled={!cues.length || currentCueIndex >= cues.length - 1}
                 className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700 text-zinc-200 text-[11px] font-bold cursor-pointer transition-colors"
                 title="Next subtitle cue"
               >
@@ -479,7 +481,7 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
               <FileText className="w-3.5 h-3.5 text-sky-400" />
               <span>Interactive Transcript</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-sky-500/20 text-sky-400">
-                {activeVttTrack?.cues.length || 0} Cues
+                {cues.length} Cues
               </span>
               {showTranscript ? <ChevronUp className="w-3.5 h-3.5 ml-0.5" /> : <ChevronDown className="w-3.5 h-3.5 ml-0.5" />}
             </button>
@@ -645,12 +647,12 @@ export const TutorialVideoPlayer: React.FC<TutorialVideoPlayerProps> = ({
                 </div>
               ) : (
                 filteredCues.map((cue, idx) => {
-                  const isSelected = activeVttTrack.cues[currentCueIndex] === cue;
+                  const isSelected = cues[currentCueIndex] === cue;
                   return (
                     <div
                       key={idx}
                       onClick={() => {
-                        const originalIndex = activeVttTrack.cues.indexOf(cue);
+                        const originalIndex = cues.indexOf(cue);
                         if (originalIndex !== -1) handleSelectCue(originalIndex);
                       }}
                       className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer flex flex-col sm:flex-row items-start gap-2.5 ${

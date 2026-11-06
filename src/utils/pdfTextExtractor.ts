@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-import pako from 'pako';
+import { inflate, inflateRaw } from 'pako';
 
 export interface ExtractedPDFResult {
   fullText: string;
@@ -158,10 +158,12 @@ function fallbackDecompressPDF(
 
     let decomp = '';
     try {
-      decomp = pako.inflate(rawBytes, { to: 'string' });
+      const inflated = inflate(rawBytes);
+      decomp = new TextDecoder('utf-8', { fatal: false }).decode(inflated);
     } catch {
       try {
-        decomp = pako.inflateRaw(rawBytes, { to: 'string' });
+        const inflatedRaw = inflateRaw(rawBytes);
+        decomp = new TextDecoder('utf-8', { fatal: false }).decode(inflatedRaw);
       } catch {
         decomp = raw;
       }

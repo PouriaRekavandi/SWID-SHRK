@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabKey } from './types';
 import { ProjectBanner } from './components/ProjectBanner';
 import { Navbar } from './components/Navbar';
@@ -11,13 +11,42 @@ import { EquipmentSection } from './components/EquipmentSection';
 import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
 import { AbaqusGallery } from './components/AbaqusGallery';
+import { PaperAnalyzer } from './components/PaperAnalyzer';
+import { Team } from './components/Team';
+import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
 import { Footer } from './components/Footer';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
 import { CheckCircle2, AlertCircle, Bot, Sparkles } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab') as TabKey;
+        if (tabParam) return tabParam;
+      } catch {
+        // ignore
+      }
+    }
+    return 'home';
+  });
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
+
+  // Sync with browser back/forward buttons and query params
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = (params.get('tab') as TabKey) || 'home';
+        setActiveTab(tabParam);
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError });
@@ -29,6 +58,17 @@ export const App: React.FC = () => {
   const handleSelectTab = (tab: TabKey) => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      const url = new URL(window.location.href);
+      if (tab === 'home') {
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('tab', tab);
+      }
+      window.history.pushState({}, '', url.toString());
+    } catch {
+      // ignore
+    }
   };
 
   return (
@@ -124,6 +164,24 @@ export const App: React.FC = () => {
         {activeTab === 'contact' && (
           <div className="max-w-6xl mx-auto px-4 py-12">
             <ContactSection onNotify={showToast} />
+          </div>
+        )}
+
+        {activeTab === 'analyzer' && (
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <PaperAnalyzer onNotify={showToast} />
+          </div>
+        )}
+
+        {activeTab === 'team' && (
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <Team onNotify={showToast} onSelectTab={handleSelectTab} />
+          </div>
+        )}
+
+        {activeTab === 'qa' && (
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <EngineeringQAChatbox onNotify={showToast} />
           </div>
         )}
       </main>

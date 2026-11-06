@@ -51,7 +51,7 @@ export function exportEnglishVectorPDF(analysis: PaperAnalysisResult): void {
     y + 15
   );
   doc.text(
-    `Analysis Date: ${new Date(analysis.analyzedAt).toLocaleDateString()} • Format: ${analysis.sourceType.toUpperCase()} • Citation: ${analysis.paperNameSection?.citation || analysis.paperTitle}`,
+    `Analysis Date: ${new Date(analysis.analyzedAt).toLocaleDateString()} • Format: ${(analysis.sourceType || 'pdf').toUpperCase()} • Citation: ${analysis.paperNameSection?.citation || analysis.paperTitle}`,
     margin + 6,
     y + 20
   );
@@ -664,6 +664,82 @@ export async function exportPersianOrBilingualPDF(
   const val = analysis.validationPackage;
   const valFa = faAnalysis.validationPackage;
 
+  const pName = faAnalysis.paperNameSection || {
+    title: faAnalysis.paperTitle,
+    authors: faAnalysis.authors,
+    citation: faAnalysis.paperTitle,
+    journalOrConference: faAnalysis.journalOrConference || '',
+    publicationYear: faAnalysis.publicationYear || ''
+  };
+  const purpFa = faAnalysis.purposeSection || {
+    summary: faAnalysis.executiveSummary,
+    hypotheses: [],
+    targetSystems: [],
+    engineeringScope: '',
+    bulletPoints: []
+  };
+  const purpEn = analysis.purposeSection || {
+    summary: analysis.executiveSummary,
+    hypotheses: [],
+    targetSystems: [],
+    engineeringScope: '',
+    bulletPoints: []
+  };
+  const gapFa = faAnalysis.researchGapSection || {
+    summary: '',
+    extractedFromReferences: [],
+    theoreticalVoids: [],
+    bulletPoints: []
+  };
+  const gapEn = analysis.researchGapSection || {
+    summary: '',
+    extractedFromReferences: [],
+    theoreticalVoids: [],
+    bulletPoints: []
+  };
+  const methFa = faAnalysis.methodsAndFacilitiesSection || {
+    summary: '',
+    facilitiesAndInstruments: [],
+    testingStandards: [],
+    computationalSolvers: [],
+    specimensAndMaterials: [],
+    bulletPoints: []
+  };
+  const methEn = analysis.methodsAndFacilitiesSection || {
+    summary: '',
+    facilitiesAndInstruments: [],
+    testingStandards: [],
+    computationalSolvers: [],
+    specimensAndMaterials: [],
+    bulletPoints: []
+  };
+  const resFa = faAnalysis.resultsSection || {
+    summary: '',
+    quantitativeMetrics: [],
+    mechanismsAndDiscoveries: [],
+    bulletPoints: []
+  };
+  const resEn = analysis.resultsSection || {
+    summary: '',
+    quantitativeMetrics: [],
+    mechanismsAndDiscoveries: [],
+    bulletPoints: []
+  };
+  const futFa = faAnalysis.futureDirectionsSection || {
+    summary: '',
+    highPriorityRoadmap: [],
+    unresolvedQuestions: [],
+    scalingRoadblocks: [],
+    bulletPoints: []
+  };
+  const futEn = analysis.futureDirectionsSection || {
+    summary: '',
+    highPriorityRoadmap: [],
+    unresolvedQuestions: [],
+    scalingRoadblocks: [],
+    bulletPoints: []
+  };
+
   // Create an off-screen HTML document styled with Vazirmatn font
   const container = document.createElement('div');
   container.style.position = 'fixed';
@@ -699,21 +775,21 @@ export async function exportPersianOrBilingualPDF(
     <!-- SECTION 1: NAME OF THE CHOSEN PAPERS -->
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 22px; page-break-inside: avoid;">
       <div style="background-color: #0284c7; color: white; padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between;">
-        <span>۱. نام مقالات انتخاب شده (Name of the Chosen Papers)</span>
+        <span>${isBilingual ? '01. Name of the Chosen Papers / ۱. نام مقالات انتخاب شده' : '۱. نام مقالات انتخاب شده'}</span>
         ${isBilingual ? '<span style="font-size: 12px; opacity: 0.9;">Section 01</span>' : ''}
       </div>
       <div style="padding: 16px; background-color: #ffffff;">
         <h1 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; line-height: 1.5; direction: ${isBilingual ? 'ltr' : 'rtl'};">
-          ${isBilingual ? `${analysis.paperTitle}<br/><span style="color: #0369a1; font-size: 16px; direction: rtl; display: block; margin-top: 6px;">${faAnalysis.paperNameSection.title}</span>` : faAnalysis.paperNameSection.title}
+          ${isBilingual ? `${analysis.paperTitle}<br/><span style="color: #0369a1; font-size: 16px; direction: rtl; display: block; margin-top: 6px;">${pName.title}</span>` : pName.title}
         </h1>
-        <div style="font-size: 13px; color: #475569; margin-bottom: 8px;">
-          <strong>${isBilingual ? 'Authors / نویسندگان:' : 'نویسندگان:'}</strong> ${isBilingual ? `${analysis.authors} | ${faAnalysis.paperNameSection.authors}` : faAnalysis.paperNameSection.authors}
+        <div style="font-size: 13px; color: #475569; margin-bottom: 8px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
+          <strong>${isBilingual ? 'Authors / نویسندگان:' : 'نویسندگان:'}</strong> ${isBilingual ? `${analysis.authors} | ${pName.authors}` : pName.authors}
         </div>
-        <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
-          <strong>${isBilingual ? 'Target Venue / نشریه:' : 'نشریه یا کنفرانس:'}</strong> ${isBilingual ? `${analysis.journalOrConference || 'Scientific Literature'} (${analysis.publicationYear || '2025'})` : `${faAnalysis.paperNameSection.journalOrConference || 'ادبیات معتبر علمی'} (${faAnalysis.paperNameSection.publicationYear || '۲۰۲۵'})`}
+        <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
+          <strong>${isBilingual ? 'Target Venue / نشریه:' : 'نشریه یا کنفرانس:'}</strong> ${isBilingual ? `${analysis.journalOrConference || 'Scientific Literature'} (${analysis.publicationYear || '2025'})` : `${pName.journalOrConference || 'ادبیات معتبر علمی'} (${pName.publicationYear || '۲۰۲۵'})`}
         </div>
-        <div style="background-color: #f0f9ff; border-left: 3px solid #0284c7; padding: 8px 12px; font-size: 12px; color: #0369a1; border-radius: 4px;">
-          <strong>استناد دانشگاهی / Academic Citation:</strong> ${faAnalysis.paperNameSection.citation}
+        <div style="background-color: #f0f9ff; border-left: 3px solid #0284c7; padding: 8px 12px; font-size: 12px; color: #0369a1; border-radius: 4px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
+          <strong>${isBilingual ? 'Academic Citation / استناد دانشگاهی:' : 'استناد دانشگاهی:'}</strong> ${pName.citation}
         </div>
       </div>
     </div>
@@ -721,20 +797,22 @@ export async function exportPersianOrBilingualPDF(
     <!-- SECTION 2: PURPOSE OF THE PAPERS -->
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 22px; page-break-inside: avoid;">
       <div style="background-color: #2563eb; color: white; padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between;">
-        <span>۲. هدف مقالات (Purpose of the Papers)</span>
+        <span>${isBilingual ? '02. Purpose of the Papers / ۲. هدف مقالات' : '۲. هدف مقالات و فرضیات پژوهش'}</span>
         ${isBilingual ? '<span style="font-size: 12px; opacity: 0.9;">Section 02</span>' : ''}
       </div>
       <div style="padding: 16px; background-color: #ffffff;">
         <div style="font-size: 13px; color: #1e293b; line-height: 1.8; margin-bottom: 12px; direction: rtl;">
-          ${faAnalysis.purposeSection.summary}
+          ${purpFa.summary}
         </div>
         ${isBilingual ? `
           <div style="font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 12px; direction: ltr; font-style: italic; background-color: #eff6ff; padding: 8px 12px; border-radius: 6px;">
-            ${analysis.purposeSection.summary}
+            ${purpEn.summary}
           </div>
         ` : ''}
-        <div style="font-size: 12.5px; color: #1d4ed8; font-weight: 700; margin-bottom: 6px;">فرضیه‌های بنیادین و دامنه مهندسی:</div>
-        ${faAnalysis.purposeSection.hypotheses.map(hyp => `
+        <div style="font-size: 12.5px; color: #1d4ed8; font-weight: 700; margin-bottom: 6px; direction: rtl;">
+          ${isBilingual ? 'Central Hypotheses & Engineering Scope / فرضیه‌های بنیادین و دامنه مهندسی:' : 'فرضیه‌های بنیادین و دامنه مهندسی:'}
+        </div>
+        ${purpFa.hypotheses.map(hyp => `
           <div style="font-size: 12px; color: #334155; line-height: 1.7; margin-bottom: 4px; direction: rtl;">• ${hyp}</div>
         `).join('')}
       </div>
@@ -743,26 +821,28 @@ export async function exportPersianOrBilingualPDF(
     <!-- SECTION 3: RESEARCH GAP AND HOW EXTRACTED FROM REFERENCES -->
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 22px; page-break-inside: avoid;">
       <div style="background-color: #ea580c; color: white; padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between;">
-        <span>۳. شکاف پژوهشی و نحوه استخراج آن از مراجع (Research Gap & Reference Extraction)</span>
+        <span>${isBilingual ? '03. Research Gap & Reference Extraction / ۳. شکاف پژوهشی' : '۳. شکاف پژوهشی و تحلیل مراجع پیشین'}</span>
         ${isBilingual ? '<span style="font-size: 12px; opacity: 0.9;">Section 03</span>' : ''}
       </div>
       <div style="padding: 16px; background-color: #ffffff;">
         <div style="font-size: 13px; color: #1e293b; line-height: 1.8; margin-bottom: 12px; direction: rtl;">
-          ${faAnalysis.researchGapSection.summary}
+          ${gapFa.summary}
         </div>
         ${isBilingual ? `
           <div style="font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 12px; direction: ltr; font-style: italic; background-color: #fff7ed; padding: 8px 12px; border-radius: 6px;">
-            ${analysis.researchGapSection.summary}
+            ${gapEn.summary}
           </div>
         ` : ''}
 
-        <div style="font-size: 12.5px; font-weight: 700; color: #c2410c; margin-bottom: 8px;">واکاوی مرجع به مرجع خلاهای علمی (Reference Void Breakdown):</div>
+        <div style="font-size: 12.5px; font-weight: 700; color: #c2410c; margin-bottom: 8px; direction: rtl;">
+          ${isBilingual ? 'Reference Void Breakdown / واکاوی مرجع به مرجع خلاهای علمی:' : 'واکاوی مرجع به مرجع خلاهای علمی:'}
+        </div>
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-          ${faAnalysis.researchGapSection.extractedFromReferences.map((ref, idx) => `
+          ${gapFa.extractedFromReferences.map((ref, idx) => `
             <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 10px 14px; direction: rtl;">
               <div style="font-size: 12.5px; font-weight: 700; color: #9a3412;">[مرجع ${idx + 1}] ${ref.reference}</div>
-              <div style="font-size: 12px; color: #64748b; margin-top: 3px;"><strong>فرضیه پیشین:</strong> ${ref.priorFindingOrAssumption}</div>
-              <div style="font-size: 12px; color: #c2410c; font-weight: 600; margin-top: 3px;"><strong>خلأ استخراج شده:</strong> ${ref.extractedGapOrVoid}</div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 3px;"><strong>فرضیه یا یافته پیشین:</strong> ${ref.priorFindingOrAssumption}</div>
+              <div style="font-size: 12px; color: #c2410c; font-weight: 600; margin-top: 3px;"><strong>خلأ علمی استخراج‌شده:</strong> ${ref.extractedGapOrVoid}</div>
             </div>
           `).join('')}
         </div>
@@ -772,34 +852,36 @@ export async function exportPersianOrBilingualPDF(
     <!-- SECTION 4: HOW TO ACHIEVE RESULTS (METHODS, INSTRUMENTS, FACILITIES) -->
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 22px; page-break-inside: avoid;">
       <div style="background-color: #7c3aed; color: white; padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between;">
-        <span>۴. نحوه دستیابی به نتایج: روش‌ها، تجهیزات، استانداردها و امکانات آزمایشگاهی</span>
+        <span>${isBilingual ? '04. Methods, Facilities & Solvers / ۴. روش‌ها و تجهیزات' : '۴. نحوه دستیابی به نتایج: روش‌ها، تجهیزات، استانداردها و امکانات آزمایشگاهی'}</span>
         ${isBilingual ? '<span style="font-size: 12px; opacity: 0.9;">Section 04</span>' : ''}
       </div>
       <div style="padding: 16px; background-color: #ffffff;">
         <div style="font-size: 13px; color: #1e293b; line-height: 1.8; margin-bottom: 12px; direction: rtl;">
-          ${faAnalysis.methodsAndFacilitiesSection.summary}
+          ${methFa.summary}
         </div>
         ${isBilingual ? `
           <div style="font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 12px; direction: ltr; font-style: italic; background-color: #f5f3ff; padding: 8px 12px; border-radius: 6px;">
-            ${analysis.methodsAndFacilitiesSection.summary}
+            ${methEn.summary}
           </div>
         ` : ''}
 
-        <div style="font-size: 12.5px; font-weight: 700; color: #6d28d9; margin-bottom: 6px;">تجهیزات و ابزارآلات آزمایشگاهی (Instruments & Hardware):</div>
+        <div style="font-size: 12.5px; font-weight: 700; color: #6d28d9; margin-bottom: 6px; direction: rtl;">
+          ${isBilingual ? 'Instruments & Hardware / تجهیزات و ابزارآلات آزمایشگاهی:' : 'تجهیزات و ابزارآلات آزمایشگاهی:'}
+        </div>
         <div style="margin-bottom: 10px;">
-          ${faAnalysis.methodsAndFacilitiesSection.facilitiesAndInstruments.map(fac => `
+          ${methFa.facilitiesAndInstruments.map(fac => `
             <div style="font-size: 12px; color: #334155; line-height: 1.7; margin-bottom: 3px; direction: rtl;">• ${fac}</div>
           `).join('')}
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; font-size: 12px; color: #475569;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; font-size: 12px; color: #475569; direction: rtl;">
           <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 6px; padding: 8px 12px;">
             <div style="font-weight: 700; color: #7c3aed; margin-bottom: 4px;">استانداردهای آزمون:</div>
-            <div>${faAnalysis.methodsAndFacilitiesSection.testingStandards.join(' • ')}</div>
+            <div>${methFa.testingStandards.join(' • ')}</div>
           </div>
           <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 6px; padding: 8px 12px;">
             <div style="font-weight: 700; color: #7c3aed; margin-bottom: 4px;">حل‌کننده‌های محاسباتی:</div>
-            <div>${faAnalysis.methodsAndFacilitiesSection.computationalSolvers.join(' • ')}</div>
+            <div>${methFa.computationalSolvers.join(' • ')}</div>
           </div>
         </div>
       </div>
@@ -808,21 +890,23 @@ export async function exportPersianOrBilingualPDF(
     <!-- SECTION 5: RESULTS -->
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 22px; page-break-inside: avoid;">
       <div style="background-color: #059669; color: white; padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between;">
-        <span>۵. نتایج و یافته‌های کمی (Results & Quantitative Findings)</span>
+        <span>${isBilingual ? '05. Results & Quantitative Findings / ۵. نتایج و دستاوردهای کمی' : '۵. نتایج و دستاوردهای کمی'}</span>
         ${isBilingual ? '<span style="font-size: 12px; opacity: 0.9;">Section 05</span>' : ''}
       </div>
       <div style="padding: 16px; background-color: #ffffff;">
         <div style="font-size: 13px; color: #1e293b; line-height: 1.8; margin-bottom: 12px; direction: rtl;">
-          ${faAnalysis.resultsSection.summary}
+          ${resFa.summary}
         </div>
         ${isBilingual ? `
           <div style="font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 12px; direction: ltr; font-style: italic; background-color: #ecfdf5; padding: 8px 12px; border-radius: 6px;">
-            ${analysis.resultsSection.summary}
+            ${resEn.summary}
           </div>
         ` : ''}
 
-        <div style="font-size: 12.5px; font-weight: 700; color: #047857; margin-bottom: 6px;">دستاوردهای کمی و مکانیسم‌های فیزیکی:</div>
-        ${faAnalysis.resultsSection.quantitativeMetrics.map(q => `
+        <div style="font-size: 12.5px; font-weight: 700; color: #047857; margin-bottom: 6px; direction: rtl;">
+          ${isBilingual ? 'Quantitative Findings & Physics / دستاوردهای کمی و سازوکارهای فیزیکی:' : 'دستاوردهای کمی و سازوکارهای فیزیکی:'}
+        </div>
+        ${resFa.quantitativeMetrics.map(q => `
           <div style="font-size: 12px; color: #064e3b; line-height: 1.7; margin-bottom: 4px; direction: rtl;">• ${q}</div>
         `).join('')}
       </div>
@@ -831,26 +915,30 @@ export async function exportPersianOrBilingualPDF(
     <!-- SECTION 6: PROPOSE FUTURE DIRECTIONS -->
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 22px; page-break-inside: avoid;">
       <div style="background-color: #db2777; color: white; padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between;">
-        <span>۶. پیشنهاد مسیرهای پژوهشی آینده (Propose Future Directions)</span>
+        <span>${isBilingual ? '06. Future Directions / ۶. مسیرهای پژوهشی آینده' : '۶. پیشنهاد مسیرهای پژوهشی آینده'}</span>
         ${isBilingual ? '<span style="font-size: 12px; opacity: 0.9;">Section 06</span>' : ''}
       </div>
       <div style="padding: 16px; background-color: #ffffff;">
         <div style="font-size: 13px; color: #1e293b; line-height: 1.8; margin-bottom: 12px; direction: rtl;">
-          ${faAnalysis.futureDirectionsSection.summary}
+          ${futFa.summary}
         </div>
         ${isBilingual ? `
           <div style="font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 12px; direction: ltr; font-style: italic; background-color: #fdf2f8; padding: 8px 12px; border-radius: 6px;">
-            ${analysis.futureDirectionsSection.summary}
+            ${futEn.summary}
           </div>
         ` : ''}
 
-        <div style="font-size: 12.5px; font-weight: 700; color: #be185d; margin-bottom: 6px;">نقشه راه اولویت‌دار پژوهشی:</div>
-        ${faAnalysis.futureDirectionsSection.highPriorityRoadmap.map(r => `
+        <div style="font-size: 12.5px; font-weight: 700; color: #be185d; margin-bottom: 6px; direction: rtl;">
+          ${isBilingual ? 'High-Priority Roadmap / نقشه راه اولویت‌دار پژوهشی:' : 'نقشه راه اولویت‌دار پژوهشی:'}
+        </div>
+        ${futFa.highPriorityRoadmap.map(r => `
           <div style="font-size: 12px; color: #831843; line-height: 1.7; margin-bottom: 4px; direction: rtl;">• ${r}</div>
         `).join('')}
 
-        <div style="font-size: 12.5px; font-weight: 700; color: #9f1239; margin-top: 10px; margin-bottom: 6px;">پرسش‌های پاسخ‌داده‌نشده و مرزهای تعمیم:</div>
-        ${faAnalysis.futureDirectionsSection.unresolvedQuestions.map(u => `
+        <div style="font-size: 12.5px; font-weight: 700; color: #9f1239; margin-top: 10px; margin-bottom: 6px; direction: rtl;">
+          ${isBilingual ? 'Unresolved Questions / پرسش‌های پاسخ‌داده‌نشده و مرزهای تعمیم:' : 'پرسش‌های پاسخ‌داده‌نشده و مرزهای تعمیم:'}
+        </div>
+        ${futFa.unresolvedQuestions.map(u => `
           <div style="font-size: 12px; color: #475569; line-height: 1.7; margin-bottom: 4px; direction: rtl;">? ${u}</div>
         `).join('')}
       </div>
@@ -865,7 +953,7 @@ export async function exportPersianOrBilingualPDF(
               ${isBilingual ? 'APPENDIX: REPLICATION & VALIDATION BENCHMARK PACKAGE / پیوست اعتبارسنجی' : 'پیوست تخصصی: بسته اعتبارسنجی و بازتولید محاسباتی و تجربی'}
             </div>
             <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
-              ${isBilingual ? 'Specifications for independent validation: Geometry, Materials, Boundary Conditions & Code' : 'کلیه داده‌های مورد نیاز محققان جهت بازتولید و اعتبارسنجی دقیق نتایج مقاله'}
+              ${isBilingual ? 'Specifications for independent validation: Geometry, Materials, Boundary Conditions & Code' : 'کلیه مشخصات مورد نیاز جهت بازتولید و اعتبارسنجی مستقل: ابعاد، خواص مواد، شرایط مرزی و کدها'}
             </div>
           </div>
           <div style="background-color: #00ff41; color: #050505; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px;">
@@ -881,20 +969,20 @@ export async function exportPersianOrBilingualPDF(
 
           <!-- Geometrical Dimensions Table -->
           <div style="margin-bottom: 16px;">
-            <div style="font-weight: 700; font-size: 13px; color: #0284c7; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 13px; color: #0284c7; margin-bottom: 6px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               ${isBilingual ? 'A.1. Geometrical Dimensions & Tolerances / مشخصات و ابعاد هندسی نمونه:' : 'A.1. مشخصات و ابعاد هندسی نمونه و دامنه حل:'}
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: ${isBilingual ? 'left' : 'right'};">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: ${isBilingual ? 'left' : 'right'}; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               <thead>
                 <tr style="background-color: #f0f9ff; color: #0369a1; border-bottom: 1.5px solid #bae6fd;">
-                  <th style="padding: 6px 10px;">ویژگی / Feature</th>
-                  <th style="padding: 6px 10px;">اندازه / Dimension</th>
-                  <th style="padding: 6px 10px;">تلرانس / Tolerance</th>
-                  <th style="padding: 6px 10px;">توضیحات / Notes</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'ویژگی / Feature' : 'ویژگی یا ناحیه هندسی'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'اندازه / Dimension' : 'اندازه اسمی'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'تلرانس / Tolerance' : 'تلرانس مجاز'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'توضیحات / Notes' : 'یادداشت‌ها و جزئیات'}</th>
                 </tr>
               </thead>
               <tbody>
-                ${val.geometricalDimensions.map((g, i) => `
+                ${(isBilingual ? val.geometricalDimensions : valFa.geometricalDimensions).map((g, i) => `
                   <tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                     <td style="padding: 6px 10px; font-weight: 600; color: #0f172a;">${g.feature}</td>
                     <td style="padding: 6px 10px; color: #0284c7; font-weight: 700; font-family: monospace;">${g.dimension}</td>
@@ -908,20 +996,20 @@ export async function exportPersianOrBilingualPDF(
 
           <!-- Material Properties Table -->
           <div style="margin-bottom: 16px;">
-            <div style="font-weight: 700; font-size: 13px; color: #059669; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 13px; color: #059669; margin-bottom: 6px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               ${isBilingual ? 'A.2. Constitutive Material Constants / ثوابت رفتاری و مکانیکی مواد:' : 'A.2. ثوابت رفتاری و مکانیکی مواد:'}
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: ${isBilingual ? 'left' : 'right'};">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: ${isBilingual ? 'left' : 'right'}; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               <thead>
                 <tr style="background-color: #ecfdf5; color: #047857; border-bottom: 1.5px solid #a7f3d0;">
-                  <th style="padding: 6px 10px;">مشخصه / Parameter</th>
-                  <th style="padding: 6px 10px;">نماد / Symbol</th>
-                  <th style="padding: 6px 10px;">مقدار و واحد / Value & Unit</th>
-                  <th style="padding: 6px 10px;">نقش رفتاری / Role</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'مشخصه / Parameter' : 'نام مشخصه'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'نماد / Symbol' : 'نماد'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'مقدار و واحد / Value & Unit' : 'مقدار و واحد'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'نقش رفتاری / Role' : 'توضیحات مدل رفتاری'}</th>
                 </tr>
               </thead>
               <tbody>
-                ${val.materialProperties.map((m, i) => `
+                ${(isBilingual ? val.materialProperties : valFa.materialProperties).map((m, i) => `
                   <tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                     <td style="padding: 6px 10px; font-weight: 600; color: #0f172a;">${m.name}</td>
                     <td style="padding: 6px 10px; color: #059669; font-weight: 700; font-family: monospace;">${m.symbol}</td>
@@ -935,20 +1023,20 @@ export async function exportPersianOrBilingualPDF(
 
           <!-- Boundary Conditions Table -->
           <div style="margin-bottom: 16px;">
-            <div style="font-weight: 700; font-size: 13px; color: #ea580c; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 13px; color: #ea580c; margin-bottom: 6px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               ${isBilingual ? 'A.3. Boundary Conditions & Kinematics / شرایط مرزی و سینماتیک بارگذاری:' : 'A.3. شرایط مرزی و سینماتیک بارگذاری:'}
             </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              ${val.boundaryConditions.map((bc, i) => `
+            <div style="display: flex; flex-direction: column; gap: 8px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
+              ${(isBilingual ? val.boundaryConditions : valFa.boundaryConditions).map((bc, i) => `
                 <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 12px; font-size: 11.5px;">
                   <div style="font-weight: 700; color: #9a3412;">
                     ${i + 1}. ${bc.region} — <span style="color: #c2410c;">${bc.type}</span>
                   </div>
                   <div style="margin-top: 3px; font-family: monospace; color: #334155;">
-                    فرمول‌بندی / Formulation: ${bc.formulation}
+                    ${isBilingual ? 'فرمول‌بندی / Formulation:' : 'فرمول‌بندی ریاضی:'} ${bc.formulation}
                   </div>
                   <div style="margin-top: 2px; color: #64748b;">
-                    درجات آزادی / DOFs: ${bc.degreesOfFreedom}
+                    ${isBilingual ? 'درجات آزادی / DOFs:' : 'درجات آزادی مهارشده:'} ${bc.degreesOfFreedom}
                   </div>
                 </div>
               `).join('')}
@@ -956,33 +1044,33 @@ export async function exportPersianOrBilingualPDF(
           </div>
 
           <!-- Mesh & Solver Discretization -->
-          <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px;">
+          <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
             <div style="font-weight: 700; color: #6d28d9; margin-bottom: 4px;">
               ${isBilingual ? 'A.4. Mesh Formulation & Solvers / فرمولاسیون مش و حل‌کننده:' : 'A.4. فرمولاسیون مش و حل‌کننده اجزای محدود:'}
             </div>
             <div style="color: #475569; line-height: 1.7;">
-              <strong>المان / Element:</strong> ${val.meshAndDiscretization.elementType} &bull; 
-              <strong>اندازه مش / Mesh Size:</strong> ${val.meshAndDiscretization.characteristicMeshSize} &bull; 
-              <strong>حل‌کننده / Solver:</strong> ${val.meshAndDiscretization.formulation || 'Standard'}
+              <strong>${isBilingual ? 'المان / Element:' : 'نوع المان:'}</strong> ${isBilingual ? val.meshAndDiscretization.elementType : valFa.meshAndDiscretization.elementType} &bull; 
+              <strong>${isBilingual ? 'اندازه مش / Mesh Size:' : 'اندازه مشخصه مش:'}</strong> ${val.meshAndDiscretization.characteristicMeshSize} &bull; 
+              <strong>${isBilingual ? 'حل‌کننده / Solver:' : 'فرمول‌بندی و حل‌کننده:'}</strong> ${isBilingual ? (val.meshAndDiscretization.formulation || 'Standard') : (valFa.meshAndDiscretization.formulation || 'استاندارد')}
             </div>
           </div>
 
           <!-- Validation Benchmarks -->
           <div style="margin-bottom: 16px;">
-            <div style="font-weight: 700; font-size: 13px; color: #047857; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 13px; color: #047857; margin-bottom: 6px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               ${isBilingual ? 'A.5. Validation Benchmark Targets / معیارهای پذیرش اعتبارسنجی:' : 'A.5. معیارهای پذیرش اعتبارسنجی:'}
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: ${isBilingual ? 'left' : 'right'}; direction: ${isBilingual ? 'ltr' : 'rtl'};">
               <thead>
                 <tr style="background-color: #f0fdf4; color: #065f46; border-bottom: 1.5px solid #bbf7d0;">
-                  <th style="padding: 6px 10px;">معیار / Target Metric</th>
-                  <th style="padding: 6px 10px;">مقدار شاخص / Benchmark Value</th>
-                  <th style="padding: 6px 10px;">تلرانس خطا / Tolerance</th>
-                  <th style="padding: 6px 10px;">ضابطه پذیرش / Criterion</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'معیار / Target Metric' : 'معیار اعتبارسنجی'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'مقدار شاخص / Benchmark Value' : 'مقدار بنچمارک هدف'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'تلرانس خطا / Tolerance' : 'تلرانس خطای مجاز'}</th>
+                  <th style="padding: 6px 10px;">${isBilingual ? 'ضابطه پذیرش / Criterion' : 'ضابطه پذیرش صحت'}</th>
                 </tr>
               </thead>
               <tbody>
-                ${val.validationBenchmarks.map((vb, i) => `
+                ${(isBilingual ? val.validationBenchmarks : valFa.validationBenchmarks).map((vb, i) => `
                   <tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                     <td style="padding: 6px 10px; font-weight: 600; color: #0f172a;">${vb.targetMetric}</td>
                     <td style="padding: 6px 10px; color: #059669; font-weight: 700; font-family: monospace;">${vb.expectedBenchmarkValue}</td>
@@ -997,7 +1085,7 @@ export async function exportPersianOrBilingualPDF(
           <!-- Executable Verification Code Box -->
           ${val.executableVerificationScript ? `
             <div>
-              <div style="font-weight: 700; font-size: 12.5px; color: #0f172a; margin-bottom: 6px;">
+              <div style="font-weight: 700; font-size: 12.5px; color: #0f172a; margin-bottom: 6px; direction: ${isBilingual ? 'ltr' : 'rtl'};">
                 ${isBilingual ? `A.6. Executable Verification Script (${val.executableVerificationScript.language.toUpperCase()}) / کد اعتبارسنجی محاسباتی:` : `A.6. اسکریپت محاسباتی اعتبارسنجی (${val.executableVerificationScript.language.toUpperCase()}):`}
               </div>
               <pre style="background-color: #0f172a; color: #00ff41; padding: 12px 16px; border-radius: 6px; font-family: 'Roboto Mono', monospace; font-size: 10.5px; line-height: 1.5; overflow-x: auto; margin: 0; direction: ltr; text-align: left;"><code>${val.executableVerificationScript.code}</code></pre>

@@ -464,7 +464,7 @@ export const getVttTrackForVideo = (videoId: string): VttTrack | undefined => {
 
 export const downloadVttTrackFile = (track: VttTrack, filename?: string): void => {
   try {
-    const blob = new Blob([track.vttContent], { type: 'text/vtt;charset=utf-8' });
+    const blob = new Blob([track.vttContent || ''], { type: 'text/vtt;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

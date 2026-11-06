@@ -109,24 +109,24 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   /**
    * Dedicated Earth Click Handler:
-   * Programmatically triggers handleSelectTab('analyzer') AND opens that view in a new browser tab.
+   * Programmatically triggers handleSelectTab('research') AND opens that view in a new browser tab.
    */
   const handleEarthClick = useCallback(
     (onSelectTab?: (tab: TabKey) => void) => {
-      setNotification('🌍 Earth Active: Programmatically selected Analyzer & opened in new tab ↗');
+      setNotification('🌍 Earth Active: Programmatically selected Research Hub & opened in new tab ↗');
 
-      // 1. Programmatically trigger handleSelectTab('analyzer') in current view
+      // 1. Programmatically trigger handleSelectTab('research') in current view
       if (typeof onSelectTab === 'function') {
         try {
-          onSelectTab('analyzer');
+          onSelectTab('research');
         } catch (err) {
           console.warn('onSelectTab error:', err);
         }
       }
 
-      // 2. Open the analyzer view in a new browser tab
+      // 2. Open the research view in a new browser tab
       try {
-        const targetUrl = `${window.location.origin}${window.location.pathname}?tab=analyzer`;
+        const targetUrl = `${window.location.origin}${window.location.pathname}?tab=research`;
         const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
 
         // Robust fallback for strict popup blocker environments: synthesize anchor click

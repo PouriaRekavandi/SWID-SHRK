@@ -3,6 +3,7 @@ import { TeamMember, TeamRoleCategory, TabKey } from '../types';
 import { INITIAL_TEAM_MEMBERS, PUBLICATIONS } from '../data/initialData';
 import profilePhoto from '../assets/profile.png';
 import profileFallback from '../assets/profile.jpg';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Users,
   Search,
@@ -19,7 +20,7 @@ import {
   FileText,
   Layers,
   Award,
-  ArrowUpRight
+  ArrowUpRight,
 } from 'lucide-react';
 
 interface TeamProps {
@@ -28,20 +29,44 @@ interface TeamProps {
 }
 
 export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
+  const { language, isRTL, t } = useLanguage();
   const [members] = useState<TeamMember[]>(INITIAL_TEAM_MEMBERS);
   const [selectedCategory, setSelectedCategory] = useState<TeamRoleCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
+  // Localized helper to retrieve member content
+  const getLocalizedMember = (member: TeamMember) => {
+    const memData = (t.team.members as Record<string, any>)[member.id];
+    if (!memData) {
+      return {
+        name: member.name,
+        role: member.role,
+        affiliation: member.affiliation,
+        bio: member.bio,
+        researchFocus: member.researchFocus,
+      };
+    }
+    return {
+      name: memData.name[language] || member.name,
+      role: memData.role[language] || member.role,
+      affiliation: memData.affiliation[language] || member.affiliation,
+      bio: memData.bio[language] || member.bio,
+      researchFocus: Array.isArray(memData.researchFocus)
+        ? memData.researchFocus.map((rf: any) => rf[language] || rf.en)
+        : member.researchFocus,
+    };
+  };
+
   const categories: { key: TeamRoleCategory; label: string; count: number }[] = useMemo(() => [
-    { key: 'all', label: 'All Members', count: members.length },
-    { key: 'pi', label: 'PI & Director', count: members.filter((m) => m.category === 'pi').length },
-    { key: 'postdoc', label: 'Postdoc Fellows', count: members.filter((m) => m.category === 'postdoc').length },
-    { key: 'phd', label: 'PhD Researchers', count: members.filter((m) => m.category === 'phd').length },
-    { key: 'msc', label: "Master's Fellows", count: members.filter((m) => m.category === 'msc').length },
-    { key: 'alumni', label: 'Alumni & Affiliates', count: members.filter((m) => m.category === 'alumni').length },
-  ], [members]);
+    { key: 'all', label: t.team.categories.all[language], count: members.length },
+    { key: 'pi', label: t.team.categories.pi[language], count: members.filter((m) => m.category === 'pi').length },
+    { key: 'postdoc', label: t.team.categories.postdoc[language], count: members.filter((m) => m.category === 'postdoc').length },
+    { key: 'phd', label: t.team.categories.phd[language], count: members.filter((m) => m.category === 'phd').length },
+    { key: 'msc', label: t.team.categories.msc[language], count: members.filter((m) => m.category === 'msc').length },
+    { key: 'alumni', label: t.team.categories.alumni[language], count: members.filter((m) => m.category === 'alumni').length },
+  ], [members, language, t]);
 
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
@@ -49,23 +74,32 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
       const q = searchQuery.toLowerCase().trim();
       if (!q) return matchesCategory;
 
+      const loc = getLocalizedMember(m);
       const matchesSearch =
         m.name.toLowerCase().includes(q) ||
+        loc.name.toLowerCase().includes(q) ||
         m.role.toLowerCase().includes(q) ||
+        loc.role.toLowerCase().includes(q) ||
         m.affiliation.toLowerCase().includes(q) ||
+        loc.affiliation.toLowerCase().includes(q) ||
         m.bio.toLowerCase().includes(q) ||
-        m.researchFocus.some((f) => f.toLowerCase().includes(q));
+        loc.bio.toLowerCase().includes(q) ||
+        m.researchFocus.some((f) => f.toLowerCase().includes(q)) ||
+        loc.researchFocus.some((f: string) => f.toLowerCase().includes(q));
 
       return matchesCategory && matchesSearch;
     });
-  }, [members, selectedCategory, searchQuery]);
+  }, [members, selectedCategory, searchQuery, language]);
 
   const handleCopyEmail = (email: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(email);
     setCopiedEmail(email);
     if (onNotify) {
-      onNotify(`Copied ${name}'s email (${email}) to clipboard`);
+      const msg = t.team.copiedEmailSuccess[language]
+        .replace('{name}', name)
+        .replace('{email}', email);
+      onNotify(msg);
     }
     setTimeout(() => {
       setCopiedEmail((prev) => (prev === email ? null : prev));
@@ -89,8 +123,25 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
     }
   };
 
+  const getCategoryBadgeLabel = (category: TeamMember['category']) => {
+    switch (category) {
+      case 'pi':
+        return t.team.categories.pi[language];
+      case 'postdoc':
+        return t.team.categories.postdoc[language];
+      case 'phd':
+        return t.team.categories.phd[language];
+      case 'msc':
+        return t.team.categories.msc[language];
+      case 'alumni':
+        return t.team.categories.alumni[language];
+      default:
+        return category;
+    }
+  };
+
   const getInitials = (name: string) => {
-    const clean = name.replace(/^Dr\.\s+/i, '');
+    const clean = name.replace(/^Dr\.\s+/i, '').replace(/^دکتر\s+/i, '');
     const parts = clean.split(' ').filter(Boolean);
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -104,22 +155,21 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
   }, [selectedMember]);
 
   return (
-    <section className="space-y-8 font-mono">
+    <section dir={isRTL ? 'rtl' : 'ltr'} className="space-y-8 font-mono">
       {/* Header Section */}
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b dark:border-zinc-800 border-slate-200 pb-5">
-          <div>
+          <div className={isRTL ? 'text-right' : 'text-left'}>
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full dark:bg-[#00b8ff]/10 bg-sky-100 border dark:border-[#00b8ff]/30 border-sky-300 dark:text-[#00b8ff] text-sky-800 text-xs font-bold mb-3 tracking-wide">
               <Users className="w-3.5 h-3.5" />
-              <span>SWID-SHRK RESEARCH GROUP</span>
+              <span>{t.team.groupBadge[language]}</span>
             </div>
             <h2 className="font-section-title text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-wider dark:text-white text-slate-900 flex items-center">
-              <span className="dark:text-[#00ff41] text-sky-600 font-mono mr-2 select-none">//</span>
-              <span>Lab Research Team</span>
+              <span className="dark:text-[#00ff41] text-sky-600 font-mono mr-2 ml-1 select-none">//</span>
+              <span>{t.team.title[language]}</span>
             </h2>
-            <p className="dark:text-zinc-400 text-slate-600 text-xs sm:text-sm max-w-2xl mt-2 leading-relaxed">
-              Interdisciplinary investigators, doctoral candidates, and research engineers driving breakthroughs in
-              aerospace fracture mechanics, neural viscoelasticity, and architected metamaterials.
+            <p className="dark:text-zinc-400 text-slate-600 text-xs sm:text-sm max-w-2xl mt-2 leading-relaxed font-sans">
+              {t.team.subtitle[language]}
             </p>
           </div>
 
@@ -127,17 +177,26 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
           <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
             <div className="px-3.5 py-2 rounded-xl dark:bg-zinc-900/90 bg-white border dark:border-zinc-800 border-slate-200 shadow-xs flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-[#00ff41] animate-pulse" />
-              <div className="text-left">
-                <div className="text-[10px] dark:text-zinc-500 text-slate-500 uppercase tracking-wider">Active Group</div>
-                <div className="text-sm font-bold dark:text-white text-slate-900 font-orbitron">{members.length} Members</div>
+              <div className={isRTL ? 'text-right' : 'text-left'}>
+                <div className="text-[10px] dark:text-zinc-500 text-slate-500 uppercase tracking-wider">
+                  {t.team.metricActiveGroup[language]}
+                </div>
+                <div className="text-sm font-bold dark:text-white text-slate-900 font-orbitron">
+                  {t.team.metricMembersCount[language].replace('{count}', members.length.toString())}
+                </div>
               </div>
             </div>
             <div className="px-3.5 py-2 rounded-xl dark:bg-zinc-900/90 bg-white border dark:border-zinc-800 border-slate-200 shadow-xs flex items-center gap-2.5">
               <GraduationCap className="w-4 h-4 text-[#00b8ff]" />
-              <div className="text-left">
-                <div className="text-[10px] dark:text-zinc-500 text-slate-500 uppercase tracking-wider">Grad &amp; Postdoc</div>
+              <div className={isRTL ? 'text-right' : 'text-left'}>
+                <div className="text-[10px] dark:text-zinc-500 text-slate-500 uppercase tracking-wider">
+                  {t.team.metricGradPostdoc[language]}
+                </div>
                 <div className="text-sm font-bold dark:text-white text-slate-900 font-orbitron">
-                  {members.filter((m) => m.category === 'phd' || m.category === 'postdoc' || m.category === 'msc').length} Scholars
+                  {t.team.metricScholarsCount[language].replace(
+                    '{count}',
+                    members.filter((m) => m.category === 'phd' || m.category === 'postdoc' || m.category === 'msc').length.toString()
+                  )}
                 </div>
               </div>
             </div>
@@ -177,18 +236,18 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
 
           {/* Search Box */}
           <div className="relative min-w-[260px] sm:min-w-[300px]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 dark:text-zinc-500 text-slate-400 pointer-events-none" />
+            <Search className={`w-4 h-4 absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 dark:text-zinc-500 text-slate-400 pointer-events-none`} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search member, research focus, topic..."
-              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl dark:bg-zinc-900/90 bg-white border dark:border-zinc-800 border-slate-200 dark:text-white text-slate-900 placeholder:text-zinc-500 dark:focus:border-[#00b8ff] focus:border-sky-500 focus:outline-none transition-colors"
+              placeholder={t.team.searchPlaceholder[language]}
+              className={`w-full ${isRTL ? 'pr-9 pl-8' : 'pl-9 pr-8'} py-2 text-xs rounded-xl dark:bg-zinc-900/90 bg-white border dark:border-zinc-800 border-slate-200 dark:text-white text-slate-900 placeholder:text-zinc-500 dark:focus:border-[#00b8ff] focus:border-sky-500 focus:outline-none transition-colors`}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                className={`absolute ${isRTL ? 'left-2.5' : 'right-2.5'} top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white`}
                 title="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -202,10 +261,7 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
       {filteredMembers.length === 0 ? (
         <div className="text-center py-16 px-4 dark:bg-zinc-900/40 bg-white border dark:border-zinc-800 border-slate-200 rounded-2xl space-y-3">
           <Users className="w-10 h-10 mx-auto dark:text-zinc-600 text-slate-400 animate-pulse" />
-          <h3 className="text-base font-bold dark:text-white text-slate-800">No Lab Members Found</h3>
-          <p className="text-xs dark:text-zinc-500 text-slate-500 max-w-md mx-auto">
-            No current team members matched your filter criteria &quot;{searchQuery}&quot;.
-          </p>
+          <h3 className="text-base font-bold dark:text-white text-slate-800">{t.team.noMembersFound[language]}</h3>
           <button
             onClick={() => {
               setSelectedCategory('all');
@@ -213,13 +269,14 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
             }}
             className="px-4 py-2 text-xs font-bold rounded-lg dark:bg-zinc-800 bg-slate-100 dark:text-[#00ff41] text-sky-700 hover:underline cursor-pointer"
           >
-            Reset Filters
+            {t.team.resetFilters[language]}
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
           {filteredMembers.map((member) => {
             const isPI = member.category === 'pi';
+            const loc = getLocalizedMember(member);
             return (
               <div
                 key={member.id}
@@ -242,7 +299,7 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                         <div className="relative w-16 h-16 rounded-full border-2 dark:border-[#00ff41] border-emerald-600 overflow-hidden dark:bg-black bg-slate-900 shadow-md group-hover:scale-105 transition-transform duration-300">
                           <img
                             src={profilePhoto}
-                            alt={member.name}
+                            alt={loc.name}
                             loading="lazy"
                             className="w-full h-full object-cover object-top select-none"
                             onError={(e) => {
@@ -252,7 +309,7 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                         </div>
                       ) : (
                         <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-orbitron font-bold text-lg dark:bg-zinc-900 bg-slate-100 border dark:border-zinc-700 border-slate-300 dark:text-[#00b8ff] text-sky-700 shadow-sm group-hover:border-[#00b8ff] group-hover:scale-105 transition-all duration-300">
-                          {getInitials(member.name)}
+                          {getInitials(loc.name)}
                         </div>
                       )}
 
@@ -261,44 +318,36 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                         className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 dark:border-[#111] border-white flex items-center justify-center ${
                           member.status === 'Active' ? 'bg-[#00ff41]' : 'bg-zinc-400'
                         }`}
-                        title={member.status === 'Active' ? 'Active Member' : 'Alumni'}
+                        title={member.status === 'Active' ? t.team.statusActive[language] : t.team.statusAlumni[language]}
                       />
                     </div>
 
                     {/* Role Tag & Status */}
-                    <div className="flex flex-col items-end gap-1.5 text-right">
+                    <div className={`flex flex-col ${isRTL ? 'items-start text-left' : 'items-end text-right'} gap-1.5`}>
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${getCategoryBadgeClass(
                           member.category
                         )}`}
                       >
-                        {member.category === 'pi'
-                          ? 'Lead / PI'
-                          : member.category === 'postdoc'
-                          ? 'Postdoctoral'
-                          : member.category === 'phd'
-                          ? 'PhD Candidate'
-                          : member.category === 'msc'
-                          ? 'MSc Fellow'
-                          : 'Alumni'}
+                        {getCategoryBadgeLabel(member.category)}
                       </span>
                       {member.joinedYear && (
                         <span className="text-[10px] dark:text-zinc-500 text-slate-500 font-mono">
-                          Since {member.joinedYear}
+                          {t.team.joinedYearLabel[language].replace('{year}', member.joinedYear)}
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Name and Role */}
-                  <div>
+                  <div className={isRTL ? 'text-right' : 'text-left'}>
                     <h3 className="text-base sm:text-lg font-bold font-orbitron dark:text-white text-slate-900 group-hover:text-sky-600 dark:group-hover:text-[#00ff41] transition-colors flex items-center gap-1.5">
-                      <span>{member.name}</span>
+                      <span>{loc.name}</span>
                       {isPI && <ShieldCheck className="w-4 h-4 text-[#00ff41] flex-none" />}
                     </h3>
-                    <p className="text-xs font-semibold dark:text-zinc-300 text-slate-700 mt-0.5">{member.role}</p>
-                    <p className="text-[11px] dark:text-zinc-500 text-slate-500 mt-0.5 line-clamp-1">
-                      {member.affiliation}
+                    <p className="text-xs font-semibold dark:text-zinc-300 text-slate-700 mt-0.5">{loc.role}</p>
+                    <p className="text-[11px] dark:text-zinc-500 text-slate-500 mt-0.5 line-clamp-1 font-sans">
+                      {loc.affiliation}
                     </p>
                   </div>
 
@@ -311,18 +360,18 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                   )}
 
                   {/* Bio */}
-                  <p className="text-xs dark:text-zinc-400 text-slate-600 leading-relaxed line-clamp-3">
-                    {member.bio}
+                  <p className={`text-xs dark:text-zinc-400 text-slate-600 leading-relaxed line-clamp-3 font-sans ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {loc.bio}
                   </p>
 
                   {/* Research Focus Pills */}
-                  <div className="space-y-1.5 pt-1">
+                  <div className={`space-y-1.5 pt-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                     <div className="text-[10px] uppercase font-bold tracking-wider dark:text-zinc-500 text-slate-400 flex items-center gap-1">
                       <Layers className="w-3 h-3 text-[#00b8ff]" />
-                      <span>Research Focus:</span>
+                      <span>{t.team.researchFocusTitle[language]}:</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {member.researchFocus.map((focus, idx) => (
+                      {loc.researchFocus.map((focus: string, idx: number) => (
                         <span
                           key={idx}
                           className="px-2 py-0.5 rounded-md text-[10px] font-mono dark:bg-zinc-900 bg-slate-100 dark:text-zinc-300 text-slate-700 border dark:border-zinc-800 border-slate-200 hover:border-[#00b8ff]/60 transition-colors"
@@ -339,14 +388,13 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                   <div className="flex items-center justify-between gap-2">
                     {/* Academic Links: Google Scholar, ResearchGate, ORCID, etc. */}
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {/* Google Scholar Link */}
                       {member.googleScholar && (
                         <a
                           href={member.googleScholar}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          title={`${member.name} on Google Scholar`}
+                          title={`${loc.name} on Google Scholar`}
                           className="p-1.5 rounded-lg border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:text-zinc-300 text-slate-700 dark:hover:border-[#00b8ff] hover:border-sky-500 dark:hover:text-[#00b8ff] hover:text-sky-600 transition-colors flex items-center gap-1 text-[11px] font-bold"
                         >
                           <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
@@ -356,62 +404,39 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                         </a>
                       )}
 
-                      {/* ResearchGate Link */}
                       {member.researchGate && (
                         <a
                           href={member.researchGate}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          title={`${member.name} on ResearchGate`}
+                          title={`${loc.name} on ResearchGate`}
                           className="p-1.5 rounded-lg border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:text-zinc-300 text-slate-700 dark:hover:border-[#00ff41] hover:border-emerald-500 dark:hover:text-[#00ff41] hover:text-emerald-600 transition-colors flex items-center gap-1 text-[11px] font-bold"
                         >
                           <span className="font-bold text-xs tracking-tighter">RG</span>
                         </a>
                       )}
 
-                      {/* ORCID Link */}
                       {member.orcid && (
                         <a
                           href={member.orcid}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          title={`${member.name} ORCID Record`}
+                          title={`${loc.name} ORCID Record`}
                           className="p-1.5 rounded-lg border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:text-emerald-400 text-emerald-700 dark:hover:border-emerald-400 hover:border-emerald-600 transition-colors flex items-center gap-1 text-[11px] font-bold"
                         >
                           <span className="text-[10px] font-mono font-bold tracking-tight">iD</span>
                         </a>
                       )}
 
-                      {/* GitHub Link */}
-                      {member.github && (
-                        <a
-                          href={member.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          title={`${member.name} on GitHub`}
-                          className="p-1.5 rounded-lg border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:text-zinc-300 text-slate-700 dark:hover:border-zinc-400 hover:border-slate-500 transition-colors"
-                        >
-                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                            <path
-                              fillRule="evenodd"
-                              clipRule="evenodd"
-                              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                            />
-                          </svg>
-                        </a>
-                      )}
-
-                      {/* LinkedIn Link */}
                       {member.linkedin && (
                         <a
                           href={member.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          title={`${member.name} on LinkedIn`}
+                          title={`${loc.name} on LinkedIn`}
                           className="p-1.5 rounded-lg border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:text-zinc-300 text-slate-700 dark:hover:border-[#00b8ff] hover:border-sky-500 dark:hover:text-[#00b8ff] hover:text-sky-600 transition-colors"
                         >
                           <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -423,8 +448,8 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                       {/* Copy Email Button */}
                       <button
                         type="button"
-                        onClick={(e) => handleCopyEmail(member.email, member.name, e)}
-                        title={`Copy ${member.email}`}
+                        onClick={(e) => handleCopyEmail(member.email, loc.name, e)}
+                        title={`${t.team.copyEmail[language]} (${member.email})`}
                         className="p-1.5 rounded-lg border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:text-zinc-300 text-slate-700 hover:border-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer"
                       >
                         {copiedEmail === member.email ? (
@@ -441,8 +466,8 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
                       onClick={() => setSelectedMember(member)}
                       className="inline-flex items-center gap-1 text-[11px] font-bold dark:text-zinc-400 text-slate-600 group-hover:text-sky-600 dark:group-hover:text-[#00ff41] transition-colors cursor-pointer"
                     >
-                      <span>Dossier</span>
-                      <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      <span>{t.team.viewDossier[language]}</span>
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-0.5' : 'group-hover:translate-x-0.5'}`} />
                     </button>
                   </div>
                 </div>
@@ -452,46 +477,6 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
         </div>
       )}
 
-      {/* Prospective Students & Postdocs Callout Banner */}
-      <div className="relative overflow-hidden rounded-2xl dark:bg-gradient-to-r dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 bg-gradient-to-r from-sky-50 via-white to-slate-50 border dark:border-zinc-800 border-slate-300 p-6 sm:p-8">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none opacity-10 dark:bg-[radial-gradient(#00ff41_1px,transparent_1px)] bg-[radial-gradient(#0284c7_1px,transparent_1px)] [background-size:12px_12px]" />
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider dark:text-[#00ff41] text-sky-700">
-              <Sparkles className="w-4 h-4" />
-              <span>Join the SWID-SHRK Research Group</span>
-            </div>
-            <h3 className="font-orbitron text-lg sm:text-xl font-bold dark:text-white text-slate-900">
-              Prospective PhD Students, Postdocs &amp; Visiting Scholars
-            </h3>
-            <p className="text-xs sm:text-sm dark:text-zinc-400 text-slate-600 leading-relaxed">
-              We are actively looking for highly motivated graduate researchers with backgrounds in finite element
-              analysis (Abaqus UMAT/VUMAT), experimental high-strain mechanics (Split Hopkinson / DIC), or physics-informed
-              machine learning to join our funded projects.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            {onSelectTab && (
-              <button
-                onClick={() => onSelectTab('contact')}
-                className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider dark:bg-[#00ff41] bg-sky-600 dark:text-black text-white hover:brightness-110 shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <span>Get in Touch</span>
-                <ArrowUpRight className="w-4 h-4" />
-              </button>
-            )}
-            <a
-              href="mailto:s.s.hejazirekavandi@gmail.com?subject=Inquiry:%20Prospective%20Researcher%20at%20SWID-SHRK"
-              className="px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider dark:bg-zinc-800 bg-white border dark:border-zinc-700 border-slate-300 dark:text-white text-slate-800 hover:border-sky-500 transition-all flex items-center gap-1.5 shadow-xs"
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Email Lab Director</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
       {/* Member Extended Dossier Modal */}
       {selectedMember && (
         <div
@@ -500,254 +485,222 @@ export const Team: React.FC<TeamProps> = ({ onNotify, onSelectTab }) => {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
           onClick={() => setSelectedMember(null)}
         >
-          <div
-            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl dark:bg-[#0c0c0c] bg-white border dark:border-zinc-700 border-slate-300 shadow-2xl p-6 sm:p-8 space-y-6 text-left"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between gap-4 border-b dark:border-zinc-800 border-slate-200 pb-4">
-              <div className="flex items-center gap-4">
-                {selectedMember.category === 'pi' ? (
-                  <div className="w-16 h-16 rounded-full border-2 dark:border-[#00ff41] border-emerald-600 overflow-hidden dark:bg-black bg-slate-900 shadow-md flex-none">
-                    <img
-                      src={profilePhoto}
-                      alt={selectedMember.name}
-                      className="w-full h-full object-cover object-top"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = profileFallback;
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-orbitron font-bold text-xl dark:bg-zinc-900 bg-slate-100 border dark:border-zinc-700 border-slate-300 dark:text-[#00b8ff] text-sky-700 flex-none shadow-sm">
-                    {getInitials(selectedMember.name)}
-                  </div>
-                )}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${getCategoryBadgeClass(
-                        selectedMember.category
-                      )}`}
-                    >
-                      {selectedMember.role}
-                    </span>
-                    <span className="text-xs dark:text-zinc-500 text-slate-500 font-mono">
-                      {selectedMember.status}
-                    </span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-bold font-orbitron dark:text-white text-slate-900 mt-1">
-                    {selectedMember.name}
-                  </h3>
-                  <p className="text-xs dark:text-zinc-400 text-slate-600">{selectedMember.affiliation}</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedMember(null)}
-                className="p-1.5 rounded-lg dark:text-zinc-400 text-slate-500 hover:dark:text-white hover:text-black dark:hover:bg-zinc-800 hover:bg-slate-100 transition-colors"
-                title="Close modal"
+          {(() => {
+            const loc = getLocalizedMember(selectedMember);
+            return (
+              <div
+                dir={isRTL ? 'rtl' : 'ltr'}
+                className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl dark:bg-[#0c0c0c] bg-white border dark:border-zinc-700 border-slate-300 shadow-2xl p-6 sm:p-8 space-y-6 ${
+                  isRTL ? 'text-right' : 'text-left'
+                }`}
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="space-y-5 text-xs sm:text-sm">
-              {/* Highlight Banner */}
-              {selectedMember.highlight && (
-                <div className="p-3 rounded-xl dark:bg-zinc-900 bg-amber-50/60 border dark:border-zinc-800 border-amber-200 flex items-center gap-2 dark:text-zinc-300 text-amber-950 font-medium">
-                  <Award className="w-4 h-4 text-amber-500 flex-none" />
-                  <span>{selectedMember.highlight}</span>
-                </div>
-              )}
-
-              {/* Bio */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-[#00ff41]" />
-                  <span>Biography &amp; Lab Focus</span>
-                </h4>
-                <p className="dark:text-zinc-300 text-slate-700 leading-relaxed dark:bg-zinc-900/50 bg-slate-50 p-4 rounded-xl border dark:border-zinc-800 border-slate-200">
-                  {selectedMember.bio}
-                </p>
-              </div>
-
-              {/* Research Focus Areas */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-[#00b8ff]" />
-                  <span>Primary Research Domains</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {selectedMember.researchFocus.map((f, i) => (
-                    <div
-                      key={i}
-                      className="px-3 py-2 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 dark:text-zinc-200 text-slate-800 text-xs font-mono flex items-center gap-2"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41]" />
-                      <span>{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Current Projects */}
-              {selectedMember.currentProjects && selectedMember.currentProjects.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Active Projects &amp; Grants</span>
-                  </h4>
-                  <ul className="space-y-1.5 list-none p-0 m-0">
-                    {selectedMember.currentProjects.map((proj, i) => (
-                      <li
-                        key={i}
-                        className="p-2.5 rounded-lg dark:bg-zinc-900/80 bg-slate-50 border dark:border-zinc-800 border-slate-200 dark:text-zinc-300 text-slate-700 text-xs flex items-center gap-2"
-                      >
-                        <ChevronRight className="w-3.5 h-3.5 text-[#00ff41] flex-none" />
-                        <span>{proj}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Co-Authored Publications in Lab */}
-              {relatedPublications.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Key Publications ({relatedPublications.length})</span>
-                  </h4>
-                  <div className="space-y-2">
-                    {relatedPublications.map((pub) => (
-                      <div
-                        key={pub.id}
-                        className="p-3 rounded-lg dark:bg-zinc-900/60 bg-white border dark:border-zinc-800 border-slate-200 space-y-1"
-                      >
-                        <div className="font-semibold dark:text-white text-slate-900 text-xs">{pub.title}</div>
-                        <div className="text-[11px] dark:text-zinc-400 text-slate-600 font-mono">
-                          {pub.journal} ({pub.year}) · {pub.doi}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Academic Profiles & Contact Links */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-2">
-                  Academic Profiles &amp; Direct Contact
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {selectedMember.googleScholar && (
-                    <a
-                      href={selectedMember.googleScholar}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-[#00b8ff] hover:border-sky-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
-                    >
-                      <svg className="w-4 h-4 fill-current text-[#00b8ff]" viewBox="0 0 24 24">
-                        <path d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" />
-                      </svg>
-                      <span>Google Scholar</span>
-                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-                    </a>
-                  )}
-
-                  {selectedMember.researchGate && (
-                    <a
-                      href={selectedMember.researchGate}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-[#00ff41] hover:border-emerald-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
-                    >
-                      <span className="font-bold text-sm text-[#00ff41] tracking-tighter">RG</span>
-                      <span>ResearchGate</span>
-                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-                    </a>
-                  )}
-
-                  {selectedMember.orcid && (
-                    <a
-                      href={selectedMember.orcid}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-emerald-400 hover:border-emerald-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
-                    >
-                      <span className="text-xs font-mono font-bold text-emerald-500">iD</span>
-                      <span>ORCID Profile</span>
-                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-                    </a>
-                  )}
-
-                  {selectedMember.github && (
-                    <a
-                      href={selectedMember.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-zinc-400 hover:border-slate-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
-                    >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                {/* Modal Header */}
+                <div className="flex items-start justify-between gap-4 border-b dark:border-zinc-800 border-slate-200 pb-4">
+                  <div className="flex items-center gap-4">
+                    {selectedMember.category === 'pi' ? (
+                      <div className="w-16 h-16 rounded-full border-2 dark:border-[#00ff41] border-emerald-600 overflow-hidden dark:bg-black bg-slate-900 shadow-md flex-none">
+                        <img
+                          src={profilePhoto}
+                          alt={loc.name}
+                          className="w-full h-full object-cover object-top"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = profileFallback;
+                          }}
                         />
-                      </svg>
-                      <span>GitHub</span>
-                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-                    </a>
-                  )}
-
-                  {selectedMember.linkedin && (
-                    <a
-                      href={selectedMember.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-[#00b8ff] hover:border-sky-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
-                    >
-                      <svg className="w-4 h-4 fill-current text-sky-600" viewBox="0 0 24 24">
-                        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.77v8.37H6.46v-8.37M7.85 6.28a1.62 1.62 0 1 0 0 3.24 1.62 1.62 0 0 0 0-3.24z" />
-                      </svg>
-                      <span>LinkedIn</span>
-                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-                    </a>
-                  )}
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-orbitron font-bold text-xl dark:bg-zinc-900 bg-slate-100 border dark:border-zinc-700 border-slate-300 dark:text-[#00b8ff] text-sky-700 flex-none shadow-sm">
+                        {getInitials(loc.name)}
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${getCategoryBadgeClass(
+                            selectedMember.category
+                          )}`}
+                        >
+                          {getCategoryBadgeLabel(selectedMember.category)}
+                        </span>
+                        <span className="text-xs dark:text-zinc-500 text-slate-500 font-mono">
+                          {selectedMember.status === 'Active' ? t.team.statusActive[language] : t.team.statusAlumni[language]}
+                        </span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-bold font-orbitron dark:text-white text-slate-900 mt-1">
+                        {loc.name}
+                      </h3>
+                      <p className="text-xs dark:text-zinc-400 text-slate-600 font-sans">{loc.affiliation}</p>
+                    </div>
+                  </div>
 
                   <button
                     type="button"
-                    onClick={(e) => handleCopyEmail(selectedMember.email, selectedMember.name, e)}
-                    className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white hover:border-emerald-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs cursor-pointer text-left"
+                    onClick={() => setSelectedMember(null)}
+                    className="p-1.5 rounded-lg dark:text-zinc-400 text-slate-500 hover:dark:text-white hover:text-black dark:hover:bg-zinc-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                    title={t.common.close[language]}
                   >
-                    {copiedEmail === selectedMember.email ? (
-                      <Check className="w-4 h-4 text-emerald-500 flex-none" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-emerald-500 flex-none" />
-                    )}
-                    <span className="truncate">{copiedEmail === selectedMember.email ? 'Copied Email' : 'Copy Email'}</span>
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="space-y-5 text-xs sm:text-sm">
+                  {/* Highlight Banner */}
+                  {selectedMember.highlight && (
+                    <div className="p-3 rounded-xl dark:bg-zinc-900 bg-amber-50/60 border dark:border-zinc-800 border-amber-200 flex items-center gap-2 dark:text-zinc-300 text-amber-950 font-medium">
+                      <Award className="w-4 h-4 text-amber-500 flex-none" />
+                      <span>{selectedMember.highlight}</span>
+                    </div>
+                  )}
+
+                  {/* Bio */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#00ff41]" />
+                      <span>{t.team.dossierModal.bioSection[language]}</span>
+                    </h4>
+                    <p className="dark:text-zinc-300 text-slate-700 leading-relaxed dark:bg-zinc-900/50 bg-slate-50 p-4 rounded-xl border dark:border-zinc-800 border-slate-200 font-sans">
+                      {loc.bio}
+                    </p>
+                  </div>
+
+                  {/* Research Focus Areas */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#00b8ff]" />
+                      <span>{t.team.researchFocusTitle[language]}</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {loc.researchFocus.map((f: string, i: number) => (
+                        <div
+                          key={i}
+                          className="px-3 py-2 rounded-lg dark:bg-zinc-900 bg-slate-50 border dark:border-zinc-800 border-slate-200 dark:text-zinc-200 text-slate-800 text-xs font-mono flex items-center gap-2"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41]" />
+                          <span>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Co-Authored Publications in Lab */}
+                  {relatedPublications.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-1.5 flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                        <span>{t.team.dossierModal.coauthoredPubs[language]} ({relatedPublications.length})</span>
+                      </h4>
+                      <div className="space-y-2">
+                        {relatedPublications.map((pub) => (
+                          <div
+                            key={pub.id}
+                            className="p-3 rounded-lg dark:bg-zinc-900/60 bg-white border dark:border-zinc-800 border-slate-200 space-y-1"
+                          >
+                            <div className="font-semibold dark:text-white text-slate-900 text-xs">{pub.title}</div>
+                            <div className="text-[11px] dark:text-zinc-400 text-slate-600 font-mono">
+                              {pub.journal} ({pub.year}) · {pub.doi}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Academic Profiles & Contact Links */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider dark:text-zinc-400 text-slate-500 mb-2">
+                      {t.team.dossierModal.contactDirect[language]}
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {selectedMember.googleScholar && (
+                        <a
+                          href={selectedMember.googleScholar}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-[#00b8ff] hover:border-sky-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
+                        >
+                          <svg className="w-4 h-4 fill-current text-[#00b8ff]" viewBox="0 0 24 24">
+                            <path d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" />
+                          </svg>
+                          <span>Google Scholar</span>
+                          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+                        </a>
+                      )}
+
+                      {selectedMember.researchGate && (
+                        <a
+                          href={selectedMember.researchGate}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-[#00ff41] hover:border-emerald-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
+                        >
+                          <span className="font-bold text-sm text-[#00ff41] tracking-tighter">RG</span>
+                          <span>ResearchGate</span>
+                          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+                        </a>
+                      )}
+
+                      {selectedMember.orcid && (
+                        <a
+                          href={selectedMember.orcid}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-emerald-400 hover:border-emerald-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
+                        >
+                          <span className="text-xs font-mono font-bold text-emerald-500">iD</span>
+                          <span>ORCID Profile</span>
+                          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+                        </a>
+                      )}
+
+                      {selectedMember.linkedin && (
+                        <a
+                          href={selectedMember.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white dark:hover:border-[#00b8ff] hover:border-sky-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs"
+                        >
+                          <svg className="w-4 h-4 fill-current text-sky-600" viewBox="0 0 24 24">
+                            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.77v8.37H6.46v-8.37M7.85 6.28a1.62 1.62 0 1 0 0 3.24 1.62 1.62 0 0 0 0-3.24z" />
+                          </svg>
+                          <span>LinkedIn</span>
+                          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyEmail(selectedMember.email, loc.name, e)}
+                        className="p-2.5 rounded-xl border dark:border-zinc-800 border-slate-300 dark:bg-zinc-900 bg-white hover:border-emerald-500 transition-colors flex items-center gap-2 dark:text-zinc-200 text-slate-800 font-bold text-xs cursor-pointer text-left"
+                      >
+                        {copiedEmail === selectedMember.email ? (
+                          <Check className="w-4 h-4 text-emerald-500 flex-none" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-emerald-500 flex-none" />
+                        )}
+                        <span className="truncate">{copiedEmail === selectedMember.email ? t.common.copied[language] : t.team.copyEmail[language]}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="pt-4 border-t dark:border-zinc-800 border-slate-200 flex items-center justify-between gap-4">
+                  <span className="text-[11px] dark:text-zinc-500 text-slate-500">
+                    {t.footer.labTitle[language]}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMember(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold dark:bg-zinc-800 bg-slate-200 dark:text-white text-slate-800 hover:brightness-110 cursor-pointer"
+                  >
+                    {t.common.close[language]}
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="pt-4 border-t dark:border-zinc-800 border-slate-200 flex items-center justify-between gap-4">
-              <span className="text-[11px] dark:text-zinc-500 text-slate-500">
-                SWID-SHRK Aerospace &amp; Mechanics Laboratory Dossier
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedMember(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold dark:bg-zinc-800 bg-slate-200 dark:text-white text-slate-800 hover:brightness-110 cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       )}
     </section>

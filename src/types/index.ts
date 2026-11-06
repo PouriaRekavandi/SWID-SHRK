@@ -50,7 +50,6 @@ export type TabKey =
   | 'team'
   | 'research'
   | 'publications'
-  | 'analyzer'
   | 'students'
   | 'gear'
   | 'abaqus'

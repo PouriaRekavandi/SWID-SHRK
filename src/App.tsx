@@ -11,20 +11,21 @@ import { EquipmentSection } from './components/EquipmentSection';
 import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
 import { AbaqusGallery } from './components/AbaqusGallery';
-import { PaperAnalyzer } from './components/PaperAnalyzer';
 import { Team } from './components/Team';
 import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
 import { Footer } from './components/Footer';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
 import { CheckCircle2, AlertCircle, Bot, Sparkles } from 'lucide-react';
+import { useLanguage } from './context/LanguageContext';
 
 export const App: React.FC = () => {
+  const { language, t, isRTL, dir } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     if (typeof window !== 'undefined') {
       try {
         const params = new URLSearchParams(window.location.search);
         const tabParam = params.get('tab') as TabKey;
-        if (tabParam) return tabParam;
+        if (tabParam && (tabParam as string) !== 'analyzer') return tabParam;
       } catch {
         // ignore
       }
@@ -81,7 +82,7 @@ export const App: React.FC = () => {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-1/2 focus:-translate-x-1/2 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#00ff41] focus:text-black focus:font-bold focus:rounded-md shadow-lg"
       >
-        Skip to main content
+        {t.common.skipToMain[language]}
       </a>
 
       {/* Top Active Project Banner */}
@@ -167,12 +168,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'analyzer' && (
-          <div className="max-w-6xl mx-auto px-4 py-8">
-            <PaperAnalyzer onNotify={showToast} />
-          </div>
-        )}
-
         {activeTab === 'team' && (
           <div className="max-w-6xl mx-auto px-4 py-8">
             <Team onNotify={showToast} onSelectTab={handleSelectTab} />
@@ -190,13 +185,13 @@ export const App: React.FC = () => {
       {activeTab !== 'chat' && (
         <button
           onClick={() => handleSelectTab('chat')}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-3.5 py-2.5 rounded-full dark:bg-black/90 bg-white/95 text-slate-800 dark:text-white border-2 dark:border-[#00ff41] border-emerald-500 shadow-xl dark:shadow-[0_0_20px_rgba(0,255,65,0.4)] shadow-slate-400/40 hover:scale-105 active:scale-95 transition-all text-xs font-mono font-bold cursor-pointer group"
-          title="Open Gemini AI Lab Assistant"
+          className={`fixed bottom-6 ${isRTL ? 'left-6' : 'right-6'} z-40 flex items-center gap-2 px-3.5 py-2.5 rounded-full dark:bg-black/90 bg-white/95 text-slate-800 dark:text-white border-2 dark:border-[#00ff41] border-emerald-500 shadow-xl dark:shadow-[0_0_20px_rgba(0,255,65,0.4)] shadow-slate-400/40 hover:scale-105 active:scale-95 transition-all text-xs font-mono font-bold cursor-pointer group`}
+          title={t.common.askLabAI[language]}
         >
           <div className="w-5 h-5 rounded-full flex items-center justify-center dark:bg-[#00ff41] bg-emerald-600 text-black">
             <Bot className="w-3.5 h-3.5" />
           </div>
-          <span className="hidden sm:inline">Ask Lab AI</span>
+          <span className="hidden sm:inline">{t.common.askLabAI[language]}</span>
           <Sparkles className="w-3 h-3 text-[#00b8ff] animate-pulse" />
         </button>
       )}

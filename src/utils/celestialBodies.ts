@@ -103,15 +103,15 @@ export const CELESTIAL_BODIES: Record<CelestialBodyKey, CelestialBodyInfo> = {
     orbitalPeriod: '365.25 Earth Days (1.00 Year)',
     surfaceTemp: '15°C Mean (-89°C to +57°C)',
     diameter: '12,742 km (Home of SWID-SHRK)',
-    labDomain: 'Multimodal Academic Paper Analysis & Biomechanics Hub',
+    labDomain: 'Global Biomechanics & Advanced Metamaterials Research Hub',
     capability: {
-      title: 'Launch Multimodal Paper Analyzer (New Tab)',
+      title: 'Explore Research Domains & Engineering Modules',
       description:
-        'Directly opens the complete SWID-SHRK 6-Section Academic Paper Analyzer in a fresh browser tab with full PDF upload, OCR, and validation tools.',
-      buttonText: 'Launch Paper Analyzer in New Tab ↗',
-      targetTab: 'analyzer',
+        'Explore the full spectrum of SWID-SHRK mechanical investigations: multiaxial fatigue, neural biomechanics, cellular metamaterials, and dynamic crashworthiness.',
+      buttonText: 'Launch Research Hub ↗',
+      targetTab: 'research',
       isExternalOrNewTab: true,
-      badge: '3rd Planet • Lab Hub',
+      badge: '3rd Planet • Research Hub',
     },
   },
   mars: {

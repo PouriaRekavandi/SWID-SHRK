@@ -2,20 +2,19 @@ import React, { useState } from 'react';
 import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { useCelestial } from '../context/CelestialContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Menu,
   X,
   Layers,
   BookOpen,
   GraduationCap,
-  Wrench,
   PlayCircle,
   Mail,
   Home,
-  Bot,
-  FileText,
   MessageSquare,
   Users,
+  Globe,
 } from 'lucide-react';
 import logoTransparent from '../assets/logo_transparent.png';
 import logoFallback from '../assets/logo.jpg';
@@ -28,17 +27,17 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { activeBodyKey, activeInfo, advanceToNextBody, handleEarthClick } = useCelestial();
+  const { language, toggleLanguage, t } = useLanguage();
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-    { key: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
-    { key: 'analyzer', label: 'Paper Analyzer', icon: <FileText className="w-4 h-4" /> },
-    { key: 'qa', label: 'Engineering Q&A', icon: <MessageSquare className="w-4 h-4" /> },
-    { key: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
-    { key: 'research', label: 'Research', icon: <Layers className="w-4 h-4" /> },
-    { key: 'publications', label: 'Publications', icon: <BookOpen className="w-4 h-4" /> },
-    { key: 'students', label: 'Theses', icon: <GraduationCap className="w-4 h-4" /> },
-    { key: 'abaqus', label: 'Abaqus_Sims', icon: <PlayCircle className="w-4 h-4" /> },
-    { key: 'contact', label: 'Connect', icon: <Mail className="w-4 h-4" /> },
+    { key: 'home', label: t.nav.home[language], icon: <Home className="w-4 h-4" /> },
+    { key: 'qa', label: t.nav.qa[language], icon: <MessageSquare className="w-4 h-4" /> },
+    { key: 'team', label: t.nav.team[language], icon: <Users className="w-4 h-4" /> },
+    { key: 'research', label: t.nav.research[language], icon: <Layers className="w-4 h-4" /> },
+    { key: 'publications', label: t.nav.publications[language], icon: <BookOpen className="w-4 h-4" /> },
+    { key: 'students', label: t.nav.students[language], icon: <GraduationCap className="w-4 h-4" /> },
+    { key: 'abaqus', label: t.nav.abaqus[language], icon: <PlayCircle className="w-4 h-4" /> },
+    { key: 'contact', label: t.nav.contact[language], icon: <Mail className="w-4 h-4" /> },
   ];
 
   const handleNavClick = (key: TabKey) => {
@@ -67,10 +66,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
           </div>
           <div className="flex flex-col">
             <span className="font-orbitron font-bold text-sm tracking-wider dark:text-white text-slate-900 dark:group-hover:text-[#00ff41] group-hover:text-sky-600 transition-colors">
-              SWID-SHRK
+              {t.nav.labName[language]}
             </span>
             <span className="text-[10px] dark:text-zinc-400 text-slate-500 font-mono tracking-widest uppercase">
-              Aerospace &amp; Mechanics Lab
+              {t.nav.labSubtitle[language]}
             </span>
           </div>
         </button>
@@ -98,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
           })}
         </div>
 
-        {/* Right Actions: Celestial Indicator, Theme Switcher & Mobile Menu */}
+        {/* Right Actions: Celestial Indicator, Language Toggle, Theme Switcher & Mobile Menu */}
         <div className="flex items-center gap-2">
           {/* Celestial Orbit Indicator Button */}
           <button
@@ -118,17 +117,32 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
             }`}
             title={
               activeBodyKey === 'earth'
-                ? 'Earth Active — Click to open Paper Analyzer in a new tab!'
-                : `Active Celestial Body: ${activeInfo.name} — Click to step to next orbit`
+                ? t.nav.earthActiveTooltip[language]
+                : t.nav.celestialTooltip[language].replace('{name}', activeInfo.name)
             }
           >
             <span className="text-sm select-none">{activeInfo.astronomicalSymbol}</span>
             <span className="hidden sm:inline font-orbitron text-[11px]">{activeInfo.name}</span>
             {activeBodyKey === 'earth' && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-400 text-black font-extrabold hidden md:inline shadow-[0_0_8px_rgba(6,182,212,0.6)]">
-                ANALYZER ↗
+                RESEARCH ↗
               </span>
             )}
+          </button>
+
+          {/* Language Switcher Toggle */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition-all cursor-pointer dark:bg-zinc-900 bg-slate-100 dark:border-zinc-700 border-slate-300 dark:text-zinc-200 text-slate-800 hover:border-[#00ff41] hover:text-[#00ff41] shadow-xs"
+            title={t.common.switchLanguage[language]}
+            aria-label={t.common.switchLanguage[language]}
+          >
+            <Globe className="w-3.5 h-3.5 text-[#00b8ff]" />
+            <span className="font-bold">{language === 'en' ? 'فا' : 'EN'}</span>
+            <span className="text-[10px] opacity-75 hidden sm:inline">
+              {language === 'en' ? 'فارسی' : 'English'}
+            </span>
           </button>
 
           {/* Theme Switcher Toggle */}
@@ -158,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-xs font-bold uppercase tracking-wider text-left transition-all ${
                   isActive
                     ? 'dark:bg-[#00ff41]/10 bg-sky-50 dark:text-[#00ff41] text-sky-700 border-l-2 dark:border-[#00ff41] border-sky-600 font-bold'
-                    : 'dark:text-zinc-300 text-slate-600 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                    : 'dark:text-zinc-300 text-slate-600 hover:text-sky-600 dark:hover:text-[#00ff41]'
                 }`}
               >
                 {item.icon}
@@ -169,9 +183,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
 
           <div className="pt-2 border-t dark:border-zinc-800 border-slate-200 flex items-center justify-between px-3 py-2">
             <span className="text-xs font-mono uppercase tracking-wider dark:text-zinc-400 text-slate-500 font-semibold">
-              Theme Mode
+              {t.common.language[language]}
             </span>
-            <ThemeSwitcher />
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold border dark:bg-zinc-900 bg-slate-100 dark:border-zinc-700 border-slate-300 dark:text-zinc-200 text-slate-800"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#00b8ff]" />
+              <span>{language === 'en' ? 'فارسی (FA)' : 'English (EN)'}</span>
+            </button>
           </div>
         </div>
       )}

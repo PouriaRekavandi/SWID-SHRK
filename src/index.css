@@ -27,6 +27,14 @@
     overflow-x: hidden;
     transition: background-color 0.25s ease, color 0.25s ease;
   }
+
+  html[dir="rtl"], .rtl-layout {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  html[dir="rtl"] .font-mono, .rtl-layout .font-mono {
+    font-family: 'Vazirmatn', 'Roboto Mono', monospace;
+  }
 }
 
 /* Custom Cosmic Background animations */

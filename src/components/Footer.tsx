@@ -1,12 +1,14 @@
 import React from 'react';
 import { TabKey } from '../types';
 import { Shield, ChevronUp } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface FooterProps {
   onSelectTab: (tab: TabKey) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
+  const { language, t } = useLanguage();
   const currentYear = new Date().getFullYear();
 
   const scrollToTop = () => {
@@ -23,11 +25,11 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
             <span>RKV MATERIALS</span>
           </div>
           <p className="dark:text-zinc-500 text-slate-500 text-[11px]">
-            Mechanical &amp; Aerospace Research Laboratory · University of Maryland, Baltimore County
+            {t.footer.affiliation[language]}
           </p>
           <div className="flex items-center gap-1.5 dark:text-[#00ff41] text-emerald-700 text-[11px] mt-1 font-semibold">
             <Shield className="w-3.5 h-3.5" />
-            <span>System Secure. Encrypted HTTPS Transmission.</span>
+            <span>{t.footer.secureSystem[language]}</span>
           </div>
         </div>
 
@@ -37,37 +39,37 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
             onClick={() => onSelectTab('home')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >
-            Home
+            {t.nav.home[language]}
           </button>
           <button
             onClick={() => onSelectTab('research')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >
-            Research
+            {t.nav.research[language]}
           </button>
           <button
             onClick={() => onSelectTab('publications')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >
-            Publications
+            {t.nav.publications[language]}
           </button>
           <button
             onClick={() => onSelectTab('students')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >
-            Thesis Registry
+            {t.nav.students[language]}
           </button>
           <button
             onClick={() => onSelectTab('gear')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >
-            Lab Gear
+            {t.nav.gear[language]}
           </button>
           <button
             onClick={() => onSelectTab('contact')}
             className="hover:text-sky-700 dark:hover:text-[#00ff41] transition-colors cursor-pointer"
           >
-            Connect
+            {t.nav.contact[language]}
           </button>
         </div>
 
@@ -75,7 +77,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
         <div className="flex flex-col items-center sm:items-end gap-2">
           <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-pulse" />
-            // Research Channels
+            // {t.footer.researchChannels[language]}
           </span>
           <div className="flex items-center gap-2.5">
             {/* GitHub */}
@@ -126,15 +128,15 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
         <button
           onClick={scrollToTop}
           className="flex items-center gap-1 px-3 py-1.5 rounded dark:bg-zinc-900 bg-white border dark:border-zinc-700 border-slate-300 dark:hover:border-[#00ff41] hover:border-sky-600 dark:text-zinc-300 text-slate-700 dark:hover:text-[#00ff41] hover:text-sky-700 text-xs font-bold transition-all cursor-pointer shadow-xs"
-          aria-label="Scroll to top of page"
+          aria-label={t.common.backToTop[language]}
         >
-          <span>Top</span>
+          <span>{t.common.backToTop[language]}</span>
           <ChevronUp className="w-3.5 h-3.5" />
         </button>
       </div>
 
       <div className="max-w-6xl mx-auto mt-8 pt-6 border-t dark:border-zinc-900 border-slate-200 text-center text-[11px] dark:text-zinc-600 text-slate-500">
-        © {currentYear} SWID-SHRK &mdash; Mechanical &amp; Aerospace Research Lab. All rights reserved.
+        © {currentYear} SWID-SHRK &mdash; {t.footer.rights[language]}
       </div>
     </footer>
   );

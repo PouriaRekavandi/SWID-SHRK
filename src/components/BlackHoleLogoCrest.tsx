@@ -72,7 +72,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
   /**
    * Primary click on the central sphere / emblem:
    * - When Black Hole is active: transforms into the Sun and begins the Solar System tour.
-   * - When Earth is active: programmatically triggers handleSelectTab('analyzer') and opens that view in a new browser tab.
+   * - When Earth is active: programmatically triggers handleSelectTab('research') and opens that view in a new browser tab.
    * - When other planets are active: executes that planet's specific engineering capability.
    */
   const handleCentralSphereClick = (e: React.MouseEvent) => {
@@ -81,7 +81,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
     if (activeBodyKey === 'blackhole') {
       advanceToNextBody();
     } else if (activeBodyKey === 'earth') {
-      // Programmatically triggers handleSelectTab('analyzer') and opens that view in a new browser tab
+      // Programmatically triggers handleSelectTab('research') and opens that view in a new browser tab
       handleEarthClick(onSelectTab);
     } else {
       executeCapability(onSelectTab);
@@ -481,11 +481,11 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
 
             {/* Capability Trigger Button */}
             {activeBodyKey === 'earth' ? (
-              /* EARTH: Programmatically triggers handleSelectTab('analyzer') AND opens that view in a new browser tab */
+              /* EARTH: Programmatically triggers handleSelectTab('research') AND opens that view in a new browser tab */
               <button
                 onClick={() => handleEarthClick(onSelectTab)}
                 className="flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-black bg-gradient-to-r from-cyan-400 via-sky-300 to-cyan-400 hover:from-cyan-300 hover:to-sky-200 shadow-[0_0_22px_rgba(6,182,212,0.7)] hover:shadow-[0_0_30px_rgba(6,182,212,0.95)] transition-all transform hover:-translate-y-0.5 cursor-pointer text-center"
-                title="Selects Analyzer view and opens in a new browser tab"
+                title="Selects Research view and opens in a new browser tab"
               >
                 <span>{activeInfo.capability.buttonText}</span>
                 <ExternalLink className="w-4 h-4" />

@@ -81,6 +81,29 @@ export interface TeamMember {
   status: 'Active' | 'Alumni' | 'Visiting';
 }
 
+export type NewsCategory = 'all' | 'fracture' | 'metamaterials' | 'fatigue' | 'biomechanics';
+
+export interface LabNewsItem {
+  id: string;
+  title: string;
+  titleFa?: string;
+  category: 'fracture' | 'metamaterials' | 'fatigue' | 'biomechanics';
+  authors: string;
+  journal: string;
+  date: string;
+  doi: string;
+  url: string;
+  summary: string;
+  summaryFa?: string;
+  keyFindings: string[];
+  keyFindingsFa?: string[];
+  methodology: string;
+  methodologyFa?: string;
+  readTime: string;
+  isPinned?: boolean;
+  citationText?: string;
+}
+
 export type CelestialBodyKey =
   | 'blackhole'
   | 'sun'

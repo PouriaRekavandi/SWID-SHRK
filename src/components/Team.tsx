@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TeamMember, TeamRoleCategory, TabKey } from '../types';
 import { INITIAL_TEAM_MEMBERS, PUBLICATIONS } from '../data/initialData';
-import profilePhoto from '../assets/profile.png';
+import profilePhoto from '../assets/profile.jpg';
 import profileFallback from '../assets/profile.jpg';
 import { useLanguage } from '../context/LanguageContext';
 import {

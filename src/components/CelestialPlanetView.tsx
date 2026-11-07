@@ -1,6 +1,6 @@
 import React from 'react';
 import { CelestialBodyKey } from '../types';
-import logoTransparent from '../assets/logo_transparent.png';
+import logoTransparent from '../assets/logo.jpg';
 import logoFallback from '../assets/logo.jpg';
 
 interface CelestialPlanetViewProps {

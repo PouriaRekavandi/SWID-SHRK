@@ -3,7 +3,7 @@ import { TabKey, CelestialBodyKey } from '../types';
 import { CELESTIAL_ORDER } from '../utils/celestialBodies';
 import { useCelestial } from '../context/CelestialContext';
 import { CelestialPlanetView } from './CelestialPlanetView';
-import logoTransparent from '../assets/logo_transparent.png';
+import logoTransparent from '../assets/logo.jpg';
 import logoFallback from '../assets/logo.jpg';
 import {
   Sparkles,

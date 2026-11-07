@@ -16,7 +16,7 @@ import {
   Users,
   Globe,
 } from 'lucide-react';
-import logoTransparent from '../assets/logo_transparent.png';
+import logoTransparent from '../assets/logo.jpg';
 import logoFallback from '../assets/logo.jpg';
 
 interface NavbarProps {

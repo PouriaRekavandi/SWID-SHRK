@@ -532,6 +532,102 @@ export const LOCALIZATION = {
     },
   },
 
+  // Laboratory News Section
+  news: {
+    badge: {
+      en: 'RESEARCH DEVELOPMENTS & PREPRINTS',
+      fa: 'تازه‌های پژوهش و دستاوردهای علمی',
+    },
+    title: {
+      en: 'Laboratory News',
+      fa: 'اخبار آزمایشگاه',
+    },
+    subtitle: {
+      en: 'Latest developments, breakthrough preprints, and experimental findings in fracture mechanics, cellular metamaterials, and dynamic impact mitigation.',
+      fa: 'تازه‌ترین دستاوردها، مقالات پیش‌چاپ و یافته‌های تجربی در مکانیک شکست، متامتریال‌های سلولی و کاهش اثر ضربه‌های دینامیکی.',
+    },
+    filterAll: {
+      en: 'All Topics',
+      fa: 'همه موضوعات',
+    },
+    filterFracture: {
+      en: 'Fracture Mechanics',
+      fa: 'مکانیک شکست',
+    },
+    filterMetamaterials: {
+      en: 'Metamaterials',
+      fa: 'متامتریال‌ها',
+    },
+    filterFatigue: {
+      en: 'Multiaxial Fatigue & FEA',
+      fa: 'خستگی چندمحوره و اجزای محدود',
+    },
+    filterBiomechanics: {
+      en: 'Biomechanics',
+      fa: 'بیومکانیک',
+    },
+    searchPlaceholder: {
+      en: 'Filter developments by keyword, author, or method...',
+      fa: 'جستجو در اخبار با کلمه کلیدی، نویسنده یا روش...',
+    },
+    fetchLatestBtn: {
+      en: 'Fetch Latest Updates',
+      fa: 'دریافت تازه‌ترین اخبار',
+    },
+    fetching: {
+      en: 'Updating Feed...',
+      fa: 'در حال به‌روزرسانی...',
+    },
+    feedUpdated: {
+      en: 'Feed Synchronized',
+      fa: 'اطلاعات همگام‌سازی شد',
+    },
+    readAbstract: {
+      en: 'Read Abstract & Findings',
+      fa: 'مشاهده چکیده و یافته‌ها',
+    },
+    viewArticle: {
+      en: 'Access Article / DOI',
+      fa: 'مشاهده مقاله در مرجع / DOI',
+    },
+    copyDoi: {
+      en: 'Copy DOI',
+      fa: 'کپی DOI',
+    },
+    copyCitation: {
+      en: 'Copy Citation',
+      fa: 'کپی استناد',
+    },
+    keyFindingsTitle: {
+      en: 'Key Experimental & Theoretical Findings',
+      fa: 'یافته‌های کلیدی آزمایشگاهی و نظری',
+    },
+    methodologyTitle: {
+      en: 'Instrumentation & Numerical Methodology',
+      fa: 'تجهیزات آزمایشگاهی و روش‌شناسی عددی',
+    },
+    itemsCount: {
+      en: 'research articles published',
+      fa: 'مقاله پژوهشی ثبت‌شده',
+    },
+    noResultsTitle: {
+      en: 'No news articles found',
+      fa: 'مقاله‌ای یافت نشد',
+    },
+    noResultsDesc: {
+      en: 'Try clearing the search query or selecting a different research category.',
+      fa: 'جستجوی دیگری انجام دهید یا دسته پژوهشی متفاوتی را انتخاب کنید.',
+    },
+    resetFilters: {
+      en: 'Reset Filters',
+      fa: 'بازنشانی فیلترها',
+    },
+    pinnedBadge: {
+      en: 'Featured Advance',
+      fa: 'دستاورد برجسته',
+    },
+  },
+
   // Footer
   footer: {
     labTitle: {

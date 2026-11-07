@@ -11,6 +11,7 @@ import { EquipmentSection } from './components/EquipmentSection';
 import { ContactSection } from './components/ContactSection';
 import { AIChatSection } from './components/AIChatSection';
 import { AbaqusGallery } from './components/AbaqusGallery';
+import { LaboratoryNewsSection } from './components/LaboratoryNewsSection';
 import { Team } from './components/Team';
 import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
 import { Footer } from './components/Footer';
@@ -100,6 +101,9 @@ export const App: React.FC = () => {
             <div className="max-w-6xl mx-auto px-4 space-y-16">
               {/* Principal Researcher Card */}
               <ProfileSection />
+
+              {/* Laboratory News Feed Section */}
+              <LaboratoryNewsSection onNotify={showToast} onSelectTab={handleSelectTab} />
 
               {/* Research Preview with Accordions and Video Player */}
               <ResearchSection onNotify={showToast} />

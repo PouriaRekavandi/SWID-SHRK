@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
   };
 
   return (
-    <footer className="mt-20 border-t dark:border-[#222222] border-slate-200 dark:bg-[#000000] bg-slate-100 py-10 px-4 dark:text-zinc-400 text-slate-600 font-mono text-xs transition-colors duration-200">
+    <footer className="mt-20 border-t border-zinc-800/80 bg-[#010308] py-10 px-4 text-zinc-400 font-mono text-xs transition-colors duration-200">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center md:items-start gap-1 text-center md:text-left">
           <div className="flex items-center gap-2 dark:text-white text-slate-900 font-orbitron font-bold text-sm tracking-wider">

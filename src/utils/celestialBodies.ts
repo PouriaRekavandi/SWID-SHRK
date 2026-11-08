@@ -16,21 +16,21 @@ export const CELESTIAL_ORDER: CelestialBodyKey[] = [
 export const CELESTIAL_BODIES: Record<CelestialBodyKey, CelestialBodyInfo> = {
   blackhole: {
     key: 'blackhole',
-    name: 'Singularity (Sagittarius A*)',
+    name: 'Event Horizon (Sagittarius A*)',
     astronomicalSymbol: '🕳️',
     orderIndex: 0,
-    classification: 'Supermassive Black Hole Singularity',
+    classification: 'Supermassive Black Hole Event Horizon & Photon Sphere',
     distanceFromSun: 'Center of Milky Way (~26,000 ly)',
     orbitalPeriod: 'Static Kerr-Newman Geodesic',
     surfaceTemp: '1.4 × 10⁻¹⁴ K (Hawking Radiation)',
-    diameter: 'Rs ≈ 24,000,000 km',
-    labDomain: 'SWID-SHRK Origin Crest & Relativistic Continuum Mechanics',
+    diameter: 'Rs ≈ 24,000,000 km (Event Horizon Radius)',
+    labDomain: 'Relativistic Spacetime Curvature & Extreme Continuum Mechanics',
     capability: {
-      title: 'Cosmic Singularity Re-Forging',
+      title: 'Relativistic Event Horizon & Gravitational Lensing',
       description:
-        'Collapses local spacetime geodesics into infinite curvature, pulsing gravitational shockwaves and re-synthesizing the SWID-SHRK crest emblem.',
-      buttonText: 'Re-Forge from Singularity ⚡',
-      badge: 'Relativistic Singularity',
+        'Infinite spacetime curvature boundary where escape velocity equals the speed of light c, framed by the razor-sharp photon ring and relativistic Doppler-boosted accretion disk.',
+      buttonText: 'Pulse Gravitational Wave Shockwave ⚡',
+      badge: 'Supermassive Event Horizon',
     },
   },
   sun: {

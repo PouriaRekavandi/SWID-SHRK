@@ -13,17 +13,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
   const { language, isRTL, t } = useLanguage();
 
   return (
-    <header className="relative isolate flex flex-col items-center justify-center min-h-[580px] sm:min-h-[660px] py-16 px-4 overflow-hidden dark:bg-black bg-gradient-to-b from-slate-100 via-white to-slate-100 dark:border-b-2 dark:border-[#00ff41] border-b-2 border-sky-600 transition-colors duration-200">
+    <header className="relative isolate flex flex-col items-center justify-center min-h-[580px] sm:min-h-[660px] py-16 px-4 overflow-hidden bg-[#02040a] border-b-2 border-[#00ff41]/40 shadow-2xl transition-colors duration-200">
       {/* Persistent Theme Toggle in Header */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30">
         <ThemeSwitcher variant="hero" />
       </div>
 
-      {/* Background radial effects */}
-      <div className="absolute inset-[-4%] -z-10 pointer-events-none opacity-60">
-        <div className="absolute inset-0 dark:bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_45%)] bg-[radial-gradient(circle_at_30%_25%,rgba(2,132,199,0.06),transparent_45%)]" />
-        <div className="absolute inset-0 dark:bg-[radial-gradient(circle_at_72%_70%,rgba(0,184,255,0.12),transparent_50%)] bg-[radial-gradient(circle_at_72%_70%,rgba(16,185,129,0.05),transparent_50%)]" />
-        <div className="absolute inset-0 dark:bg-[repeating-linear-gradient(to_bottom,rgba(255,255,255,0.02)_0_1px,transparent_1px_3px)] bg-[repeating-linear-gradient(to_bottom,rgba(0,0,0,0.015)_0_1px,transparent_1px_3px)]" />
+      {/* Deep Space Cosmic Canvas with Distant Stars and Nebula Glow */}
+      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[#02040a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(15,23,42,0.9),rgba(2,4,10,1))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(14,165,233,0.14)_0%,rgba(99,102,241,0.08)_40%,transparent_70%)]" />
+        {/* Subtle procedural starfield specks */}
+        <div className="absolute inset-0 opacity-35 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1.5px,transparent_1.5px)] [background-size:56px_56px]" />
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fde047_1px,transparent_1px)] [background-size:84px_84px]" />
       </div>
 
       {/* Central Black Hole Crest & Interactive Solar Orbit Engine */}
@@ -34,21 +38,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
       {/* Main Titles */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-4xl px-2" dir={isRTL ? 'rtl' : 'ltr'}>
         <h1
-          className={`text-4xl sm:text-5xl md:text-7xl dark:text-white text-slate-900 font-normal leading-tight tracking-wide dark:drop-shadow-[0_0_3px_rgba(255,255,255,0.9)] drop-shadow-sm mb-3 ${
+          className={`text-4xl sm:text-5xl md:text-7xl text-white font-normal leading-tight tracking-wide drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] mb-3 ${
             isRTL ? 'font-serif' : 'font-allura'
           }`}
         >
           {t.hero.mainTitle[language]}
         </h1>
-        <p className="dark:text-zinc-400 text-slate-600 font-mono text-xs sm:text-sm md:text-base tracking-[0.15em] uppercase mb-4">
+        <p className="text-zinc-300 font-mono text-xs sm:text-sm md:text-base tracking-[0.15em] uppercase mb-4 drop-shadow-xs">
           {t.hero.subtitle[language]}
         </p>
 
         {/* MIGA Badge */}
-        <div className="inline-flex items-baseline px-4 py-1 border dark:border-white/10 border-slate-300 rounded-full font-orbitron font-bold text-xs sm:text-sm tracking-[0.2em] uppercase mb-8 dark:bg-black/40 bg-white/90 shadow-sm">
-          <span className="text-[#ff3131] dark:drop-shadow-[0_0_6px_rgba(255,49,49,0.7)]">M</span>
-          <span className="dark:text-white text-slate-800 dark:drop-shadow-[0_0_5px_rgba(255,255,255,0.6)]">IG</span>
-          <span className="dark:text-[#00e676] text-emerald-600 dark:drop-shadow-[0_0_6px_rgba(0,230,118,0.7)]">A</span>
+        <div className="inline-flex items-baseline px-4 py-1 border border-zinc-700/80 rounded-full font-orbitron font-bold text-xs sm:text-sm tracking-[0.2em] uppercase mb-8 bg-black/70 shadow-sm">
+          <span className="text-[#ff3131] drop-shadow-[0_0_6px_rgba(255,49,49,0.7)]">M</span>
+          <span className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.6)]">IG</span>
+          <span className="text-[#00e676] drop-shadow-[0_0_6px_rgba(0,230,118,0.7)]">A</span>
         </div>
 
         {/* Interactive Action Buttons */}

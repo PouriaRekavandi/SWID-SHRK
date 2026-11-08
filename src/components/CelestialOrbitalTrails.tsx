@@ -35,7 +35,7 @@ export const CelestialOrbitalTrails: React.FC<CelestialOrbitalTrailsProps> = ({
       <div className="absolute top-2 right-2 z-30">
         <button
           onClick={toggleOrbitTrails}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold dark:bg-black/70 bg-white/80 border dark:border-zinc-800 border-slate-300 dark:text-zinc-400 text-slate-600 dark:hover:text-[#00ff41] hover:text-emerald-700 transition-colors cursor-pointer shadow-xs backdrop-blur-xs"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-black/80 border border-zinc-700/80 text-zinc-300 hover:text-[#00ff41] transition-colors cursor-pointer shadow-md backdrop-blur-md"
           title="Enable Glowing Planetary Orbital Trails"
         >
           <Eye className="w-3 h-3 text-[#00ff41]" />
@@ -102,7 +102,10 @@ export const CelestialOrbitalTrails: React.FC<CelestialOrbitalTrailsProps> = ({
         {/* ========================================================================= */}
         {/* RENDER ALL PERSISTENT GLOWING ELLIPTICAL TRAILS                           */}
         {/* ========================================================================= */}
-        <g className="transition-opacity duration-500">
+        <g
+          className="transition-opacity duration-500"
+          filter={activeBodyKey === 'blackhole' ? 'url(#blackHoleGravitationalLensing)' : undefined}
+        >
           {visibleTrails.map((trail) => {
             const isActive = trail.key === activeBodyKey;
             const isHovered = trail.key === hoveredBodyKey;
@@ -243,10 +246,10 @@ export const CelestialOrbitalTrails: React.FC<CelestialOrbitalTrailsProps> = ({
           {/* Focused vs All Orbits Toggle */}
           <button
             onClick={toggleFocusedOrbitOnly}
-            className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer backdrop-blur-xs border ${
+            className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer backdrop-blur-md border ${
               focusedOrbitOnly
-                ? 'dark:bg-[#00ff41]/20 bg-emerald-100 dark:border-[#00ff41] border-emerald-500 dark:text-[#00ff41] text-emerald-800'
-                : 'dark:bg-black/60 bg-white/80 dark:border-zinc-800 border-slate-300 dark:text-zinc-400 text-slate-600 hover:text-white'
+                ? 'bg-[#00ff41]/20 border-[#00ff41] text-[#00ff41]'
+                : 'bg-black/75 border-zinc-700/80 text-zinc-300 hover:text-white'
             }`}
             title={focusedOrbitOnly ? 'Show All 10 Planetary Orbit Trails' : 'Focus Only on Active Planet Orbit Trail'}
           >
@@ -260,7 +263,7 @@ export const CelestialOrbitalTrails: React.FC<CelestialOrbitalTrailsProps> = ({
               const nextIdx = (speeds.indexOf(orbitAnimationSpeed) + 1) % speeds.length;
               setOrbitAnimationSpeed(speeds[nextIdx]);
             }}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold dark:bg-black/60 bg-white/80 border dark:border-zinc-800 border-slate-300 dark:text-zinc-400 text-slate-600 dark:hover:text-[#00ff41] hover:text-emerald-700 transition-colors cursor-pointer backdrop-blur-xs"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/75 border border-zinc-700/80 text-zinc-300 hover:text-[#00ff41] transition-colors cursor-pointer backdrop-blur-md"
             title="Cycle Orbital Speed"
           >
             <Zap className="w-2.5 h-2.5 text-amber-400" />
@@ -270,7 +273,7 @@ export const CelestialOrbitalTrails: React.FC<CelestialOrbitalTrailsProps> = ({
           {/* Hide Trails Toggle */}
           <button
             onClick={toggleOrbitTrails}
-            className="p-1 rounded text-[10px] font-mono font-bold dark:bg-black/60 bg-white/80 border dark:border-zinc-800 border-slate-300 dark:text-zinc-400 text-slate-600 dark:hover:text-red-400 hover:text-red-600 transition-colors cursor-pointer backdrop-blur-xs"
+            className="p-1 rounded text-[10px] font-mono font-bold bg-black/75 border border-zinc-700/80 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer backdrop-blur-md"
             title="Hide Orbital Trails"
             aria-label="Hide Orbital Trails"
           >

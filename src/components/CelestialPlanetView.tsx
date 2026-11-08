@@ -14,10 +14,10 @@ interface CelestialPlanetViewProps {
 
 /**
  * CelestialPlanetView
- * Visualizes celestial bodies with strict 3D spin rotation around the VERTICAL Y-AXIS:
- * - X-axis: horizontal (left to right)
- * - Y-axis: vertical (up to down, the axis of spin rotation)
- * - Surface features and cloud bands drift horizontally along X around the vertical Y-axis.
+ * Renders physically-accurate 3D planetary surfaces with the SWID-SHRK crest logo
+ * harmoniously and visibly embedded into each celestial body (Sun and all planets):
+ * - Preserves atmospheric depth, storm vortices, convective cells, continents, and 3D limb darkening.
+ * - Embeds the iconic crest with tailored, high-contrast holographic and spherical blend modes.
  */
 export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
   bodyKey,
@@ -28,11 +28,9 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
   isWarping = false,
 }) => {
   const speed = Math.max(0.5, revolutionSpeed || rotationSpeed || 1.0);
-  // Dynamic duration calculations based on rotational & orbital acceleration
   const spinDuration = `${Math.max(0.45, 24 / speed)}s`;
-  const counterSpinDuration = `${Math.max(0.45, 28 / speed)}s`;
   const fastSpinDuration = `${Math.max(0.25, 12 / speed)}s`;
-  const moonOrbitDuration = `${Math.max(0.3, 10 / speed)}s`;
+  const moonOrbitDuration = `${Math.max(0.3, 11 / speed)}s`;
 
   // Hyperspace warp effect overlay
   const warpOverlay = isWarping ? (
@@ -45,102 +43,83 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
     </div>
   ) : null;
 
-  // Vertical Y-Axis Spin Pole Marker (Up-to-Down Axis of Rotation)
-  const verticalYAxisMarker = (
-    <div
-      aria-hidden="true"
-      className="absolute -top-5 -bottom-5 left-1/2 -translate-x-1/2 w-[2px] bg-gradient-to-b from-amber-400 via-amber-300/30 to-amber-400 pointer-events-none z-30 flex flex-col justify-between items-center"
-      title="Vertical Y-Axis of Spin Rotation (Up-to-Down, rotateY)"
-    >
-      {/* Top North Pole (-Y in screen coords) */}
-      <div className="relative flex flex-col items-center">
-        <div className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_8px_#fde047] ring-1 ring-amber-100" />
-        <span className="text-[7px] font-mono font-black text-amber-200 tracking-tighter bg-black/90 px-1 rounded -mt-0.5 border border-amber-400/50 shadow-sm whitespace-nowrap">
-          -Y
-        </span>
-      </div>
-
-      {/* Central 3D rotateY spin rotation glyph */}
-      <div className="text-[9px] text-amber-300/90 font-bold leading-none animate-pulse bg-black/70 px-0.5 rounded shadow">
-        ⟲
-      </div>
-
-      {/* Bottom South Pole (+Y in screen coords) */}
-      <div className="relative flex flex-col items-center">
-        <span className="text-[7px] font-mono font-black text-amber-200 tracking-tighter bg-black/90 px-1 rounded -mb-0.5 border border-amber-400/50 shadow-sm whitespace-nowrap">
-          +Y
-        </span>
-        <div className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_8px_#fde047] ring-1 ring-amber-100" />
-      </div>
-    </div>
-  );
-
   switch (bodyKey) {
     case 'sun':
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Intense Solar Corona Halo Glow */}
+          {/* 1. Deep Volumetric Solar Corona */}
           <div
             className={`absolute -inset-10 sm:-inset-16 rounded-full pointer-events-none transition-all duration-700 blur-2xl ${
-              isHovered || flareActive || isWarping ? 'opacity-95 scale-110' : 'opacity-80 scale-100'
+              isHovered || flareActive ? 'opacity-95 scale-110' : 'opacity-85 scale-100'
             }`}
             style={{
               background:
-                'radial-gradient(circle, rgba(255, 235, 59, 0.9) 0%, rgba(255, 152, 0, 0.75) 45%, rgba(244, 67, 54, 0.4) 70%, transparent 85%)',
+                'radial-gradient(circle, rgba(255, 235, 59, 0.95) 0%, rgba(255, 152, 0, 0.8) 42%, rgba(244, 67, 54, 0.45) 70%, transparent 85%)',
             }}
           />
 
-          {/* Coronal Mass Prominence Loops aligned on vertical Y poles */}
-          <div className="absolute inset-[-14%] rounded-full pointer-events-none">
+          {/* 2. Coronal Plasma Prominence Loops */}
+          <div className="absolute inset-[-15%] rounded-full pointer-events-none">
             <div
-              className="absolute top-1 right-5 w-16 h-16 rounded-full border-2 border-amber-300 opacity-80 blur-[1px]"
+              className="absolute top-0 right-6 w-16 h-16 rounded-full border-2 border-amber-300 opacity-80 blur-[1px]"
               style={{
                 clipPath: 'polygon(0 0, 100% 0, 100% 60%, 0 0)',
-                filter: 'drop-shadow(0 0 10px #ff9800)',
+                filter: 'drop-shadow(0 0 12px #ff9800)',
               }}
             />
             <div
-              className="absolute bottom-2 left-4 w-20 h-20 rounded-full border-2 border-orange-400 opacity-75 blur-[1px]"
+              className="absolute bottom-1 left-4 w-20 h-20 rounded-full border-2 border-orange-400 opacity-75 blur-[1px]"
               style={{
                 clipPath: 'polygon(0 50%, 100% 100%, 0 100%)',
-                filter: 'drop-shadow(0 0 12px #ff5722)',
+                filter: 'drop-shadow(0 0 14px #ff5722)',
               }}
             />
           </div>
 
-          {/* Sun Photosphere Main Body (Boiling Convection Plasma) */}
+          {/* 3. Solar Photosphere Body (3D Convective Surface) */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_50px_rgba(255,180,0,0.95),inset_0_0_40px_rgba(255,255,255,0.85)] border-2 border-amber-200"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_55px_rgba(255,180,0,0.95),inset_0_0_40px_rgba(255,255,255,0.9)] border-2 border-amber-200"
             style={{
               background:
-                'radial-gradient(circle at 38% 34%, #ffffff 0%, #fff59d 18%, #fbc02d 42%, #f57f17 68%, #d84315 92%, #bf360c 100%)',
+                'radial-gradient(circle at 40% 35%, #ffffff 0%, #fff9c4 16%, #fbc02d 38%, #f57f17 65%, #d84315 88%, #bf360c 100%)',
             }}
           >
-            {/* Plasma Granules Drifting Horizontally along X around the Vertical Y-Axis */}
+            {/* Boiling Convective Granulation Cells */}
             <div
-              className="absolute inset-0 opacity-55 mix-blend-color-burn"
+              className="absolute inset-0 opacity-70 mix-blend-overlay"
               style={{
-                background:
-                  'radial-gradient(ellipse at center, transparent 30%, rgba(216, 67, 21, 0.6) 70%, rgba(191, 54, 12, 0.9) 100%)',
+                background: `radial-gradient(circle at 30% 25%, transparent 20%, rgba(191, 54, 12, 0.7) 70%),
+                  radial-gradient(circle at 70% 65%, transparent 20%, rgba(216, 67, 21, 0.7) 65%),
+                  radial-gradient(circle at 50% 50%, rgba(255, 235, 59, 0.4) 0%, transparent 50%)`,
                 animation: `celestial-spin-y ${fastSpinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             />
 
-            {/* Embossed Golden SWID-SHRK Crest Spinning around the Vertical Y-Axis */}
+            {/* Sunspot Groups */}
             <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-90 mix-blend-screen"
+              className="absolute inset-0 pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
+              }}
+            >
+              <div className="absolute top-[38%] left-[28%] w-5 h-3.5 rounded-[50%] bg-[#450a0a] border border-[#d84315] shadow-[0_0_6px_#ff5722] flex items-center justify-center">
+                <div className="w-2.5 h-1.5 rounded-[50%] bg-[#1a0505]" />
+              </div>
+              <div className="absolute top-[48%] left-[58%] w-4 h-3 rounded-[50%] bg-[#450a0a] border border-[#d84315] shadow-[0_0_5px_#ff5722]">
+                <div className="w-2 h-1 rounded-[50%] bg-[#1a0505]" />
+              </div>
+            </div>
+
+            {/* EMBEDDED SWID-SHRK GOLDEN CREST IN SUN */}
+            <div
+              className="absolute inset-0 flex items-center justify-center p-3 z-14 opacity-90 mix-blend-screen pointer-events-none"
+              style={{
+                animation: `celestial-spin-y ${spinDuration} linear infinite`,
               }}
             >
               <img
@@ -149,9 +128,18 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_12px_#ffffff] drop-shadow-[0_0_24px_#ffeb3b]"
+                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_16px_#ffeb3b] drop-shadow-[0_0_30px_#ff9800]"
               />
             </div>
+
+            {/* 3D Solar Limb Darkening */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none z-18"
+              style={{
+                boxShadow:
+                  'inset 0 0 35px 8px rgba(183, 28, 28, 0.85), inset 0 0 70px rgba(127, 29, 29, 0.5)',
+              }}
+            />
           </div>
         </div>
       );
@@ -160,12 +148,11 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Faint Solar Glare */}
+          {/* Faint Solar Backlight */}
           <div
             className="absolute -inset-4 rounded-full pointer-events-none opacity-40 blur-lg"
             style={{
@@ -174,58 +161,62 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
             }}
           />
 
-          {/* Mercury Rocky Body with Silicate Mantle */}
+          {/* Mercury 3D Rocky Cratered Surface */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_25px_rgba(180,180,195,0.4),inset_-18px_-18px_40px_rgba(0,0,0,0.92)] border border-slate-500/50"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_25px_rgba(180,180,195,0.4),inset_-22px_-22px_45px_rgba(0,0,0,0.95)] border border-slate-500/60"
             style={{
               background:
-                'radial-gradient(circle at 32% 30%, #e2e8f0 0%, #94a3b8 32%, #64748b 60%, #334155 82%, #0f172a 100%)',
+                'radial-gradient(circle at 30% 28%, #f1f5f9 0%, #cbd5e1 22%, #94a3b8 48%, #64748b 72%, #334155 88%, #0f172a 100%)',
             }}
           >
-            {/* Cratered Mantle rotating around the vertical Y-axis */}
+            {/* Cratered Hermian Terrain */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
-              {/* Caloris Basin Multiring Impact Feature */}
+              {/* Caloris Basin */}
               <div
-                className="absolute top-[28%] left-[24%] w-14 h-14 rounded-full border border-slate-300/40 pointer-events-none"
+                className="absolute top-[26%] left-[22%] w-16 h-16 rounded-full border border-slate-300/50"
                 style={{
-                  boxShadow: 'inset 0 0 10px rgba(15, 23, 42, 0.8), 0 0 6px rgba(255, 255, 255, 0.3)',
+                  boxShadow:
+                    'inset 0 0 12px rgba(15, 23, 42, 0.85), 0 0 8px rgba(255, 255, 255, 0.35)',
                 }}
               >
-                <div className="absolute inset-2 rounded-full border border-slate-400/30" />
-                <div className="absolute inset-4 rounded-full bg-slate-900/40" />
+                <div className="absolute inset-2.5 rounded-full border border-slate-400/40 bg-slate-800/30" />
+                <div className="absolute inset-5 rounded-full bg-slate-900/50 border border-slate-500/30" />
               </div>
 
-              {/* Smaller Craters across the Silicate Mantle */}
-              <div className="absolute top-[60%] left-[38%] w-8 h-8 rounded-full border border-slate-400/30 shadow-[inset_0_0_6px_#0f172a]" />
-              <div className="absolute top-[22%] right-[28%] w-6 h-6 rounded-full border border-slate-400/30 shadow-[inset_0_0_4px_#0f172a]" />
-              <div className="absolute bottom-[22%] right-[32%] w-10 h-10 rounded-full border border-slate-500/40 shadow-[inset_0_0_8px_#0f172a]" />
-
-              {/* Embedded Crest */}
-              <div className="absolute inset-0 flex items-center justify-center p-4 opacity-50 mix-blend-overlay">
-                <img
-                  src={logoTransparent}
-                  alt="SWID-SHRK Mercury Crest"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoFallback;
-                  }}
-                  className="w-[75%] h-[75%] object-contain rounded-full"
-                />
-              </div>
+              {/* Impact Craters */}
+              <div className="absolute top-[62%] left-[36%] w-9 h-9 rounded-full border border-slate-300/40 shadow-[inset_0_0_8px_#0f172a] bg-slate-800/40" />
+              <div className="absolute top-[20%] right-[26%] w-7 h-7 rounded-full border border-slate-300/40 shadow-[inset_0_0_6px_#0f172a] bg-slate-800/35" />
+              <div className="absolute bottom-[20%] right-[32%] w-11 h-11 rounded-full border border-slate-400/40 shadow-[inset_0_0_10px_#0f172a] bg-slate-800/40" />
             </div>
 
-            {/* Fixed Terminator Line (Sunward illumination fixed) */}
+            {/* EMBEDDED SWID-SHRK CREST IN MERCURY */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-85 z-20"
+              className="absolute inset-0 flex items-center justify-center p-3.5 z-14 opacity-80 mix-blend-overlay pointer-events-none"
+              style={{
+                animation: `celestial-spin-y ${spinDuration} linear infinite`,
+              }}
+            >
+              <img
+                src={logoTransparent}
+                alt="SWID-SHRK Mercury Crest"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = logoFallback;
+                }}
+                className="w-[78%] h-[78%] object-contain rounded-full filter drop-shadow-[0_0_12px_#cbd5e1]"
+              />
+            </div>
+
+            {/* Deep Photorealistic Day/Night Terminator Line */}
+            <div
+              className="absolute inset-0 pointer-events-none z-20"
               style={{
                 background:
-                  'linear-gradient(135deg, transparent 40%, rgba(15, 23, 42, 0.6) 65%, rgba(2, 6, 23, 0.98) 90%)',
+                  'linear-gradient(125deg, transparent 38%, rgba(15, 23, 42, 0.6) 62%, rgba(2, 6, 23, 0.98) 88%)',
               }}
             />
           </div>
@@ -236,12 +227,11 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Supercritical Golden Atmosphere Glow */}
+          {/* Supercritical Atmospheric Glow */}
           <div
             className="absolute -inset-6 rounded-full pointer-events-none opacity-70 blur-xl"
             style={{
@@ -250,37 +240,34 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
             }}
           />
 
-          {/* Venus Cloud Sphere with Swirling Acid Decks */}
+          {/* Venus 3D Sulfuric Acid Cloud Canopy */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(255,193,7,0.65),inset_-16px_-16px_36px_rgba(62,39,35,0.95)] border border-amber-300/40"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(255,193,7,0.65),inset_-20px_-20px_45px_rgba(62,39,35,0.98)] border border-amber-300/50"
             style={{
               background:
-                'radial-gradient(circle at 35% 32%, #fff9c4 0%, #ffe082 25%, #ffb74d 50%, #f57c00 75%, #5d4037 100%)',
+                'radial-gradient(circle at 35% 30%, #fffde7 0%, #fff59d 18%, #ffe082 40%, #ffb74d 68%, #f57c00 88%, #5d4037 100%)',
             }}
           >
-            {/* Retrograde Horizontal Drift along X around the vertical Y-axis */}
+            {/* Swirling Atmospheric Chevron Cloud Bands */}
             <div
-              className="absolute inset-0 opacity-60"
+              className="absolute inset-0 opacity-75"
               style={{
-                background:
-                  'repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(255, 238, 88, 0.3) 20px, rgba(230, 81, 0, 0.25) 40px)',
-                animation: `celestial-spin-y-reverse ${counterSpinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
+                background: `repeating-linear-gradient(
+                  -18deg,
+                  rgba(255, 238, 88, 0.35) 0px,
+                  rgba(255, 238, 88, 0.35) 16px,
+                  rgba(245, 124, 0, 0.25) 16px,
+                  rgba(245, 124, 0, 0.25) 32px
+                )`,
+                animation: `celestial-spin-y-reverse ${spinDuration} linear infinite`,
               }}
             />
 
-            {/* Lightning Flicker Discharge */}
-            <div className="absolute top-[35%] left-[42%] w-2 h-2 rounded-full bg-amber-100 animate-ping opacity-75" />
-            <div className="absolute top-[65%] left-[28%] w-1.5 h-1.5 rounded-full bg-white animate-pulse opacity-85" />
-
-            {/* Embedded Logo spinning around vertical Y-axis */}
+            {/* EMBEDDED SWID-SHRK CREST IN VENUS */}
             <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-60 mix-blend-color-dodge"
+              className="absolute inset-0 flex items-center justify-center p-3.5 z-14 opacity-80 mix-blend-color-dodge pointer-events-none"
               style={{
-                animation: `celestial-spin-y-reverse ${counterSpinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
+                animation: `celestial-spin-y-reverse ${spinDuration} linear infinite`,
               }}
             >
               <img
@@ -289,9 +276,18 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[80%] h-[80%] object-contain rounded-full filter drop-shadow-[0_0_12px_#ffe082]"
+                className="w-[80%] h-[80%] object-contain rounded-full filter drop-shadow-[0_0_14px_#ffe082]"
               />
             </div>
+
+            {/* Thick Atmospheric Volumetric Shade */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 40%, rgba(93, 64, 55, 0.5) 65%, rgba(62, 39, 35, 0.95) 90%)',
+              }}
+            />
           </div>
         </div>
       );
@@ -300,133 +296,149 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Luminous Atmospheric Rayleigh Scattering Rim (Cyan Corona) */}
+          {/* Luminous Rayleigh Atmospheric Scattering Horizon (Cyan Corona) */}
           <div
             className={`absolute -inset-7 sm:-inset-10 rounded-full pointer-events-none transition-all duration-500 blur-xl ${
-              isHovered || isWarping ? 'opacity-95 scale-110' : 'opacity-80 scale-100'
+              isHovered ? 'opacity-95 scale-110' : 'opacity-85 scale-100'
             }`}
             style={{
               background:
-                'radial-gradient(circle, rgba(0, 229, 255, 0.45) 0%, rgba(33, 150, 243, 0.35) 45%, rgba(0, 255, 65, 0.15) 65%, transparent 80%)',
+                'radial-gradient(circle, rgba(0, 229, 255, 0.5) 0%, rgba(33, 150, 243, 0.38) 45%, rgba(0, 255, 65, 0.18) 65%, transparent 80%)',
             }}
           />
 
-          {/* 3D Orbiting Moon (Luna) Revolving around Earth in Horizontal Orbit */}
+          {/* 3D Orbiting Moon (Luna) with Craters */}
           <div
             className="absolute inset-[-20%] pointer-events-none rounded-full flex items-center justify-center"
             style={{
               animation: `celestial-revolve ${moonOrbitDuration} linear infinite`,
-              willChange: 'transform',
             }}
           >
             <div
-              className="absolute w-5 h-5 rounded-full bg-slate-200 border border-white shadow-[0_0_10px_#ffffff]"
+              className="absolute w-5 h-5 rounded-full bg-slate-200 border border-white shadow-[0_0_12px_#ffffff]"
               style={{ transform: 'translateX(clamp(65px, 20vw, 85px))' }}
             >
-              <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-slate-400/60" />
+              <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-slate-400/70" />
             </div>
           </div>
 
-          {/* Earth Body (The Blue Marble) */}
+          {/* Earth Body (3D Blue Marble Surface) */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_45px_rgba(0,184,255,0.85),inset_-18px_-18px_38px_rgba(3,10,30,0.95)] border-2 border-cyan-300/60"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_45px_rgba(0,184,255,0.85),inset_-20px_-20px_42px_rgba(3,10,30,0.98)] border-2 border-cyan-300/70"
             style={{
               background:
-                'radial-gradient(circle at 35% 30%, #0284c7 0%, #0369a1 35%, #075985 65%, #0c4a6e 85%, #022c43 100%)',
+                'radial-gradient(circle at 35% 30%, #38bdf8 0%, #0284c7 28%, #0369a1 55%, #075985 75%, #0c4a6e 90%, #022c43 100%)',
             }}
           >
-            {/* Seamless Continents translating horizontally along X around vertical Y-axis */}
+            {/* North & South Polar Ice Caps */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-4 rounded-b-full bg-white/95 shadow-[0_0_8px_#ffffff] z-12" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-3.5 rounded-t-full bg-white/90 shadow-[0_0_8px_#ffffff] z-12" />
+
+            {/* Realistic Continents Layer */}
             <div
-              className="absolute inset-0 flex w-[200%] h-full pointer-events-none opacity-85"
+              className="absolute inset-0 flex w-[200%] h-full pointer-events-none opacity-85 z-10"
               style={{
                 animation: `surface-drift-x ${spinDuration} linear infinite`,
-                willChange: 'transform',
               }}
             >
-              {/* Hemispheric Continental Segment 1 */}
               <div className="w-1/2 h-full relative flex-none">
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  {/* Eurasia & Africa */}
+                  {/* Africa & Eurasia */}
                   <path
-                    d="M 28,22 Q 40,15 54,20 Q 65,24 62,35 Q 58,45 68,52 Q 74,62 65,72 Q 52,78 45,68 Q 38,62 32,68 Q 24,60 28,45 Q 22,32 28,22 Z"
-                    fill="#16a34a"
-                    opacity="0.85"
+                    d="M 42,32 Q 52,30 56,38 Q 60,52 52,65 Q 46,72 40,60 Q 36,46 42,32 Z"
+                    fill="#15803d"
+                    opacity="0.9"
                   />
-                  <path d="M 32,25 Q 42,20 50,26 Q 58,32 52,42 Q 44,48 38,40 Z" fill="#84cc16" opacity="0.9" />
-                  <path d="M 40,40 Q 52,38 56,46 Q 50,54 42,50 Z" fill="#d97706" opacity="0.75" />
+                  <path d="M 43,33 Q 54,32 55,42 Q 47,45 42,39 Z" fill="#d97706" opacity="0.9" />
+                  <path
+                    d="M 40,16 Q 48,12 55,18 Q 50,26 42,28 Q 36,24 40,16 Z"
+                    fill="#16a34a"
+                    opacity="0.9"
+                  />
+                  <path
+                    d="M 54,16 Q 74,12 82,24 Q 85,40 76,46 Q 66,50 62,38 Q 55,30 54,16 Z"
+                    fill="#16a34a"
+                    opacity="0.9"
+                  />
                   {/* Americas */}
                   <path
-                    d="M 12,24 Q 18,20 16,36 Q 14,48 22,54 Q 24,68 18,78 Q 12,70 14,56 Q 8,42 12,24 Z"
+                    d="M 10,18 Q 24,14 26,26 Q 24,36 18,44 Q 10,38 8,26 Z"
                     fill="#15803d"
-                    opacity="0.75"
+                    opacity="0.9"
+                  />
+                  <path
+                    d="M 18,46 Q 26,48 24,62 Q 22,78 16,82 Q 12,70 14,56 Z"
+                    fill="#16a34a"
+                    opacity="0.9"
                   />
                 </svg>
               </div>
-
-              {/* Hemispheric Continental Segment 2 (Seamless Repeat) */}
               <div className="w-1/2 h-full relative flex-none">
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <path
-                    d="M 28,22 Q 40,15 54,20 Q 65,24 62,35 Q 58,45 68,52 Q 74,62 65,72 Q 52,78 45,68 Q 38,62 32,68 Q 24,60 28,45 Q 22,32 28,22 Z"
-                    fill="#16a34a"
-                    opacity="0.85"
-                  />
-                  <path d="M 32,25 Q 42,20 50,26 Q 58,32 52,42 Q 44,48 38,40 Z" fill="#84cc16" opacity="0.9" />
-                  <path d="M 40,40 Q 52,38 56,46 Q 50,54 42,50 Z" fill="#d97706" opacity="0.75" />
-                  <path
-                    d="M 12,24 Q 18,20 16,36 Q 14,48 22,54 Q 24,68 18,78 Q 12,70 14,56 Q 8,42 12,24 Z"
+                    d="M 42,32 Q 52,30 56,38 Q 60,52 52,65 Q 46,72 40,60 Q 36,46 42,32 Z"
                     fill="#15803d"
-                    opacity="0.75"
+                    opacity="0.9"
+                  />
+                  <path d="M 43,33 Q 54,32 55,42 Q 47,45 42,39 Z" fill="#d97706" opacity="0.9" />
+                  <path
+                    d="M 40,16 Q 48,12 55,18 Q 50,26 42,28 Q 36,24 40,16 Z"
+                    fill="#16a34a"
+                    opacity="0.9"
+                  />
+                  <path
+                    d="M 54,16 Q 74,12 82,24 Q 85,40 76,46 Q 66,50 62,38 Q 55,30 54,16 Z"
+                    fill="#16a34a"
+                    opacity="0.9"
+                  />
+                  <path
+                    d="M 10,18 Q 24,14 26,26 Q 24,36 18,44 Q 10,38 8,26 Z"
+                    fill="#15803d"
+                    opacity="0.9"
+                  />
+                  <path
+                    d="M 18,46 Q 26,48 24,62 Q 22,78 16,82 Q 12,70 14,56 Z"
+                    fill="#16a34a"
+                    opacity="0.9"
                   />
                 </svg>
               </div>
             </div>
 
-            {/* Dynamic Clouds drifting horizontally along X around vertical Y-axis */}
+            {/* Dynamic Swirling Clouds Layer */}
             <div
-              className="absolute inset-0 flex w-[200%] h-full pointer-events-none opacity-65"
+              className="absolute inset-0 flex w-[200%] h-full pointer-events-none opacity-65 z-13"
               style={{
                 animation: `surface-drift-x ${fastSpinDuration} linear infinite`,
-                willChange: 'transform',
               }}
             >
               <div
                 className="w-1/2 h-full"
                 style={{
-                  background:
-                    'radial-gradient(ellipse at 40% 40%, rgba(255, 255, 255, 0.8) 0%, transparent 35%), radial-gradient(ellipse at 70% 65%, rgba(255, 255, 255, 0.7) 0%, transparent 30%), radial-gradient(ellipse at 25% 75%, rgba(255, 255, 255, 0.75) 0%, transparent 28%)',
+                  background: `radial-gradient(ellipse at 42% 38%, rgba(255, 255, 255, 0.85) 0%, transparent 35%),
+                    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.8) 0%, transparent 30%),
+                    radial-gradient(ellipse at 22% 72%, rgba(255, 255, 255, 0.85) 0%, transparent 28%)`,
                 }}
               />
               <div
                 className="w-1/2 h-full"
                 style={{
-                  background:
-                    'radial-gradient(ellipse at 40% 40%, rgba(255, 255, 255, 0.8) 0%, transparent 35%), radial-gradient(ellipse at 70% 65%, rgba(255, 255, 255, 0.7) 0%, transparent 30%), radial-gradient(ellipse at 25% 75%, rgba(255, 255, 255, 0.75) 0%, transparent 28%)',
+                  background: `radial-gradient(ellipse at 42% 38%, rgba(255, 255, 255, 0.85) 0%, transparent 35%),
+                    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.8) 0%, transparent 30%),
+                    radial-gradient(ellipse at 22% 72%, rgba(255, 255, 255, 0.85) 0%, transparent 28%)`,
                 }}
               />
             </div>
 
-            {/* Fixed Day/Night Terminator Shade */}
+            {/* EMBEDDED SWID-SHRK CREST IN EARTH (The Blue Marble Research Hub) */}
             <div
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                background:
-                  'linear-gradient(130deg, transparent 45%, rgba(2, 6, 23, 0.5) 68%, rgba(2, 6, 23, 0.95) 92%)',
-              }}
-            />
-
-            {/* Embedded Crest spinning around vertical Y-axis */}
-            <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-75 mix-blend-screen z-15"
+              className="absolute inset-0 flex items-center justify-center p-3 z-16 opacity-85 mix-blend-screen pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
               <img
@@ -435,16 +447,25 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[84%] h-[84%] object-contain rounded-full filter drop-shadow-[0_0_14px_#00e5ff]"
+                className="w-[84%] h-[84%] object-contain rounded-full filter drop-shadow-[0_0_16px_#00e5ff]"
               />
             </div>
 
-            {/* Atmospheric Limb Sheen */}
+            {/* Day/Night Terminator Line */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 44%, rgba(2, 6, 23, 0.5) 66%, rgba(2, 6, 23, 0.95) 90%)',
+              }}
+            />
+
+            {/* Atmospheric Blue Limb Sheen */}
             <div
               className="absolute inset-0 rounded-full pointer-events-none z-20"
               style={{
                 boxShadow:
-                  'inset 0 0 20px 4px rgba(0, 229, 255, 0.8), inset 0 0 45px rgba(255, 255, 255, 0.35)',
+                  'inset 0 0 24px 6px rgba(0, 229, 255, 0.85), inset 0 0 50px rgba(255, 255, 255, 0.4)',
               }}
             />
           </div>
@@ -455,67 +476,74 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Red Atmospheric Haze */}
+          {/* Red Atmospheric Limb Haze */}
           <div
             className="absolute -inset-6 rounded-full pointer-events-none opacity-65 blur-xl"
             style={{
               background:
-                'radial-gradient(circle, rgba(239, 68, 68, 0.5) 0%, rgba(185, 28, 28, 0.35) 50%, transparent 75%)',
+                'radial-gradient(circle, rgba(239, 68, 68, 0.55) 0%, rgba(185, 28, 28, 0.35) 50%, transparent 75%)',
             }}
           />
 
-          {/* Mars Sphere (Iron Oxide Regolith) */}
+          {/* Mars 3D Red Planet Surface */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(239,68,68,0.7),inset_-18px_-18px_36px_rgba(30,5,5,0.95)] border border-red-500/50"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(239,68,68,0.7),inset_-20px_-20px_42px_rgba(30,5,5,0.98)] border border-red-500/60"
             style={{
               background:
-                'radial-gradient(circle at 35% 30%, #f87171 0%, #ef4444 28%, #dc2626 55%, #991b1b 80%, #450a0a 100%)',
+                'radial-gradient(circle at 35% 30%, #fca5a5 0%, #f87171 22%, #ef4444 45%, #dc2626 68%, #991b1b 88%, #450a0a 100%)',
             }}
           >
-            {/* North Polar Dry Ice Cap (+Y Pole) & South Polar Cap (-Y Pole) */}
-            <div className="absolute top-0.5 left-1/2 -translate-x-1/2 w-12 h-4 rounded-b-full bg-white shadow-[0_0_10px_#ffffff] z-20" />
-            <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-10 h-3 rounded-t-full bg-white/90 shadow-[0_0_8px_#ffffff] z-20" />
+            {/* North & South Polar Ice Caps */}
+            <div className="absolute top-0.5 left-1/2 -translate-x-1/2 w-12 h-3.5 rounded-b-full bg-white shadow-[0_0_10px_#ffffff] z-12" />
+            <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-10 h-3 rounded-t-full bg-white/90 shadow-[0_0_8px_#ffffff] z-12" />
 
-            {/* Martian Crust & Syrtis Major drifting horizontally along X around vertical Y-axis */}
+            {/* Martian Topography (Valles Marineris & Olympus Mons) */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
-              {/* Dark Basalt Plains */}
               <div
-                className="absolute top-[42%] left-[22%] w-24 h-12 rounded-full bg-red-950/70 blur-[2px] -rotate-12"
-                style={{
-                  boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.8)',
-                }}
+                className="absolute top-[40%] left-[22%] w-24 h-12 rounded-full bg-[#450a0a]/80 blur-[1.5px] -rotate-12"
               />
-              <div className="absolute top-[55%] right-[25%] w-16 h-8 rounded-full bg-red-950/60 blur-[1.5px] rotate-6" />
-
-              {/* Olympus Mons Caldera Volcano Peak */}
-              <div className="absolute top-[32%] right-[34%] w-6 h-6 rounded-full border border-amber-300/40 bg-red-900/60 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-amber-200/80" />
-              </div>
-
-              {/* Embedded Logo */}
-              <div className="absolute inset-0 flex items-center justify-center p-3 opacity-60 mix-blend-color-dodge">
-                <img
-                  src={logoTransparent}
-                  alt="SWID-SHRK Mars Crest"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoFallback;
-                  }}
-                  className="w-[80%] h-[80%] object-contain rounded-full filter drop-shadow-[0_0_10px_#fca5a5]"
-                />
+              <div
+                className="absolute top-[48%] left-[30%] w-32 h-2.5 bg-[#260505] rounded-full -rotate-6 blur-[0.4px]"
+              />
+              <div className="absolute top-[32%] right-[32%] w-8 h-8 rounded-full border-2 border-amber-300/60 bg-[#7f1d1d] flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#450a0a]" />
               </div>
             </div>
+
+            {/* EMBEDDED SWID-SHRK CREST IN MARS */}
+            <div
+              className="absolute inset-0 flex items-center justify-center p-3.5 z-14 opacity-80 mix-blend-color-dodge pointer-events-none"
+              style={{
+                animation: `celestial-spin-y ${spinDuration} linear infinite`,
+              }}
+            >
+              <img
+                src={logoTransparent}
+                alt="SWID-SHRK Mars Crest"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = logoFallback;
+                }}
+                className="w-[80%] h-[80%] object-contain rounded-full filter drop-shadow-[0_0_12px_#fca5a5]"
+              />
+            </div>
+
+            {/* Day/Night Terminator Line */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 40%, rgba(40, 5, 5, 0.6) 65%, rgba(15, 2, 2, 0.95) 90%)',
+              }}
+            />
           </div>
         </div>
       );
@@ -524,12 +552,11 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Auroral UV Glow */}
+          {/* Jovian Auroral UV Glow */}
           <div
             className="absolute -inset-8 rounded-full pointer-events-none opacity-60 blur-xl"
             style={{
@@ -538,63 +565,53 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
             }}
           />
 
-          {/* Jupiter Banded Gaseous Surface */}
+          {/* Jupiter Banded Gas Giant Sphere */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_40px_rgba(217,119,6,0.7),inset_-20px_-20px_40px_rgba(20,10,5,0.95)] border border-amber-500/50"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_40px_rgba(217,119,6,0.7),inset_-20px_-20px_45px_rgba(20,10,5,0.98)] border border-amber-500/60"
             style={{
               background:
                 'radial-gradient(circle at 35% 30%, #fef3c7 0%, #fde68a 25%, #d97706 60%, #92400e 85%, #451a03 100%)',
             }}
           >
-            {/* Horizontal Atmospheric Belts drifting along X around vertical Y-axis */}
+            {/* Alternating Equatorial & Temperate Cloud Belts */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-80"
+              className="absolute inset-0 pointer-events-none opacity-85"
               style={{
                 backgroundImage: `repeating-linear-gradient(
                   0deg,
-                  rgba(120, 53, 15, 0.85) 0px,
-                  rgba(120, 53, 15, 0.85) 12px,
-                  rgba(254, 243, 199, 0.7) 12px,
-                  rgba(254, 243, 199, 0.7) 24px,
-                  rgba(180, 83, 9, 0.85) 24px,
-                  rgba(180, 83, 9, 0.85) 36px,
-                  rgba(253, 230, 138, 0.7) 36px,
-                  rgba(253, 230, 138, 0.7) 48px
+                  rgba(120, 53, 15, 0.9) 0px,
+                  rgba(120, 53, 15, 0.9) 11px,
+                  rgba(254, 243, 199, 0.8) 11px,
+                  rgba(254, 243, 199, 0.8) 22px,
+                  rgba(180, 83, 9, 0.9) 22px,
+                  rgba(180, 83, 9, 0.9) 33px,
+                  rgba(253, 230, 138, 0.8) 33px,
+                  rgba(253, 230, 138, 0.8) 44px
                 )`,
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             />
 
-            {/* The Great Red Spot drifting horizontally along X around the vertical Y-axis */}
+            {/* The Great Red Spot */}
             <div
-              className="absolute bottom-[30%] left-1/2 -translate-x-1/2 pointer-events-none"
+              className="absolute bottom-[28%] left-1/2 -translate-x-1/2 pointer-events-none z-10"
               style={{
                 animation: `celestial-spin-y ${fastSpinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
               <div
-                className="w-12 h-8 rounded-[50%] bg-gradient-to-r from-red-600 via-rose-700 to-amber-700 border-2 border-red-300/80 shadow-[0_0_14px_#dc2626] flex items-center justify-center"
+                className="w-13 h-8.5 rounded-[50%] bg-gradient-to-r from-red-600 via-rose-700 to-amber-700 border-2 border-red-300 shadow-[0_0_16px_#dc2626] flex items-center justify-center"
                 style={{ transform: 'translateX(35px)' }}
               >
-                <div className="w-5 h-3 rounded-[50%] bg-amber-200/90" />
+                <div className="w-5.5 h-3.5 rounded-[50%] bg-amber-200/95" />
               </div>
             </div>
 
-            {/* Polar Aurora Rings centered on top and bottom vertical Y-poles */}
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-16 h-3 rounded-full bg-violet-400/70 blur-[1px] shadow-[0_0_8px_#a855f7] z-20" />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-3 rounded-full bg-violet-400/70 blur-[1px] shadow-[0_0_8px_#a855f7] z-20" />
-
-            {/* Embedded Crest spinning around vertical Y-axis */}
+            {/* EMBEDDED SWID-SHRK CREST IN JUPITER */}
             <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-55 mix-blend-screen"
+              className="absolute inset-0 flex items-center justify-center p-3 z-14 opacity-80 mix-blend-screen pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
               <img
@@ -603,9 +620,18 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_12px_#fde68a]"
+                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_14px_#fde68a]"
               />
             </div>
+
+            {/* 3D Oblate Limb Darkening */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 40%, rgba(69, 26, 3, 0.5) 65%, rgba(20, 8, 2, 0.95) 90%)',
+              }}
+            />
           </div>
         </div>
       );
@@ -614,22 +640,21 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Majestic 3D Tilted Ring System Behind Planet (Back Half) */}
+          {/* 3D Tilted Ring System Behind Planet (Back Half) */}
           <div
-            className="absolute w-[185%] sm:w-[210%] h-[55%] pointer-events-none z-0"
+            className="absolute w-[190%] sm:w-[215%] h-[56%] pointer-events-none z-0"
             style={{
               borderRadius: '50%',
               background: `radial-gradient(ellipse at center, 
                 transparent 52%, 
                 rgba(217, 180, 120, 0.6) 53%, 
                 rgba(245, 222, 179, 0.95) 64%, 
-                rgba(20, 15, 10, 0.9) 65%, 
-                rgba(20, 15, 10, 0.9) 67%, 
+                rgba(15, 10, 5, 0.95) 65%, 
+                rgba(15, 10, 5, 0.95) 67%, 
                 rgba(235, 205, 150, 0.95) 68%, 
                 rgba(210, 175, 120, 0.75) 80%, 
                 transparent 84%)`,
@@ -637,41 +662,34 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
             }}
           />
 
-          {/* Saturn Gas Giant Sphere spinning around vertical Y-axis */}
+          {/* Saturn 3D Gas Giant Sphere */}
           <div
-            className="relative z-10 w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(234,179,8,0.6),inset_-18px_-18px_36px_rgba(40,25,5,0.92)] border border-amber-200/50"
+            className="relative z-10 w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(234,179,8,0.6),inset_-18px_-18px_38px_rgba(40,25,5,0.95)] border border-amber-200/50"
             style={{
               background:
                 'radial-gradient(circle at 35% 30%, #fef08a 0%, #fde047 30%, #eab308 60%, #ca8a04 82%, #713f12 100%)',
             }}
           >
-            {/* Butterscotch Latitudinal Belts drifting along X around vertical Y-axis */}
+            {/* Butterscotch Latitudinal Cloud Belts */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-60"
+              className="absolute inset-0 pointer-events-none opacity-65"
               style={{
                 backgroundImage: `repeating-linear-gradient(
                   0deg,
-                  rgba(161, 98, 7, 0.45) 0px,
-                  rgba(161, 98, 7, 0.45) 8px,
+                  rgba(161, 98, 7, 0.5) 0px,
+                  rgba(161, 98, 7, 0.5) 8px,
                   rgba(254, 240, 138, 0.4) 8px,
                   rgba(254, 240, 138, 0.4) 16px
                 )`,
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             />
 
-            {/* Hexagonal Storm on North Pole (+Y Pole) */}
-            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-6 border border-amber-100/60 [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)] bg-amber-400/40 z-20" />
-
-            {/* Embedded Logo */}
+            {/* EMBEDDED SWID-SHRK CREST IN SATURN */}
             <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-65 mix-blend-color-dodge"
+              className="absolute inset-0 flex items-center justify-center p-3.5 z-14 opacity-80 mix-blend-color-dodge pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
               <img
@@ -680,14 +698,28 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[80%] h-[80%] object-contain rounded-full filter drop-shadow-[0_0_12px_#fef08a]"
+                className="w-[80%] h-[80%] object-contain rounded-full filter drop-shadow-[0_0_14px_#fef08a]"
               />
             </div>
+
+            {/* Ring Shadow cast across Saturn's surface */}
+            <div
+              className="absolute top-[48%] left-0 right-0 h-4 bg-black/60 blur-[1px] -rotate-1 pointer-events-none z-15"
+            />
+
+            {/* 3D Atmospheric Limb Darkening */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 40%, rgba(113, 63, 18, 0.5) 65%, rgba(30, 15, 3, 0.95) 90%)',
+              }}
+            />
           </div>
 
-          {/* Majestic 3D Tilted Ring System in Front of Planet (Front Half) */}
+          {/* 3D Tilted Ring System in Front of Planet (Front Half) */}
           <div
-            className="absolute w-[185%] sm:w-[210%] h-[55%] pointer-events-none z-20"
+            className="absolute w-[190%] sm:w-[215%] h-[56%] pointer-events-none z-20"
             style={{
               borderRadius: '50%',
               clipPath: 'polygon(0% 48%, 100% 48%, 100% 100%, 0% 100%)',
@@ -695,8 +727,8 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 transparent 52%, 
                 rgba(217, 180, 120, 0.6) 53%, 
                 rgba(245, 222, 179, 0.95) 64%, 
-                rgba(20, 15, 10, 0.9) 65%, 
-                rgba(20, 15, 10, 0.9) 67%, 
+                rgba(15, 10, 5, 0.95) 65%, 
+                rgba(15, 10, 5, 0.95) 67%, 
                 rgba(235, 205, 150, 0.95) 68%, 
                 rgba(210, 175, 120, 0.75) 80%, 
                 transparent 84%)`,
@@ -710,12 +742,11 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Cold Methane Glow */}
+          {/* Methane Cyan Atmospheric Glow */}
           <div
             className="absolute -inset-6 rounded-full pointer-events-none opacity-65 blur-xl"
             style={{
@@ -724,38 +755,34 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
             }}
           />
 
-          {/* Uranus Ice Giant Body */}
+          {/* Uranus 3D Tilted Ice Giant Body */}
           <div
-            className="relative z-10 w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(6,182,212,0.7),inset_-18px_-18px_36px_rgba(8,51,68,0.95)] border border-cyan-200/60"
+            className="relative z-10 w-full h-full rounded-full overflow-hidden shadow-[0_0_35px_rgba(6,182,212,0.7),inset_-18px_-18px_38px_rgba(8,51,68,0.98)] border border-cyan-200/60"
             style={{
               background:
                 'radial-gradient(circle at 35% 30%, #cffafe 0%, #a5f3fc 28%, #22d3ee 55%, #0891b2 80%, #155e75 100%)',
             }}
           >
-            {/* Cloud features drifting horizontally around the vertical Y axis */}
+            {/* Faint Methane Cloud Belts */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-40"
+              className="absolute inset-0 pointer-events-none opacity-45"
               style={{
                 backgroundImage: `repeating-linear-gradient(
                   90deg,
-                  rgba(255, 255, 255, 0.4) 0px,
-                  rgba(255, 255, 255, 0.4) 15px,
-                  transparent 15px,
-                  transparent 30px
+                  rgba(255, 255, 255, 0.45) 0px,
+                  rgba(255, 255, 255, 0.45) 14px,
+                  transparent 14px,
+                  transparent 28px
                 )`,
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             />
 
-            {/* Embedded Logo */}
+            {/* EMBEDDED SWID-SHRK CREST IN URANUS */}
             <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-65 mix-blend-screen"
+              className="absolute inset-0 flex items-center justify-center p-3 z-14 opacity-80 mix-blend-screen pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
               <img
@@ -764,9 +791,18 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_12px_#67e8f9]"
+                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_14px_#67e8f9]"
               />
             </div>
+
+            {/* 3D Atmospheric Depth */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 42%, rgba(21, 94, 117, 0.5) 65%, rgba(8, 51, 68, 0.95) 90%)',
+              }}
+            />
           </div>
         </div>
       );
@@ -775,12 +811,11 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
       return (
         <div
           className="relative w-full h-full rounded-full flex items-center justify-center overflow-visible select-none animate-celestial-morph"
-          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          style={{ perspective: 1000 }}
         >
           {warpOverlay}
-          {verticalYAxisMarker}
 
-          {/* Deep Azure Glow */}
+          {/* Deep Cobalt Azure Glow */}
           <div
             className="absolute -inset-7 rounded-full pointer-events-none opacity-75 blur-xl"
             style={{
@@ -789,41 +824,35 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
             }}
           />
 
-          {/* Neptune Sphere (Dynamic Atmosphere) */}
+          {/* Neptune 3D Supersonic Atmospheric Surface */}
           <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.85),inset_-18px_-18px_38px_rgba(15,23,42,0.98)] border border-blue-400/60"
+            className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.85),inset_-18px_-18px_40px_rgba(15,23,42,0.98)] border border-blue-400/60"
             style={{
               background:
-                'radial-gradient(circle at 35% 30%, #60a5fa 0%, #3b82f6 30%, #1d4ed8 60%, #1e40af 82%, #172554 100%)',
+                'radial-gradient(circle at 35% 30%, #93c5fd 0%, #60a5fa 25%, #3b82f6 50%, #1d4ed8 75%, #1e40af 88%, #172554 100%)',
             }}
           >
-            {/* Supersonic Cirrus Cloud Streaks drifting horizontally along X around the vertical Y-axis */}
+            {/* Supersonic High-Altitude White Cirrus Cloud Streaks ("Scooter") */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${fastSpinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
-              <div
-                className="absolute top-[32%] left-[18%] w-20 h-2 rounded-full bg-white/90 blur-[0.6px] shadow-[0_0_8px_#ffffff]"
-              />
-              <div
-                className="absolute top-[68%] right-[22%] w-16 h-2 rounded-full bg-cyan-200/90 blur-[0.6px] shadow-[0_0_8px_#67e8f9]"
-              />
-              <div
-                className="absolute top-[44%] right-[28%] w-10 h-7 rounded-full bg-blue-950/80 border border-blue-300/40 shadow-[inset_0_0_8px_#020617]"
-              />
+              <div className="absolute top-[30%] left-[16%] w-22 h-2.5 rounded-full bg-white/95 blur-[0.6px] shadow-[0_0_10px_#ffffff]" />
+              <div className="absolute top-[65%] right-[20%] w-18 h-2 rounded-full bg-cyan-200/90 blur-[0.6px] shadow-[0_0_8px_#67e8f9]" />
             </div>
 
-            {/* Embedded Logo */}
+            {/* Great Dark Spot */}
+            <div className="absolute top-[42%] right-[26%] w-12 h-8 rounded-full bg-[#020617] border border-blue-300/50 shadow-[inset_0_0_10px_#0f172a] flex items-center justify-center">
+              <div className="w-6 h-3 rounded-full bg-[#0f172a] opacity-80" />
+            </div>
+
+            {/* EMBEDDED SWID-SHRK CREST IN NEPTUNE */}
             <div
-              className="absolute inset-0 flex items-center justify-center p-3 opacity-70 mix-blend-screen"
+              className="absolute inset-0 flex items-center justify-center p-3 z-14 opacity-85 mix-blend-screen pointer-events-none"
               style={{
                 animation: `celestial-spin-y ${spinDuration} linear infinite`,
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
               }}
             >
               <img
@@ -832,9 +861,18 @@ export const CelestialPlanetView: React.FC<CelestialPlanetViewProps> = ({
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = logoFallback;
                 }}
-                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_14px_#3b82f6]"
+                className="w-[82%] h-[82%] object-contain rounded-full filter drop-shadow-[0_0_16px_#3b82f6]"
               />
             </div>
+
+            {/* 3D Atmospheric Limb Volumetric Shade */}
+            <div
+              className="absolute inset-0 pointer-events-none z-18"
+              style={{
+                background:
+                  'linear-gradient(130deg, transparent 40%, rgba(30, 64, 175, 0.5) 65%, rgba(15, 23, 42, 0.98) 90%)',
+              }}
+            />
           </div>
         </div>
       );

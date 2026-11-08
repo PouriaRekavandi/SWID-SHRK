@@ -4,6 +4,7 @@ import { CELESTIAL_ORDER } from '../utils/celestialBodies';
 import { useCelestial } from '../context/CelestialContext';
 import { CelestialPlanetView } from './CelestialPlanetView';
 import { CelestialOrbitalTrails } from './CelestialOrbitalTrails';
+import { GravitationalLensingOverlay } from './GravitationalLensingOverlay';
 import logoTransparent from '../assets/logo.jpg';
 import logoFallback from '../assets/logo.jpg';
 import {
@@ -104,6 +105,11 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
       <div className="relative flex items-center justify-center pt-8 sm:pt-10 pb-6 sm:pb-8 px-4 sm:px-8 w-full max-w-3xl min-h-[380px] sm:min-h-[440px] overflow-visible">
         {/* Persistent Glowing Elliptical Trails Layer */}
         <CelestialOrbitalTrails className="z-0" />
+
+        {/* Real-Time Einstein Gravitational Lensing Distortion Overlay */}
+        {activeBodyKey === 'blackhole' && (
+          <GravitationalLensingOverlay isActive={true} intensity={1.1} />
+        )}
 
         {/* Central Celestial Sphere Anchor */}
         <div
@@ -236,39 +242,88 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
                 />
               </div>
 
-              {/* The Singularity Point Flare */}
+              {/* 5. The Event Horizon Shadow Sphere (r <= r_s) with Blazing Photon Ring */}
               <div
-                aria-hidden="true"
-                className="absolute top-1/2 left-1/2 z-25 pointer-events-none -translate-x-1/2 -translate-y-1/2"
+                className={`relative z-20 w-[82%] h-[82%] rounded-full bg-black flex items-center justify-center transition-all duration-700 ${
+                  isHovered ? 'scale-102' : 'scale-100'
+                }`}
+                style={{
+                  boxShadow: `
+                    0 0 0 2px #ffffff,
+                    0 0 14px 4px #fbbf24,
+                    0 0 35px 8px #f59e0b,
+                    0 0 75px 14px rgba(249, 115, 22, 0.65),
+                    inset 0 0 40px 12px #000000
+                  `,
+                }}
               >
+                {/* Pure Absolute Blackness Void (Event Horizon: Nothing, Not Even Light, Escapes) */}
                 <div
-                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white transition-all duration-300 ${
-                    isMaterializing ? 'scale-150' : 'scale-100'
-                  }`}
+                  className="w-full h-full rounded-full bg-[#000000] overflow-hidden relative flex items-center justify-center"
                   style={{
-                    animation: 'singularityPulse 2.8s infinite ease-in-out',
+                    boxShadow: 'inset 0 0 35px #000000, inset 0 0 70px #000000',
                   }}
-                />
-              </div>
+                >
+                  {/* Gravitational Redshift Accretion Edge at the Horizon */}
+                  <div
+                    className="absolute inset-0 rounded-full pointer-events-none opacity-45"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 45% 45%, transparent 66%, rgba(217, 119, 6, 0.45) 82%, rgba(185, 28, 28, 0.75) 92%, #000000 100%)',
+                    }}
+                  />
 
-              {/* SWID-SHRK Master Crest Logo inside Black Hole */}
-              <div className="relative z-20 w-full h-full flex items-center justify-center p-2.5 sm:p-3.5 rounded-full overflow-hidden">
-                <img
-                  key={`crest-genesis-${genesisCount}`}
-                  src={logoTransparent}
-                  alt="SWID-SHRK Research Group Crest Logo"
-                  loading="eager"
-                  decoding="async"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoFallback;
+                  {/* Relativistic Kerr Frame Dragging Whirl (Spacetime Swirl around Horizon) */}
+                  <div
+                    className="absolute inset-2 rounded-full pointer-events-none opacity-25"
+                    style={{
+                      background:
+                        'conic-gradient(from 180deg, #ff6b00 0deg, #ffb700 90deg, transparent 180deg, #d84315 270deg, #ff6b00 360deg)',
+                      animation: 'spin 18s linear infinite',
+                      filter: 'blur(3px)',
+                    }}
+                  />
+
+                  {/* The Absolute Event Horizon Shadow Void Center with Embedded Relativistic Crest Logo */}
+                  <div
+                    className={`w-[78%] h-[78%] rounded-full bg-[#000000] relative z-10 transition-transform duration-500 overflow-hidden flex items-center justify-center p-2.5 sm:p-3 ${
+                      isMaterializing ? 'scale-110' : 'scale-100'
+                    }`}
+                    style={{
+                      boxShadow: 'inset 0 0 30px rgba(0,0,0,1)',
+                    }}
+                  >
+                    {/* SWID-SHRK Master Crest Logo inside Black Hole Event Horizon */}
+                    <img
+                      key={`crest-horizon-${genesisCount}`}
+                      src={logoTransparent}
+                      alt="SWID-SHRK Research Crest inside Event Horizon"
+                      loading="eager"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = logoFallback;
+                      }}
+                      className={`w-full h-full object-contain select-none rounded-full [clip-path:circle(49%_at_50%_50%)] transition-all duration-500 filter ${
+                        isMaterializing
+                          ? 'animate-[crestAfterSwallow_3.4s_cubic-bezier(0.16,1,0.3,1)_forwards]'
+                          : isHovered
+                          ? 'scale-105 brightness-115 drop-shadow-[0_0_24px_rgba(255,210,90,0.95)]'
+                          : 'scale-100 drop-shadow-[0_0_18px_rgba(255,190,60,0.85)]'
+                      }`}
+                    />
+
+                    {/* Gravitational Wave Singularity Genesis Pulse */}
+                    {isMaterializing && (
+                      <div className="absolute inset-0 rounded-full border border-amber-300/80 animate-ping opacity-60" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Razor-Sharp Photon Ring (r = 1.5 r_s) Bordering the Event Horizon */}
+                <div
+                  className="absolute inset-[-1.5px] rounded-full pointer-events-none border border-white/95"
+                  style={{
+                    boxShadow: '0 0 10px #ffffff, 0 0 20px #fbbf24',
                   }}
-                  className={`w-full h-full object-contain select-none rounded-full [clip-path:circle(49%_at_50%_50%)] transition-all duration-500 filter ${
-                    isMaterializing
-                      ? 'animate-[crestAfterSwallow_3.4s_cubic-bezier(0.16,1,0.3,1)_forwards]'
-                      : isHovered
-                      ? 'scale-105 brightness-110 drop-shadow-[0_0_24px_rgba(255,210,90,0.95)]'
-                      : 'scale-100 drop-shadow-[0_0_20px_rgba(255,190,60,0.85)]'
-                  }`}
                 />
               </div>
             </>
@@ -304,7 +359,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
             ) : activeBodyKey === 'blackhole' ? (
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-amber-500/90 text-black border border-amber-300 shadow-[0_0_16px_rgba(245,158,11,0.7)]">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Click Black Hole: Enter Solar Orbit ☉</span>
+                <span>Event Horizon (Sagittarius A*) — Click to Enter Solar Orbit ☉</span>
               </div>
             ) : (
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-black/80 dark:bg-zinc-900/90 text-[#00ff41] border border-[#00ff41]/50 shadow-[0_0_14px_rgba(0,255,65,0.4)]">
@@ -492,6 +547,22 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
                 <span>
                   Period <strong className="text-zinc-200">{activeInfo.orbitTrail.orbitalPeriodSec}s sim</strong>
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* Gravitational Lensing Distortion Active Field Indicator */}
+          {activeBodyKey === 'blackhole' && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 text-[11px] font-mono text-amber-200">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-pulse" />
+                <span className="font-bold text-amber-300">Gravitational Lensing:</span>
+                <span>Einstein Deflection Field &amp; Caustic Arcs Active</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-amber-300/80">
+                <span>Einstein Radius θ_E ≈ 1.8 r_s</span>
+                <span>·</span>
+                <span>Spacetime Warp α = 4GM / c²r</span>
               </div>
             </div>
           )}

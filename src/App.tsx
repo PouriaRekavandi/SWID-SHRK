@@ -75,7 +75,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen dark:bg-[#050505] bg-[#f8fafc] dark:text-[#e0e0e0] text-slate-900 flex flex-col font-mono selection:bg-[#00ff41]/20 selection:text-[#00ff41] transition-colors duration-200">
+    <div className="min-h-screen bg-[#02040a] text-[#e0e0e0] flex flex-col font-mono selection:bg-[#00ff41]/20 selection:text-[#00ff41] transition-colors duration-200">
       {/* Viewport Reading Progress Bar */}
       <ReadingProgressBar />
 

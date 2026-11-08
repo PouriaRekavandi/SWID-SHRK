@@ -8,21 +8,22 @@
     --blue: #00b8ff;
     --red: #ff3131;
     --mint: #00e676;
-    --bg: #050505;
-    --line: #333333;
+    --bg: #02040a;
+    --line: #1e2638;
   }
 
   html.light {
-    --green: #047857;
+    --green: #059669;
     --blue: #0284c7;
     --red: #dc2626;
-    --mint: #059669;
-    --bg: #f8fafc;
-    --line: #cbd5e1;
+    --mint: #10b981;
+    --bg: #050814;
+    --line: #1e293b;
   }
 
   body {
     background-color: var(--bg);
+    color: #e2e8f0;
     font-family: 'Roboto Mono', monospace;
     overflow-x: hidden;
     transition: background-color 0.25s ease, color 0.25s ease;

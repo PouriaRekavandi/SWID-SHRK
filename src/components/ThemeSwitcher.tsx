@@ -29,7 +29,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
       className={`group relative flex items-center cursor-pointer select-none rounded-full border transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
         isDark
           ? 'bg-[#090d12]/90 border-[#333333] hover:border-[#00ff41] text-zinc-200 hover:text-white shadow-[0_0_12px_rgba(0,0,0,0.6)] hover:shadow-[0_0_18px_rgba(0,255,65,0.3)] focus:ring-[#00ff41]/50 focus:ring-offset-black'
-          : 'bg-white/95 border-slate-300 hover:border-amber-500 text-slate-800 hover:text-slate-900 shadow-sm hover:shadow-md focus:ring-amber-500/50 focus:ring-offset-white'
+          : 'bg-[#0a0f18]/90 border-zinc-700/80 hover:border-amber-400 text-zinc-200 hover:text-white shadow-sm hover:shadow-md focus:ring-amber-500/50 focus:ring-offset-black'
       } ${
         isHero
           ? 'px-3.5 py-2 gap-3 backdrop-blur-md'

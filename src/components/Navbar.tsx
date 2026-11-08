@@ -27,7 +27,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { activeBodyKey, activeInfo, advanceToNextBody, handleEarthClick, rotationSpeed } = useCelestial();
+  const { activeBodyKey, activeInfo, advanceToNextBody, handleEarthClick, orbitAnimationSpeed } = useCelestial();
   const { language, toggleLanguage, t } = useLanguage();
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
@@ -49,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 dark:bg-[#050505]/95 bg-white/95 backdrop-blur-md border-b dark:border-[#333333] border-slate-200 transition-colors duration-200 shadow-sm">
+    <nav className="sticky top-0 z-50 bg-[#02040a]/95 backdrop-blur-md border-b border-zinc-800/80 text-white shadow-md transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-[58px] gap-2">
         {/* Brand / Logo */}
         <button
@@ -125,9 +125,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
           >
             <span className="text-sm select-none">{activeInfo.astronomicalSymbol}</span>
             <span className="hidden sm:inline font-orbitron text-[11px]">{activeInfo.name}</span>
-            {rotationSpeed > 1.0 && (
+            {orbitAnimationSpeed > 1.0 && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400 text-black font-extrabold hidden md:inline shadow-[0_0_8px_rgba(245,158,11,0.6)]">
-                {rotationSpeed.toFixed(1)}x
+                {orbitAnimationSpeed.toFixed(1)}x
               </span>
             )}
             {activeBodyKey === 'earth' && (

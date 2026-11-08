@@ -102,6 +102,10 @@ export const LOCALIZATION = {
       en: 'Lab Gear',
       fa: 'تجهیزات آزمایشگاه',
     },
+    mail: {
+      en: 'Lab Mail (Gmail)',
+      fa: 'مکاتبات (Gmail)',
+    },
     contact: {
       en: 'Connect',
       fa: 'ارتباط با ما',
@@ -625,6 +629,106 @@ export const LOCALIZATION = {
     pinnedBadge: {
       en: 'Featured Advance',
       fa: 'دستاورد برجسته',
+    },
+  },
+
+  // Gmail & Laboratory Mail Hub
+  gmail: {
+    badge: {
+      en: 'GOOGLE WORKSPACE & GMAIL INTEGRATION',
+      fa: 'یکپارچه‌سازی جیمیل و محیط کاری گوگل',
+    },
+    title: {
+      en: 'Laboratory Gmail Hub',
+      fa: 'مرکز مکاتبات جیمیل آزمایشگاه',
+    },
+    subtitle: {
+      en: 'Read, search, and send academic research correspondence and laboratory inquiries directly via your authenticated Google account.',
+      fa: 'مشاهده، جستجو و ارسال نامه‌های پژوهشی و مکاتبات دانشگاهی از طریق حساب کاربری تأییدشده گوگل.',
+    },
+    signInWithGoogle: {
+      en: 'Sign in with Google',
+      fa: 'ورود با حساب گوگل',
+    },
+    signOut: {
+      en: 'Sign Out',
+      fa: 'خروج از حساب',
+    },
+    connectedAs: {
+      en: 'Connected as',
+      fa: 'متصل با حساب',
+    },
+    notConnectedTitle: {
+      en: 'Connect Your Google Account',
+      fa: 'اتصال به حساب کاربری گوگل',
+    },
+    notConnectedDesc: {
+      en: 'Sign in with Google to read your research correspondence, send inquiries with official templates, and securely log sent drafts to your Firestore database.',
+      fa: 'برای دسترسی به نامه‌های پژوهشی، ارسال پیام با الگوهای آماده آزمایشگاه و ثبت امن رونوشت‌ها در پایگاه داده فایربیس، وارد حساب گوگل خود شوید.',
+    },
+    inboxTab: {
+      en: 'Inbox Messages',
+      fa: 'صندوق نامه‌ها',
+    },
+    composeTab: {
+      en: 'Compose Email',
+      fa: 'نگارش نامه جدید',
+    },
+    historyTab: {
+      en: 'Firestore Log',
+      fa: 'تاریخچه فایربیس',
+    },
+    refreshInbox: {
+      en: 'Refresh Messages',
+      fa: 'به‌روزرسانی نامه‌ها',
+    },
+    loadingMessages: {
+      en: 'Loading Gmail messages...',
+      fa: 'در حال بارگذاری نامه‌های جیمیل...',
+    },
+    noMessages: {
+      en: 'No messages found in your Gmail inbox.',
+      fa: 'هیچ نامه‌ای در صندوق ورودی جیمیل یافت نشد.',
+    },
+    searchPlaceholder: {
+      en: 'Search messages by subject, sender, or keyword...',
+      fa: 'جستجوی نامه‌ها با موضوع، فرستنده یا کلمه کلیدی...',
+    },
+    toField: {
+      en: 'To (Recipient Email)',
+      fa: 'گیرنده (نشانی رایانامه)',
+    },
+    subjectField: {
+      en: 'Subject',
+      fa: 'موضوع نامه',
+    },
+    bodyField: {
+      en: 'Message Content',
+      fa: 'متن نامه',
+    },
+    sendBtn: {
+      en: 'Send Email via Gmail',
+      fa: 'ارسال با حساب جیمیل',
+    },
+    sending: {
+      en: 'Sending message...',
+      fa: 'در حال ارسال نامه...',
+    },
+    templatesTitle: {
+      en: 'Academic Templates',
+      fa: 'الگوهای نگارش دانشگاهی',
+    },
+    useTemplate: {
+      en: 'Use Template',
+      fa: 'استفاده از الگو',
+    },
+    savedToFirestore: {
+      en: 'Synced to Firestore',
+      fa: 'همگام در فایربیس',
+    },
+    sentSuccess: {
+      en: 'Email dispatched successfully via Gmail REST API!',
+      fa: 'نامه با موفقیت از طریق رابط جیمیل ارسال شد!',
     },
   },
 

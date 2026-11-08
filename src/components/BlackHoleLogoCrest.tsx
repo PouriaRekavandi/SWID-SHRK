@@ -3,6 +3,7 @@ import { TabKey, CelestialBodyKey } from '../types';
 import { CELESTIAL_ORDER } from '../utils/celestialBodies';
 import { useCelestial } from '../context/CelestialContext';
 import { CelestialPlanetView } from './CelestialPlanetView';
+import { CelestialOrbitalTrails } from './CelestialOrbitalTrails';
 import logoTransparent from '../assets/logo.jpg';
 import logoFallback from '../assets/logo.jpg';
 import {
@@ -41,6 +42,8 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
     triggerSingularityGenesis,
     handleEarthClick,
     executeCapability,
+    orbitTrailsVisible,
+    toggleOrbitTrails,
   } = useCelestial();
 
   const [isHovered, setIsHovered] = useState(false);
@@ -97,34 +100,35 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
         </div>
       )}
 
-      {/* Outer Viewport-Safe Wrapper */}
-      <div
-        onClick={handleCentralSphereClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="relative flex items-center justify-center pt-6 sm:pt-8 pb-4 sm:pb-6 px-4 sm:px-8 cursor-pointer group"
-        title={
-          activeBodyKey === 'earth'
-            ? 'Earth Active — Click Earth to open Paper Analyzer in a new tab!'
-            : activeBodyKey === 'blackhole'
-            ? 'Black Hole Singularity — Click to transform into the Sun and Solar System orbit!'
-            : `${activeInfo.name} — Click to activate ${activeInfo.capability.title}`
-        }
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleCentralSphereClick(e as any);
-          }
-        }}
-        aria-label={`${activeInfo.name} Celestial Body`}
-      >
+      {/* Outer Viewport-Safe Wrapper with Planetary Orbital Trails */}
+      <div className="relative flex items-center justify-center pt-8 sm:pt-10 pb-6 sm:pb-8 px-4 sm:px-8 w-full max-w-3xl min-h-[380px] sm:min-h-[440px] overflow-visible">
+        {/* Persistent Glowing Elliptical Trails Layer */}
+        <CelestialOrbitalTrails className="z-0" />
+
         {/* Central Celestial Sphere Anchor */}
         <div
-          className={`relative w-[180px] xs:w-[210px] sm:w-[260px] md:w-[290px] aspect-square rounded-full flex items-center justify-center transition-all duration-500 ${
+          onClick={handleCentralSphereClick}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={`relative z-10 w-[180px] xs:w-[210px] sm:w-[260px] md:w-[290px] aspect-square rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer group ${
             isTransitioning ? 'scale-90 opacity-70 blur-sm' : 'scale-100 opacity-100'
           }`}
+          title={
+            activeBodyKey === 'earth'
+              ? 'Earth Active — Click Earth to open Paper Analyzer in a new tab!'
+              : activeBodyKey === 'blackhole'
+              ? 'Black Hole Singularity — Click to transform into the Sun and Solar System orbit!'
+              : `${activeInfo.name} — Click to activate ${activeInfo.capability.title}`
+          }
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCentralSphereClick(e as any);
+            }
+          }}
+          aria-label={`${activeInfo.name} Celestial Body`}
         >
           {/* ========================================================================= */}
           {/* CONDITIONAL RENDER: BLACK HOLE SINGULARITY OR SOLAR SYSTEM PLANET/STAR   */}
@@ -460,6 +464,37 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Orbital Ellipse Trajectory Telemetry */}
+          {activeInfo.orbitTrail && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] font-mono">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2.5 h-2.5 rounded-full animate-pulse"
+                  style={{
+                    backgroundColor: activeInfo.orbitTrail.glowColor,
+                    boxShadow: `0 0 10px ${activeInfo.orbitTrail.glowColor}`,
+                  }}
+                />
+                <span className="text-zinc-400">Keplerian Orbital Path:</span>
+                <span className="font-bold text-white">{activeInfo.orbitTrail.name}</span>
+              </div>
+
+              <div className="flex items-center gap-2.5 text-[10px] text-zinc-400">
+                <span>
+                  Eccentricity <strong className="text-zinc-200">e={activeInfo.orbitTrail.eccentricity}</strong>
+                </span>
+                <span>·</span>
+                <span>
+                  Inclination <strong className="text-zinc-200">{activeInfo.orbitTrail.inclinationDeg}°</strong>
+                </span>
+                <span>·</span>
+                <span>
+                  Period <strong className="text-zinc-200">{activeInfo.orbitTrail.orbitalPeriodSec}s sim</strong>
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Engineering Research Domain Linkage */}
           <div className="text-xs text-zinc-300 font-mono flex items-start gap-2 pt-1">

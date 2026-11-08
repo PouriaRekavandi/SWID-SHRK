@@ -1,4 +1,4 @@
-import { CelestialBodyKey, CelestialBodyInfo } from '../types';
+import { CelestialBodyKey, CelestialBodyInfo, PlanetaryOrbitTrailConfig } from '../types';
 
 export const CELESTIAL_ORDER: CelestialBodyKey[] = [
   'blackhole',
@@ -216,6 +216,169 @@ export const CELESTIAL_BODIES: Record<CelestialBodyKey, CelestialBodyInfo> = {
   },
 };
 
+export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrailConfig> = {
+  blackhole: {
+    key: 'blackhole',
+    name: 'Event Horizon & Accretion Trajectory',
+    semiMajorAxis: 84,
+    semiMinorAxis: 50,
+    eccentricity: 0.804,
+    inclinationDeg: -16,
+    strokeColor: '#f59e0b',
+    glowColor: '#ff6d00',
+    orbitalPeriodSec: 18,
+    initialPhaseDeg: 45,
+    focalDistance: 67.5,
+  },
+  sun: {
+    key: 'sun',
+    name: 'Solar Coronal Boundary',
+    semiMajorAxis: 96,
+    semiMinorAxis: 62,
+    eccentricity: 0.763,
+    inclinationDeg: -10,
+    strokeColor: '#f59e0b',
+    glowColor: '#ffd700',
+    orbitalPeriodSec: 22,
+    initialPhaseDeg: 90,
+    focalDistance: 73.3,
+  },
+  mercury: {
+    key: 'mercury',
+    name: "Mercury's Precessing Orbit",
+    semiMajorAxis: 124,
+    semiMinorAxis: 78,
+    eccentricity: 0.778,
+    inclinationDeg: 7.0,
+    strokeColor: '#94a3b8',
+    glowColor: '#e2e8f0',
+    orbitalPeriodSec: 15,
+    initialPhaseDeg: 120,
+    focalDistance: 96.4,
+  },
+  venus: {
+    key: 'venus',
+    name: "Venus's Greenhouse Orbit",
+    semiMajorAxis: 156,
+    semiMinorAxis: 100,
+    eccentricity: 0.768,
+    inclinationDeg: 3.4,
+    strokeColor: '#fbbf24',
+    glowColor: '#f59e0b',
+    orbitalPeriodSec: 24,
+    initialPhaseDeg: 30,
+    focalDistance: 119.8,
+  },
+  earth: {
+    key: 'earth',
+    name: "Earth's Biosphere Orbit",
+    semiMajorAxis: 194,
+    semiMinorAxis: 124,
+    eccentricity: 0.769,
+    inclinationDeg: 0.0,
+    strokeColor: '#38bdf8',
+    glowColor: '#00e5ff',
+    orbitalPeriodSec: 34,
+    initialPhaseDeg: 215,
+    focalDistance: 149.2,
+  },
+  mars: {
+    key: 'mars',
+    name: "Mars's Eccentric Orbit",
+    semiMajorAxis: 236,
+    semiMinorAxis: 150,
+    eccentricity: 0.772,
+    inclinationDeg: 1.85,
+    strokeColor: '#f87171',
+    glowColor: '#ef4444',
+    orbitalPeriodSec: 48,
+    initialPhaseDeg: 320,
+    focalDistance: 182.2,
+  },
+  jupiter: {
+    key: 'jupiter',
+    name: "Jupiter's Jovian Orbit",
+    semiMajorAxis: 284,
+    semiMinorAxis: 180,
+    eccentricity: 0.774,
+    inclinationDeg: 1.3,
+    strokeColor: '#fb923c',
+    glowColor: '#f97316',
+    orbitalPeriodSec: 68,
+    initialPhaseDeg: 145,
+    focalDistance: 219.7,
+  },
+  saturn: {
+    key: 'saturn',
+    name: "Saturn's Ringed Orbit",
+    semiMajorAxis: 338,
+    semiMinorAxis: 214,
+    eccentricity: 0.774,
+    inclinationDeg: 2.48,
+    strokeColor: '#fde047',
+    glowColor: '#eab308',
+    orbitalPeriodSec: 92,
+    initialPhaseDeg: 275,
+    focalDistance: 261.7,
+  },
+  uranus: {
+    key: 'uranus',
+    name: "Uranus's Tilted Ice Orbit",
+    semiMajorAxis: 392,
+    semiMinorAxis: 248,
+    eccentricity: 0.774,
+    inclinationDeg: 0.77,
+    strokeColor: '#2dd4bf',
+    glowColor: '#14b8a6',
+    orbitalPeriodSec: 120,
+    initialPhaseDeg: 70,
+    focalDistance: 303.4,
+  },
+  neptune: {
+    key: 'neptune',
+    name: "Neptune's Supersonic Orbit",
+    semiMajorAxis: 448,
+    semiMinorAxis: 282,
+    eccentricity: 0.777,
+    inclinationDeg: 1.77,
+    strokeColor: '#60a5fa',
+    glowColor: '#3b82f6',
+    orbitalPeriodSec: 155,
+    initialPhaseDeg: 185,
+    focalDistance: 348.1,
+  },
+};
+
+/**
+ * Calculates current Cartesian coordinates (x, y) on the rotated ellipse
+ * given the orbit config, time elapsed in seconds, and speed multiplier.
+ */
+export function calculateOrbitPosition(
+  orbit: PlanetaryOrbitTrailConfig,
+  timeSeconds: number,
+  speedMultiplier = 1
+): { x: number; y: number; angleRad: number } {
+  // Angular frequency omega = 2 * PI / orbitalPeriodSec
+  const omega = (2 * Math.PI) / orbit.orbitalPeriodSec;
+  const currentAngleRad =
+    ((orbit.initialPhaseDeg * Math.PI) / 180 + omega * timeSeconds * speedMultiplier) %
+    (2 * Math.PI);
+
+  // Position on unrotated ellipse centered at (0, 0)
+  const unrotatedX = orbit.semiMajorAxis * Math.cos(currentAngleRad);
+  const unrotatedY = orbit.semiMinorAxis * Math.sin(currentAngleRad);
+
+  // Rotate by inclinationDeg
+  const tiltRad = (orbit.inclinationDeg * Math.PI) / 180;
+  const cosT = Math.cos(tiltRad);
+  const sinT = Math.sin(tiltRad);
+
+  const x = unrotatedX * cosT - unrotatedY * sinT;
+  const y = unrotatedX * sinT + unrotatedY * cosT;
+
+  return { x, y, angleRad: currentAngleRad };
+}
+
 export function getNextCelestialBody(current: CelestialBodyKey): CelestialBodyKey {
   const currentIndex = CELESTIAL_ORDER.indexOf(current);
   if (currentIndex === -1 || currentIndex === CELESTIAL_ORDER.length - 1) {
@@ -233,5 +396,9 @@ export function getPrevCelestialBody(current: CelestialBodyKey): CelestialBodyKe
 }
 
 export function getCelestialBodyInfo(key: CelestialBodyKey): CelestialBodyInfo {
-  return CELESTIAL_BODIES[key] || CELESTIAL_BODIES.blackhole;
+  const base = CELESTIAL_BODIES[key] || CELESTIAL_BODIES.blackhole;
+  return {
+    ...base,
+    orbitTrail: PLANETARY_ORBIT_TRAILS[key],
+  };
 }

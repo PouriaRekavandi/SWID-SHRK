@@ -190,3 +190,134 @@
   animation: neural-sweep 4s ease-in-out infinite;
 }
 
+/* 3D Celestial Planetary Spin Rotation around the Vertical Y-Axis (X: Left-to-Right, Y: Up-to-Down) */
+@keyframes celestial-spin {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes celestial-reverse-spin {
+  0% { transform: rotateY(360deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+@keyframes celestial-spin-y {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes celestial-spin-y-reverse {
+  0% { transform: rotateY(360deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+/* Horizontal Surface Map Panoramic Drift along X-Axis around the Vertical Y-Axis */
+@keyframes surface-drift-x {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes surface-drift-x-reverse {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
+
+@keyframes celestial-warp-flare {
+  0% {
+    transform: scale(0.92) rotate(0deg);
+    opacity: 0.95;
+    filter: brightness(1.8) drop-shadow(0 0 35px rgba(0, 255, 65, 0.9));
+  }
+  50% {
+    transform: scale(1.12) rotate(180deg);
+    opacity: 1;
+    filter: brightness(2.2) drop-shadow(0 0 50px rgba(0, 184, 255, 1));
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0.85;
+    filter: brightness(1);
+  }
+}
+
+.animate-warp-burst {
+  animation: celestial-warp-flare 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, filter, opacity;
+}
+
+/* Celestial Orbital Revolution (Keplerian Orbit Motion around Center) */
+@keyframes celestial-revolve {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes celestial-revolve-reverse {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes celestial-counter-revolve {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes celestial-counter-revolve-reverse {
+  0% {
+    transform: rotate(-360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes orbit-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    border-color: rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    opacity: 0.85;
+    border-color: rgba(0, 229, 255, 0.7);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  }
+}
+
+/* Persistent Keplerian Elliptical Orbit Styling */
+.orbit-ellipse-plane {
+  transform: rotate(var(--orbit-tilt, -14deg)) scaleY(var(--orbit-eccentricity, 0.62));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.orbit-planet-upright {
+  transform: scaleY(calc(1 / var(--orbit-eccentricity, 0.62))) rotate(calc(-1 * var(--orbit-tilt, -14deg)));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+@keyframes trajectory-sweep-glow {
+  0%, 100% {
+    opacity: 0.45;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  50% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 12px currentColor);
+  }
+}
+
+.animate-trajectory-glow {
+  animation: trajectory-sweep-glow 3s ease-in-out infinite;
+}

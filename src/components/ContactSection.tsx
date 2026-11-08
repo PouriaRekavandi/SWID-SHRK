@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, MapPin, Globe, Send, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { TabKey } from '../types';
 
 interface ContactSectionProps {
   onNotify: (msg: string, isError?: boolean) => void;
+  onSelectTab?: (tab: TabKey) => void;
 }
 
-export const ContactSection: React.FC<ContactSectionProps> = ({ onNotify }) => {
+export const ContactSection: React.FC<ContactSectionProps> = ({ onNotify, onSelectTab }) => {
   const [senderName, setSenderName] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -99,6 +101,29 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onNotify }) => {
               Prospective PhD, Master's, and visiting scholars with backgrounds in finite element methods, fracture mechanics, or computational metamaterials are invited to send their CV and research statement.
             </p>
           </div>
+
+          {onSelectTab && (
+            <div className="p-4 rounded-xl dark:bg-[#0c1015] bg-sky-50/70 border dark:border-[#00b8ff]/40 border-sky-200 text-xs font-mono space-y-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold dark:text-[#00b8ff] text-sky-800 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4" /> Laboratory Gmail Hub
+                </span>
+                <span className="text-[10px] uppercase font-bold dark:text-[#00ff41] text-emerald-700">
+                  Google Workspace
+                </span>
+              </div>
+              <p className="text-[11px] dark:text-zinc-400 text-slate-600 leading-relaxed">
+                Send academic inquiries or read correspondence directly through your authenticated Google account with Firestore logging.
+              </p>
+              <button
+                type="button"
+                onClick={() => onSelectTab('mail')}
+                className="w-full py-2 px-3 rounded-lg dark:bg-zinc-800 bg-white border dark:border-zinc-700 border-slate-300 dark:hover:border-[#00ff41] hover:border-emerald-600 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:text-emerald-700 dark:hover:text-[#00ff41] transition-all cursor-pointer text-center block shadow-2xs"
+              >
+                Launch Gmail Hub ↗
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Transmission Form */}

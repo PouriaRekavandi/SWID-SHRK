@@ -55,6 +55,7 @@ export type TabKey =
   | 'abaqus'
   | 'chat'
   | 'qa'
+  | 'mail'
   | 'contact';
 
 export type TeamRoleCategory = 'all' | 'pi' | 'postdoc' | 'phd' | 'msc' | 'alumni';
@@ -116,6 +117,21 @@ export type CelestialBodyKey =
   | 'uranus'
   | 'neptune';
 
+export interface PlanetaryOrbitTrailConfig {
+  key: CelestialBodyKey;
+  name: string;
+  semiMajorAxis: number;
+  semiMinorAxis: number;
+  eccentricity: number;
+  inclinationDeg: number;
+  strokeColor: string;
+  glowColor: string;
+  orbitalPeriodSec: number;
+  initialPhaseDeg: number;
+  focalDistance: number;
+  lineDash?: string;
+}
+
 export interface CelestialBodyInfo {
   key: CelestialBodyKey;
   name: string;
@@ -127,6 +143,7 @@ export interface CelestialBodyInfo {
   surfaceTemp: string;
   diameter: string;
   labDomain: string;
+  orbitTrail?: PlanetaryOrbitTrailConfig;
   capability: {
     title: string;
     description: string;

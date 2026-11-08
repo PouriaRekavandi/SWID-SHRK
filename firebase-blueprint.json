@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/GoogleCloudPlatform/firebase-tools/master/schema/blueprint.schema.json",
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and authentication identity document",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "UserEmail": {
+      "title": "UserEmail",
+      "description": "Saved email drafts, sent messages, and correspondence log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "to": { "type": "string" },
+        "from": { "type": "string" },
+        "subject": { "type": "string" },
+        "snippet": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string", "enum": ["sent", "draft", "inbox", "inquiry"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "to", "subject"]
+    }
+  },
+  "firestore": {
+    "collections": {
+      "/users/{userId}": {
+        "entity": "UserProfile",
+        "access": "owner-only"
+      },
+      "/users/{userId}/emails/{emailId}": {
+        "entity": "UserEmail",
+        "access": "owner-only"
+      }
+    }
+  }
+}

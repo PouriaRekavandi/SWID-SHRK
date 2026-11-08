@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { CelestialBodyKey, CelestialBodyInfo, TabKey } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { CelestialBodyKey, CelestialBodyInfo, PlanetaryOrbitTrailConfig, TabKey } from '../types';
 import {
   CELESTIAL_ORDER,
   CELESTIAL_BODIES,
+  PLANETARY_ORBIT_TRAILS,
+  calculateOrbitPosition,
   getNextCelestialBody,
   getPrevCelestialBody,
   getCelestialBodyInfo,
@@ -15,6 +17,11 @@ interface CelestialContextType {
   flareActive: boolean;
   notification: string | null;
   genesisCount: number;
+  orbitTrailsVisible: boolean;
+  orbitAnimationSpeed: number;
+  focusedOrbitOnly: boolean;
+  elapsedOrbitalTime: number;
+  orbitalTrails: PlanetaryOrbitTrailConfig[];
   setCelestialBody: (key: CelestialBodyKey) => void;
   advanceToNextBody: () => CelestialBodyKey;
   stepToPrevBody: () => CelestialBodyKey;
@@ -22,6 +29,11 @@ interface CelestialContextType {
   setNotification: (msg: string | null) => void;
   handleEarthClick: (onSelectTab?: (tab: TabKey) => void) => void;
   executeCapability: (onSelectTab?: (tab: TabKey) => void) => void;
+  toggleOrbitTrails: () => void;
+  setOrbitTrailsVisible: (visible: boolean) => void;
+  setOrbitAnimationSpeed: (speed: number) => void;
+  toggleFocusedOrbitOnly: () => void;
+  getPlanetPosition: (key: CelestialBodyKey, customTime?: number) => { x: number; y: number; angleRad: number };
 }
 
 const CelestialContext = createContext<CelestialContextType | undefined>(undefined);
@@ -53,9 +65,27 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [genesisCount, setGenesisCount] = useState(0);
   const [notification, setNotificationState] = useState<string | null>(null);
 
-  const activeInfo = getCelestialBodyInfo(activeBodyKey);
+  // Persistent Glowing Elliptical Trails state
+  const [orbitTrailsVisible, setOrbitTrailsVisibleState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_orbit_trails_visible');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
 
-  // Sync with localStorage
+  const [orbitAnimationSpeed, setOrbitAnimationSpeedState] = useState<number>(1.0);
+  const [focusedOrbitOnly, setFocusedOrbitOnly] = useState<boolean>(false);
+  const [elapsedOrbitalTime, setElapsedOrbitalTime] = useState<number>(0);
+
+  const activeInfo = getCelestialBodyInfo(activeBodyKey);
+  const orbitalTrails = CELESTIAL_ORDER.map((k) => PLANETARY_ORBIT_TRAILS[k]);
+
+  // Sync activeBodyKey with localStorage
   useEffect(() => {
     try {
       localStorage.setItem('swid_celestial_active_body', activeBodyKey);
@@ -63,6 +93,69 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // ignore
     }
   }, [activeBodyKey]);
+
+  // Sync orbitTrailsVisible with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('swid_orbit_trails_visible', String(orbitTrailsVisible));
+    } catch {
+      // ignore
+    }
+  }, [orbitTrailsVisible]);
+
+  // High-precision smooth animation loop for orbital motion along ellipses
+  const lastTimeRef = useRef<number>(performance.now());
+  const requestRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const animate = (now: number) => {
+      const deltaSec = (now - lastTimeRef.current) / 1000;
+      lastTimeRef.current = now;
+
+      // Advance orbital elapsed time proportional to orbitAnimationSpeed
+      setElapsedOrbitalTime((prev) => prev + deltaSec * orbitAnimationSpeed);
+      requestRef.current = requestAnimationFrame(animate);
+    };
+
+    requestRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, [orbitAnimationSpeed]);
+
+  const toggleOrbitTrails = useCallback(() => {
+    setOrbitTrailsVisibleState((prev) => {
+      const next = !prev;
+      setNotificationState(next ? '🌌 Elliptical Orbit Trails Illuminated' : 'Orbit Trails Minimized');
+      return next;
+    });
+  }, []);
+
+  const setOrbitTrailsVisible = useCallback((visible: boolean) => {
+    setOrbitTrailsVisibleState(visible);
+  }, []);
+
+  const setOrbitAnimationSpeed = useCallback((speed: number) => {
+    setOrbitAnimationSpeedState(speed);
+    setNotificationState(`Orbital Clock Adjusted: ${speed}x Speed`);
+  }, []);
+
+  const toggleFocusedOrbitOnly = useCallback(() => {
+    setFocusedOrbitOnly((prev) => {
+      const next = !prev;
+      setNotificationState(next ? 'Focused on Active Planet Orbit Trail' : 'All Solar System Orbit Trails Active');
+      return next;
+    });
+  }, []);
+
+  const getPlanetPosition = useCallback(
+    (key: CelestialBodyKey, customTime?: number) => {
+      const orbit = PLANETARY_ORBIT_TRAILS[key];
+      const timeToUse = customTime !== undefined ? customTime : elapsedOrbitalTime;
+      return calculateOrbitPosition(orbit, timeToUse, orbitAnimationSpeed);
+    },
+    [elapsedOrbitalTime, orbitAnimationSpeed]
+  );
 
   const setNotification = useCallback((msg: string | null) => {
     setNotificationState(msg);
@@ -115,7 +208,6 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     (onSelectTab?: (tab: TabKey) => void) => {
       setNotification('🌍 Earth Active: Programmatically selected Research Hub & opened in new tab ↗');
 
-      // 1. Programmatically trigger handleSelectTab('research') in current view
       if (typeof onSelectTab === 'function') {
         try {
           onSelectTab('research');
@@ -124,12 +216,10 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
 
-      // 2. Open the research view in a new browser tab
       try {
         const targetUrl = `${window.location.origin}${window.location.pathname}?tab=research`;
         const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
 
-        // Robust fallback for strict popup blocker environments: synthesize anchor click
         if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
           const anchor = document.createElement('a');
           anchor.href = targetUrl;
@@ -191,6 +281,11 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         flareActive,
         notification,
         genesisCount,
+        orbitTrailsVisible,
+        orbitAnimationSpeed,
+        focusedOrbitOnly,
+        elapsedOrbitalTime,
+        orbitalTrails,
         setCelestialBody,
         advanceToNextBody,
         stepToPrevBody,
@@ -198,6 +293,11 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setNotification,
         handleEarthClick,
         executeCapability,
+        toggleOrbitTrails,
+        setOrbitTrailsVisible,
+        setOrbitAnimationSpeed,
+        toggleFocusedOrbitOnly,
+        getPlanetPosition,
       }}
     >
       {children}

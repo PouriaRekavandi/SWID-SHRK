@@ -14,6 +14,7 @@ import { AbaqusGallery } from './components/AbaqusGallery';
 import { LaboratoryNewsSection } from './components/LaboratoryNewsSection';
 import { Team } from './components/Team';
 import { EngineeringQAChatbox } from './components/EngineeringQAChatbox';
+import { GmailResearchHub } from './components/GmailResearchHub';
 import { Footer } from './components/Footer';
 import { ReadingProgressBar } from './components/ReadingProgressBar';
 import { CheckCircle2, AlertCircle, Bot, Sparkles } from 'lucide-react';
@@ -168,7 +169,13 @@ export const App: React.FC = () => {
 
         {activeTab === 'contact' && (
           <div className="max-w-6xl mx-auto px-4 py-12">
-            <ContactSection onNotify={showToast} />
+            <ContactSection onNotify={showToast} onSelectTab={handleSelectTab} />
+          </div>
+        )}
+
+        {activeTab === 'mail' && (
+          <div className="max-w-6xl mx-auto px-4 py-12">
+            <GmailResearchHub onNotify={showToast} />
           </div>
         )}
 

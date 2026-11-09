@@ -1,10 +1,22 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { CelestialBodyKey, CelestialBodyInfo, PlanetaryOrbitTrailConfig, TabKey } from '../types';
+import {
+  CelestialBodyKey,
+  CelestialBodyInfo,
+  PlanetaryOrbitTrailConfig,
+  OrbitTrailSegment,
+  CelestialMoonConfig,
+  TabKey,
+} from '../types';
 import {
   CELESTIAL_ORDER,
   CELESTIAL_BODIES,
   PLANETARY_ORBIT_TRAILS,
+  PLANETARY_MOONS,
   calculateOrbitPosition,
+  calculateFadingTrailSegments,
+  generateFadingTrailSvgPath,
+  getMoonsForPlanet,
+  calculateMoonPosition,
   getNextCelestialBody,
   getPrevCelestialBody,
   getCelestialBodyInfo,
@@ -18,7 +30,10 @@ interface CelestialContextType {
   notification: string | null;
   genesisCount: number;
   orbitTrailsVisible: boolean;
+  fadingTrailsVisible: boolean;
+  moonsVisible: boolean;
   orbitAnimationSpeed: number;
+  trailLengthMultiplier: number;
   focusedOrbitOnly: boolean;
   elapsedOrbitalTime: number;
   orbitalTrails: PlanetaryOrbitTrailConfig[];
@@ -31,9 +46,26 @@ interface CelestialContextType {
   executeCapability: (onSelectTab?: (tab: TabKey) => void) => void;
   toggleOrbitTrails: () => void;
   setOrbitTrailsVisible: (visible: boolean) => void;
+  toggleFadingTrails: () => void;
+  setFadingTrailsVisible: (visible: boolean) => void;
+  toggleMoons: () => void;
+  setMoonsVisible: (visible: boolean) => void;
+  starfieldVisible: boolean;
+  lensingVisible: boolean;
+  graphicsMode: 'high' | 'eco';
+  toggleStarfield: () => void;
+  setStarfieldVisible: (visible: boolean) => void;
+  toggleLensing: () => void;
+  setLensingVisible: (visible: boolean) => void;
+  toggleMasterGraphics: () => void;
+  setGraphicsMode: (mode: 'high' | 'eco') => void;
   setOrbitAnimationSpeed: (speed: number) => void;
+  setTrailLengthMultiplier: (multiplier: number) => void;
   toggleFocusedOrbitOnly: () => void;
   getPlanetPosition: (key: CelestialBodyKey, customTime?: number) => { x: number; y: number; angleRad: number };
+  getPlanetTrailSegments: (key: CelestialBodyKey, customTime?: number, customTrailLengthDeg?: number) => OrbitTrailSegment[];
+  getPlanetTrailPath: (key: CelestialBodyKey, customTime?: number, customTrailLengthDeg?: number) => string;
+  getPlanetMoons: (planetKey: CelestialBodyKey) => CelestialMoonConfig[];
 }
 
 const CelestialContext = createContext<CelestialContextType | undefined>(undefined);
@@ -78,6 +110,33 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return true;
   });
 
+  // Faint Fading Orbital Trail behind Moving Planets
+  const [fadingTrailsVisible, setFadingTrailsVisibleState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_fading_trails_visible');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
+
+  // Dynamic Orbiting Moons / Satellites state
+  const [moonsVisible, setMoonsVisibleState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_moons_visible');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
+
+  const [trailLengthMultiplier, setTrailLengthMultiplierState] = useState<number>(1.0);
   const [orbitAnimationSpeed, setOrbitAnimationSpeedState] = useState<number>(1.0);
   const [focusedOrbitOnly, setFocusedOrbitOnly] = useState<boolean>(false);
   const [elapsedOrbitalTime, setElapsedOrbitalTime] = useState<number>(0);
@@ -103,6 +162,87 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [orbitTrailsVisible]);
 
+  // Sync fadingTrailsVisible with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('swid_fading_trails_visible', String(fadingTrailsVisible));
+    } catch {
+      // ignore
+    }
+  }, [fadingTrailsVisible]);
+
+  // Sync moonsVisible with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('swid_moons_visible', String(moonsVisible));
+    } catch {
+      // ignore
+    }
+  }, [moonsVisible]);
+
+  // Starfield Canvas Particles State
+  const [starfieldVisible, setStarfieldVisibleState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_starfield_visible');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
+
+  // Gravitational Lensing Distortion Filter State
+  const [lensingVisible, setLensingVisibleState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_lensing_visible');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
+
+  // Master Graphics Performance Mode: 'high' (all effects active) vs 'eco' (lightweight)
+  const [graphicsMode, setGraphicsModeState] = useState<'high' | 'eco'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('swid_graphics_mode') as 'high' | 'eco';
+        return saved === 'eco' ? 'eco' : 'high';
+      } catch {
+        return 'high';
+      }
+    }
+    return 'high';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('swid_starfield_visible', String(starfieldVisible));
+    } catch {
+      // ignore
+    }
+  }, [starfieldVisible]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('swid_lensing_visible', String(lensingVisible));
+    } catch {
+      // ignore
+    }
+  }, [lensingVisible]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('swid_graphics_mode', graphicsMode);
+    } catch {
+      // ignore
+    }
+  }, [graphicsMode]);
+
   // High-precision smooth animation loop for orbital motion along ellipses
   const lastTimeRef = useRef<number>(performance.now());
   const requestRef = useRef<number | null>(null);
@@ -126,13 +266,111 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const toggleOrbitTrails = useCallback(() => {
     setOrbitTrailsVisibleState((prev) => {
       const next = !prev;
-      setNotificationState(next ? '🌌 Elliptical Orbit Trails Illuminated' : 'Orbit Trails Minimized');
+      setNotificationState(next ? '🌌 Elliptical Orbit Paths Illuminated' : 'Orbit Paths Minimized');
       return next;
     });
   }, []);
 
   const setOrbitTrailsVisible = useCallback((visible: boolean) => {
     setOrbitTrailsVisibleState(visible);
+  }, []);
+
+  const toggleFadingTrails = useCallback(() => {
+    setFadingTrailsVisibleState((prev) => {
+      const next = !prev;
+      setNotificationState(next ? '✨ Fading Planetary Motion Trails Active' : 'Fading Motion Trails Hidden');
+      return next;
+    });
+  }, []);
+
+  const setFadingTrailsVisible = useCallback((visible: boolean) => {
+    setFadingTrailsVisibleState(visible);
+  }, []);
+
+  const toggleMoons = useCallback(() => {
+    setMoonsVisibleState((prev) => {
+      const next = !prev;
+      setNotificationState(next ? '🛰️ Orbiting Planetary Moons & Satellites Active' : 'Orbiting Moons Hidden');
+      return next;
+    });
+  }, []);
+
+  const setMoonsVisible = useCallback((visible: boolean) => {
+    setMoonsVisibleState(visible);
+  }, []);
+
+  const toggleStarfield = useCallback(() => {
+    setStarfieldVisibleState((prev) => {
+      const next = !prev;
+      setNotificationState(next ? '⭐ Twinkling Starfield Active' : 'Starfield Canvas Suspended (Eco)');
+      return next;
+    });
+  }, []);
+
+  const setStarfieldVisible = useCallback((visible: boolean) => {
+    setStarfieldVisibleState(visible);
+  }, []);
+
+  const toggleLensing = useCallback(() => {
+    setLensingVisibleState((prev) => {
+      const next = !prev;
+      setNotificationState(next ? '🌀 Gravitational Lensing Shader Active' : 'Lensing Shader Suspended');
+      return next;
+    });
+  }, []);
+
+  const setLensingVisible = useCallback((visible: boolean) => {
+    setLensingVisibleState(visible);
+  }, []);
+
+  const setGraphicsMode = useCallback((mode: 'high' | 'eco') => {
+    setGraphicsModeState(mode);
+    if (mode === 'eco') {
+      setOrbitTrailsVisibleState(false);
+      setFadingTrailsVisibleState(false);
+      setMoonsVisibleState(false);
+      setStarfieldVisibleState(false);
+      setLensingVisibleState(false);
+      setNotificationState('🌱 Graphics Eco Mode Engaged: High-FPS Minimal GPU load');
+    } else {
+      setOrbitTrailsVisibleState(true);
+      setFadingTrailsVisibleState(true);
+      setMoonsVisibleState(true);
+      setStarfieldVisibleState(true);
+      setLensingVisibleState(true);
+      setNotificationState('🚀 Graphics Ultra Mode Active: Full Cosmic VFX & Canvas Shaders');
+    }
+  }, []);
+
+  const toggleMasterGraphics = useCallback(() => {
+    setGraphicsModeState((prev) => {
+      const next = prev === 'high' ? 'eco' : 'high';
+      if (next === 'eco') {
+        setOrbitTrailsVisibleState(false);
+        setFadingTrailsVisibleState(false);
+        setMoonsVisibleState(false);
+        setStarfieldVisibleState(false);
+        setLensingVisibleState(false);
+        setNotificationState('🌱 Graphics Eco Mode Engaged (Minimal GPU Load)');
+      } else {
+        setOrbitTrailsVisibleState(true);
+        setFadingTrailsVisibleState(true);
+        setMoonsVisibleState(true);
+        setStarfieldVisibleState(true);
+        setLensingVisibleState(true);
+        setNotificationState('🚀 Graphics Ultra Mode: All Celestial VFX Active');
+      }
+      return next;
+    });
+  }, []);
+
+  const getPlanetMoons = useCallback((planetKey: CelestialBodyKey) => {
+    return getMoonsForPlanet(planetKey);
+  }, []);
+
+  const setTrailLengthMultiplier = useCallback((multiplier: number) => {
+    setTrailLengthMultiplierState(multiplier);
+    setNotificationState(`Planetary Motion Trail Length: ${multiplier}x`);
   }, []);
 
   const setOrbitAnimationSpeed = useCallback((speed: number) => {
@@ -155,6 +393,34 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return calculateOrbitPosition(orbit, timeToUse, orbitAnimationSpeed);
     },
     [elapsedOrbitalTime, orbitAnimationSpeed]
+  );
+
+  /**
+   * Calculates dynamic fading path segments trailing behind the moving planet
+   */
+  const getPlanetTrailSegments = useCallback(
+    (key: CelestialBodyKey, customTime?: number, customTrailLengthDeg?: number) => {
+      const orbit = PLANETARY_ORBIT_TRAILS[key];
+      const timeToUse = customTime !== undefined ? customTime : elapsedOrbitalTime;
+      const { angleRad } = calculateOrbitPosition(orbit, timeToUse, orbitAnimationSpeed);
+      const effectiveLength = (customTrailLengthDeg || orbit.trailLengthDeg || 75) * trailLengthMultiplier;
+      return calculateFadingTrailSegments(orbit, angleRad, effectiveLength);
+    },
+    [elapsedOrbitalTime, orbitAnimationSpeed, trailLengthMultiplier]
+  );
+
+  /**
+   * Generates a continuous SVG path string for the fading trailing arc
+   */
+  const getPlanetTrailPath = useCallback(
+    (key: CelestialBodyKey, customTime?: number, customTrailLengthDeg?: number) => {
+      const orbit = PLANETARY_ORBIT_TRAILS[key];
+      const timeToUse = customTime !== undefined ? customTime : elapsedOrbitalTime;
+      const { angleRad } = calculateOrbitPosition(orbit, timeToUse, orbitAnimationSpeed);
+      const effectiveLength = (customTrailLengthDeg || orbit.trailLengthDeg || 75) * trailLengthMultiplier;
+      return generateFadingTrailSvgPath(orbit, angleRad, effectiveLength);
+    },
+    [elapsedOrbitalTime, orbitAnimationSpeed, trailLengthMultiplier]
   );
 
   const setNotification = useCallback((msg: string | null) => {
@@ -282,7 +548,10 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         notification,
         genesisCount,
         orbitTrailsVisible,
+        fadingTrailsVisible,
+        moonsVisible,
         orbitAnimationSpeed,
+        trailLengthMultiplier,
         focusedOrbitOnly,
         elapsedOrbitalTime,
         orbitalTrails,
@@ -295,9 +564,26 @@ export const CelestialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         executeCapability,
         toggleOrbitTrails,
         setOrbitTrailsVisible,
+        toggleFadingTrails,
+        setFadingTrailsVisible,
+        toggleMoons,
+        setMoonsVisible,
+        starfieldVisible,
+        lensingVisible,
+        graphicsMode,
+        toggleStarfield,
+        setStarfieldVisible,
+        toggleLensing,
+        setLensingVisible,
+        toggleMasterGraphics,
+        setGraphicsMode,
         setOrbitAnimationSpeed,
+        setTrailLengthMultiplier,
         toggleFocusedOrbitOnly,
         getPlanetPosition,
+        getPlanetTrailSegments,
+        getPlanetTrailPath,
+        getPlanetMoons,
       }}
     >
       {children}

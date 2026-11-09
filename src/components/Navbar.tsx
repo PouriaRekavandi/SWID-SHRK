@@ -16,6 +16,8 @@ import {
   MessageSquare,
   Users,
   Globe,
+  Newspaper,
+  Bot,
 } from 'lucide-react';
 import logoTransparent from '../assets/logo.jpg';
 import logoFallback from '../assets/logo.jpg';
@@ -32,13 +34,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onSelectTab }) => {
 
   const navItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'home', label: t.nav.home[language], icon: <Home className="w-4 h-4" /> },
-    { key: 'mail', label: t.nav.mail[language], icon: <Inbox className="w-4 h-4 text-rose-500" /> },
-    { key: 'qa', label: t.nav.qa[language], icon: <MessageSquare className="w-4 h-4" /> },
-    { key: 'team', label: t.nav.team[language], icon: <Users className="w-4 h-4" /> },
     { key: 'research', label: t.nav.research[language], icon: <Layers className="w-4 h-4" /> },
     { key: 'publications', label: t.nav.publications[language], icon: <BookOpen className="w-4 h-4" /> },
     { key: 'students', label: t.nav.students[language], icon: <GraduationCap className="w-4 h-4" /> },
     { key: 'abaqus', label: t.nav.abaqus[language], icon: <PlayCircle className="w-4 h-4" /> },
+    { key: 'news', label: t.nav.news?.[language] || 'News', icon: <Newspaper className="w-4 h-4" /> },
+    { key: 'team', label: t.nav.team[language], icon: <Users className="w-4 h-4" /> },
+    { key: 'qa', label: t.nav.qa[language], icon: <MessageSquare className="w-4 h-4" /> },
+    { key: 'chat', label: t.nav.chat?.[language] || 'AI Assistant', icon: <Bot className="w-4 h-4" /> },
+    { key: 'mail', label: t.nav.mail[language], icon: <Inbox className="w-4 h-4 text-rose-500" /> },
     { key: 'contact', label: t.nav.contact[language], icon: <Mail className="w-4 h-4" /> },
   ];
 

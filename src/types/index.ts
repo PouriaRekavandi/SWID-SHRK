@@ -56,7 +56,8 @@ export type TabKey =
   | 'chat'
   | 'qa'
   | 'mail'
-  | 'contact';
+  | 'contact'
+  | 'news';
 
 export type TeamRoleCategory = 'all' | 'pi' | 'postdoc' | 'phd' | 'msc' | 'alumni';
 
@@ -130,6 +131,34 @@ export interface PlanetaryOrbitTrailConfig {
   initialPhaseDeg: number;
   focalDistance: number;
   lineDash?: string;
+  trailLengthDeg?: number;
+  trailWidth?: number;
+}
+
+export interface OrbitTrailSegment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  alpha: number;
+  width: number;
+  progress: number;
+}
+
+export interface CelestialMoonConfig {
+  id: string;
+  name: string;
+  parentKey: CelestialBodyKey;
+  semiMajorAxis: number;
+  semiMinorAxis: number;
+  eccentricity: number;
+  inclinationDeg: number;
+  orbitalPeriodSec: number;
+  initialPhaseDeg: number;
+  radius: number;
+  color: string;
+  glowColor: string;
+  hasTrail?: boolean;
 }
 
 export interface CelestialBodyInfo {

@@ -1,9 +1,13 @@
-import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, ArrowRight, ExternalLink } from 'lucide-react';
 import profilePhoto from '../assets/profile.jpg';
 import { useLanguage } from '../context/LanguageContext';
+import { TabKey } from '../types';
 
-export const ProfileSection: React.FC = () => {
+interface ProfileSectionProps {
+  onSelectTab?: (tab: TabKey) => void;
+}
+
+export const ProfileSection: React.FC<ProfileSectionProps> = ({ onSelectTab }) => {
   const { language, isRTL, t } = useLanguage();
 
   return (
@@ -20,16 +24,16 @@ export const ProfileSection: React.FC = () => {
         {/* Avatar / Portrait */}
         <div className="flex flex-col items-center justify-center">
           <div className="relative group/avatar">
-            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-4 dark:border-[#00b8ff] border-sky-600 dark:shadow-[0_0_25px_rgba(0,184,255,0.45)] shadow-md dark:bg-gradient-to-b dark:from-[#102538] dark:to-[#050b11] bg-gradient-to-b from-sky-50 to-slate-100 flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-105">
+            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-4 dark:border-[#00b8ff] border-sky-600 dark:shadow-[0_0_25px_rgba(0,184,255,0.45)] shadow-md dark:bg-gradient-to-b dark:from-[#102538] dark:to-[#050b11] bg-gradient-to-b from-sky-50 to-slate-100 relative flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-105">
               <img
                 src={profilePhoto}
                 alt="Pouria Hejazi Rekavandi"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center relative z-10"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <span className="font-orbitron font-bold text-3xl sm:text-4xl dark:text-[#00b8ff] text-sky-700 select-none">
+              <span className="absolute inset-0 flex items-center justify-center font-orbitron font-bold text-3xl sm:text-4xl dark:text-[#00b8ff] text-sky-700 select-none z-0">
                 PHR
               </span>
             </div>
@@ -72,18 +76,42 @@ export const ProfileSection: React.FC = () => {
             </div>
           </blockquote>
 
-          {/* Signature */}
-          <div className="pt-2 font-mono text-sm space-y-0.5">
-            <p className="text-xs uppercase tracking-wider dark:text-zinc-400 text-slate-500 font-bold">
-              {t.profile.roleTitle[language]}
-            </p>
-            <p className="dark:text-zinc-300 text-slate-700">
-              {t.profile.signatureLead[language]}
-              <br />
-              <strong className="text-base dark:text-white text-slate-900 font-semibold">
-                {t.profile.signatureName[language]}
-              </strong>
-            </p>
+          {/* Signature and Team Workspace Link */}
+          <div className="pt-2 font-mono text-sm flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-0.5">
+              <p className="text-xs uppercase tracking-wider dark:text-zinc-400 text-slate-500 font-bold">
+                {t.profile.roleTitle[language]}
+              </p>
+              <p className="dark:text-zinc-300 text-slate-700">
+                {t.profile.signatureLead[language]}
+                <br />
+                <strong className="text-base dark:text-white text-slate-900 font-semibold">
+                  {t.profile.signatureName[language]}
+                </strong>
+              </p>
+            </div>
+
+            {onSelectTab && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onSelectTab('team')}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#00b8ff]/15 hover:bg-[#00b8ff] text-[#00b8ff] hover:text-black border border-[#00b8ff]/40 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                >
+                  <span>{language === 'fa' ? 'مشاهده تیم کامل و سوابق علمی' : 'View Full Academic Team'}</span>
+                  <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
+                </button>
+
+                <a
+                  href="?tab=team"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 text-xs font-mono transition-colors"
+                  title={language === 'fa' ? 'باز کردن بخش تیم در تب جدید' : 'Open Team workspace in new tab'}
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#00b8ff]" />
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>

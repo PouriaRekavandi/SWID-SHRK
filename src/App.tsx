@@ -3,6 +3,7 @@ import { TabKey } from './types';
 import { ProjectBanner } from './components/ProjectBanner';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
+import { HomeHubDirectory } from './components/HomeHubDirectory';
 import { ProfileSection } from './components/ProfileSection';
 import { ResearchSection } from './components/ResearchSection';
 import { PublicationsSection } from './components/PublicationsSection';
@@ -97,26 +98,22 @@ export const App: React.FC = () => {
       <main id="main-content" className="flex-1 focus:outline-none">
         {activeTab === 'home' && (
           <div className="space-y-16">
+            {/* Level 1: Celestial Hero Section */}
             <HeroSection onSelectTab={handleSelectTab} />
 
-            <div className="max-w-6xl mx-auto px-4 space-y-16">
-              {/* Principal Researcher Card */}
-              <ProfileSection />
+            <div className="max-w-6xl mx-auto px-4 space-y-16 pb-12">
+              {/* Level 2: Principal Researcher Executive Dossier (Moved to second level) */}
+              <ProfileSection onSelectTab={handleSelectTab} />
 
-              {/* Laboratory News Feed Section */}
-              <LaboratoryNewsSection onNotify={showToast} onSelectTab={handleSelectTab} />
-
-              {/* Research Preview with Accordions and Video Player */}
-              <ResearchSection onNotify={showToast} />
-
-              {/* Integrated AI Assistant Section on Home */}
-              <div className="pt-8 border-t dark:border-zinc-800 border-slate-200">
-                <AIChatSection onNotify={showToast} />
-              </div>
-
-              {/* Thesis Registry Overview */}
-              <ThesisRegistry onNotify={showToast} />
+              {/* Level 3: Interactive Organized Workspaces Directory */}
+              <HomeHubDirectory onSelectTab={handleSelectTab} />
             </div>
+          </div>
+        )}
+
+        {activeTab === 'news' && (
+          <div className="max-w-6xl mx-auto px-4 py-12">
+            <LaboratoryNewsSection onNotify={showToast} onSelectTab={handleSelectTab} />
           </div>
         )}
 

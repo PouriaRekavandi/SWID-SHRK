@@ -78,6 +78,14 @@ export const LOCALIZATION = {
       en: 'Engineering Q&A',
       fa: 'پرسش و پاسخ مهندسی',
     },
+    news: {
+      en: 'News & Dispatches',
+      fa: 'اخبار و اطلاعیه‌ها',
+    },
+    chat: {
+      en: 'AI Assistant',
+      fa: 'دستیار هوش مصنوعی',
+    },
     team: {
       en: 'Team',
       fa: 'تیم پژوهشی',
@@ -183,7 +191,7 @@ export const LOCALIZATION = {
   // Hero Section
   hero: {
     mainTitle: {
-      en: 'Something Weird is Discovering…!',
+      en: 'Something Weird is discovering...!',
       fa: 'چیزی شگفت‌انگیز در حال کشف شدن است…!',
     },
     subtitle: {

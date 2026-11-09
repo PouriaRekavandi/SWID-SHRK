@@ -3,7 +3,10 @@ import { TabKey } from '../types';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { ArrowRight, GraduationCap, PlayCircle, Bot, Sparkles } from 'lucide-react';
 import { BlackHoleLogoCrest } from './BlackHoleLogoCrest';
+import { CelestialStarfieldCanvas } from './CelestialStarfieldCanvas';
+import { CelestialPerformanceControls } from './CelestialPerformanceControls';
 import { useLanguage } from '../context/LanguageContext';
+import { useCelestial } from '../context/CelestialContext';
 
 interface HeroSectionProps {
   onSelectTab: (tab: TabKey) => void;
@@ -11,27 +14,40 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
   const { language, isRTL, t } = useLanguage();
+  const { starfieldVisible } = useCelestial();
 
   return (
     <header className="relative isolate flex flex-col items-center justify-center min-h-[580px] sm:min-h-[660px] py-16 px-4 overflow-hidden bg-[#02040a] border-b-2 border-[#00ff41]/40 shadow-2xl transition-colors duration-200">
-      {/* Persistent Theme Toggle in Header */}
+      {/* Far-Left Docked Graphics & Performance Controls */}
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30">
+        <CelestialPerformanceControls />
+      </div>
+
+      {/* Far-Right Persistent Theme Toggle in Header */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30">
         <ThemeSwitcher variant="hero" />
       </div>
 
-      {/* Deep Space Cosmic Canvas with Distant Stars and Nebula Glow */}
+      {/* Deep Space Cosmic Canvas with Dynamic Twinkling Starfield and Nebula Glow */}
       <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[#02040a]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(15,23,42,0.9),rgba(2,4,10,1))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(14,165,233,0.14)_0%,rgba(99,102,241,0.08)_40%,transparent_70%)]" />
-        {/* Subtle procedural starfield specks */}
-        <div className="absolute inset-0 opacity-35 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:28px_28px]" />
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1.5px,transparent_1.5px)] [background-size:56px_56px]" />
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fde047_1px,transparent_1px)] [background-size:84px_84px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(15,23,42,0.95),rgba(2,4,10,1))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(14,165,233,0.18)_0%,rgba(99,102,241,0.09)_45%,transparent_75%)]" />
+        
+        {/* Dynamic Canvas-based Starfield Particle System with variable depth, size, and twinkle */}
+        {starfieldVisible && (
+          <CelestialStarfieldCanvas
+            className="absolute inset-0 z-0"
+            starCount={240}
+            interactiveParallax={true}
+            showShootingStars={true}
+            blackHoleLensing={true}
+          />
+        )}
       </div>
 
       {/* Central Black Hole Crest & Interactive Solar Orbit Engine */}
-      <div className="relative z-10 flex flex-col items-center mb-6 w-full max-w-3xl">
+      <div className="relative z-10 flex flex-col items-center mb-3 sm:mb-4 w-full max-w-3xl">
         <BlackHoleLogoCrest onSelectTab={onSelectTab} />
       </div>
 

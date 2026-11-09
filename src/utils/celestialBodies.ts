@@ -1,4 +1,10 @@
-import { CelestialBodyKey, CelestialBodyInfo, PlanetaryOrbitTrailConfig } from '../types';
+import {
+  CelestialBodyKey,
+  CelestialBodyInfo,
+  PlanetaryOrbitTrailConfig,
+  OrbitTrailSegment,
+  CelestialMoonConfig,
+} from '../types';
 
 export const CELESTIAL_ORDER: CelestialBodyKey[] = [
   'blackhole',
@@ -229,6 +235,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 18,
     initialPhaseDeg: 45,
     focalDistance: 67.5,
+    trailLengthDeg: 80,
+    trailWidth: 2.8,
   },
   sun: {
     key: 'sun',
@@ -242,6 +250,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 22,
     initialPhaseDeg: 90,
     focalDistance: 73.3,
+    trailLengthDeg: 75,
+    trailWidth: 2.6,
   },
   mercury: {
     key: 'mercury',
@@ -255,6 +265,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 15,
     initialPhaseDeg: 120,
     focalDistance: 96.4,
+    trailLengthDeg: 90,
+    trailWidth: 2.0,
   },
   venus: {
     key: 'venus',
@@ -268,6 +280,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 24,
     initialPhaseDeg: 30,
     focalDistance: 119.8,
+    trailLengthDeg: 80,
+    trailWidth: 2.2,
   },
   earth: {
     key: 'earth',
@@ -281,6 +295,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 34,
     initialPhaseDeg: 215,
     focalDistance: 149.2,
+    trailLengthDeg: 78,
+    trailWidth: 2.4,
   },
   mars: {
     key: 'mars',
@@ -294,6 +310,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 48,
     initialPhaseDeg: 320,
     focalDistance: 182.2,
+    trailLengthDeg: 70,
+    trailWidth: 2.0,
   },
   jupiter: {
     key: 'jupiter',
@@ -307,6 +325,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 68,
     initialPhaseDeg: 145,
     focalDistance: 219.7,
+    trailLengthDeg: 65,
+    trailWidth: 3.2,
   },
   saturn: {
     key: 'saturn',
@@ -320,6 +340,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 92,
     initialPhaseDeg: 275,
     focalDistance: 261.7,
+    trailLengthDeg: 62,
+    trailWidth: 3.0,
   },
   uranus: {
     key: 'uranus',
@@ -333,6 +355,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 120,
     initialPhaseDeg: 70,
     focalDistance: 303.4,
+    trailLengthDeg: 55,
+    trailWidth: 2.5,
   },
   neptune: {
     key: 'neptune',
@@ -346,6 +370,8 @@ export const PLANETARY_ORBIT_TRAILS: Record<CelestialBodyKey, PlanetaryOrbitTrai
     orbitalPeriodSec: 155,
     initialPhaseDeg: 185,
     focalDistance: 348.1,
+    trailLengthDeg: 52,
+    trailWidth: 2.5,
   },
 };
 
@@ -379,6 +405,98 @@ export function calculateOrbitPosition(
   return { x, y, angleRad: currentAngleRad };
 }
 
+/**
+ * Calculates (x, y) coordinates on the rotated ellipse given an angle in radians.
+ */
+export function calculateOrbitPointAtAngle(
+  orbit: PlanetaryOrbitTrailConfig,
+  angleRad: number
+): { x: number; y: number } {
+  const unrotatedX = orbit.semiMajorAxis * Math.cos(angleRad);
+  const unrotatedY = orbit.semiMinorAxis * Math.sin(angleRad);
+
+  const tiltRad = (orbit.inclinationDeg * Math.PI) / 180;
+  const cosT = Math.cos(tiltRad);
+  const sinT = Math.sin(tiltRad);
+
+  return {
+    x: unrotatedX * cosT - unrotatedY * sinT,
+    y: unrotatedX * sinT + unrotatedY * cosT,
+  };
+}
+
+/**
+ * Calculates a sequence of fading segments trailing behind the moving planet.
+ * The trail extends backwards from currentAngleRad by trailLengthDeg.
+ * Returns segments with increasing opacity and width toward the leading planet head.
+ */
+export function calculateFadingTrailSegments(
+  orbit: PlanetaryOrbitTrailConfig,
+  currentAngleRad: number,
+  trailLengthDeg = orbit.trailLengthDeg || 75,
+  numSegments = 18,
+  maxOpacity = 0.85,
+  headWidth = orbit.trailWidth || 2.4
+): OrbitTrailSegment[] {
+  const trailLengthRad = (trailLengthDeg * Math.PI) / 180;
+  const segments: OrbitTrailSegment[] = [];
+
+  for (let i = 0; i < numSegments; i++) {
+    const p1 = i / numSegments;
+    const p2 = (i + 1) / numSegments;
+
+    // Angle starts at tail (currentAngleRad - trailLengthRad) and reaches head (currentAngleRad)
+    const angle1 = currentAngleRad - trailLengthRad * (1 - p1);
+    const angle2 = currentAngleRad - trailLengthRad * (1 - p2);
+
+    const pt1 = calculateOrbitPointAtAngle(orbit, angle1);
+    const pt2 = calculateOrbitPointAtAngle(orbit, angle2);
+
+    // Exponential fade for natural comet wake dissolution
+    const alpha = Math.pow(p2, 1.8) * maxOpacity;
+    const width = (0.2 + 0.8 * Math.pow(p2, 1.2)) * headWidth;
+
+    segments.push({
+      x1: pt1.x,
+      y1: pt1.y,
+      x2: pt2.x,
+      y2: pt2.y,
+      alpha: Math.max(0.01, alpha),
+      width: Math.max(0.4, width),
+      progress: p2,
+    });
+  }
+
+  return segments;
+}
+
+/**
+ * Generates an SVG path 'd' string for the full trailing arc.
+ */
+export function generateFadingTrailSvgPath(
+  orbit: PlanetaryOrbitTrailConfig,
+  currentAngleRad: number,
+  trailLengthDeg = orbit.trailLengthDeg || 75,
+  numSamples = 24
+): string {
+  const trailLengthRad = (trailLengthDeg * Math.PI) / 180;
+  let d = '';
+
+  for (let i = 0; i <= numSamples; i++) {
+    const progress = i / numSamples;
+    const angle = currentAngleRad - trailLengthRad * (1 - progress);
+    const pt = calculateOrbitPointAtAngle(orbit, angle);
+
+    if (i === 0) {
+      d += `M ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
+    } else {
+      d += ` L ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
+    }
+  }
+
+  return d;
+}
+
 export function getNextCelestialBody(current: CelestialBodyKey): CelestialBodyKey {
   const currentIndex = CELESTIAL_ORDER.indexOf(current);
   if (currentIndex === -1 || currentIndex === CELESTIAL_ORDER.length - 1) {
@@ -402,3 +520,401 @@ export function getCelestialBodyInfo(key: CelestialBodyKey): CelestialBodyInfo {
     orbitTrail: PLANETARY_ORBIT_TRAILS[key],
   };
 }
+
+/**
+ * Dynamic Moon / Satellite orbital configurations for each celestial body.
+ * Each satellite has its own local semiMajorAxis, semiMinorAxis, inclinationDeg,
+ * orbital period, color, and size, orbiting its parent planet.
+ */
+export const PLANETARY_MOONS: Record<CelestialBodyKey, CelestialMoonConfig[]> = {
+  blackhole: [
+    {
+      id: 'isco_probe',
+      name: 'ISCO Relativistic Probe',
+      parentKey: 'blackhole',
+      semiMajorAxis: 20,
+      semiMinorAxis: 13,
+      eccentricity: 0.76,
+      inclinationDeg: -22,
+      orbitalPeriodSec: 4.2,
+      initialPhaseDeg: 45,
+      radius: 1.5,
+      color: '#ff6d00',
+      glowColor: '#ff9100',
+      hasTrail: true,
+    },
+  ],
+  sun: [
+    {
+      id: 'parker_probe',
+      name: 'Parker Solar Probe',
+      parentKey: 'sun',
+      semiMajorAxis: 22,
+      semiMinorAxis: 14,
+      eccentricity: 0.77,
+      inclinationDeg: 12,
+      orbitalPeriodSec: 5.5,
+      initialPhaseDeg: 110,
+      radius: 1.5,
+      color: '#fef08a',
+      glowColor: '#f59e0b',
+      hasTrail: true,
+    },
+  ],
+  mercury: [
+    {
+      id: 'bepicolombo',
+      name: 'BepiColombo Orbiter',
+      parentKey: 'mercury',
+      semiMajorAxis: 15,
+      semiMinorAxis: 10,
+      eccentricity: 0.75,
+      inclinationDeg: 18,
+      orbitalPeriodSec: 3.8,
+      initialPhaseDeg: 30,
+      radius: 1.2,
+      color: '#cbd5e1',
+      glowColor: '#94a3b8',
+      hasTrail: true,
+    },
+  ],
+  venus: [
+    {
+      id: 'akatsuki',
+      name: 'Akatsuki Atmospheric Orbiter',
+      parentKey: 'venus',
+      semiMajorAxis: 17,
+      semiMinorAxis: 11,
+      eccentricity: 0.76,
+      inclinationDeg: -14,
+      orbitalPeriodSec: 4.8,
+      initialPhaseDeg: 195,
+      radius: 1.3,
+      color: '#fde68a',
+      glowColor: '#f59e0b',
+      hasTrail: true,
+    },
+  ],
+  earth: [
+    {
+      id: 'luna',
+      name: 'Luna (The Moon)',
+      parentKey: 'earth',
+      semiMajorAxis: 24,
+      semiMinorAxis: 16,
+      eccentricity: 0.75,
+      inclinationDeg: 15,
+      orbitalPeriodSec: 7.2,
+      initialPhaseDeg: 60,
+      radius: 2.4,
+      color: '#e2e8f0',
+      glowColor: '#38bdf8',
+      hasTrail: true,
+    },
+    {
+      id: 'iss',
+      name: 'ISS (Orbital Station)',
+      parentKey: 'earth',
+      semiMajorAxis: 14,
+      semiMinorAxis: 9,
+      eccentricity: 0.77,
+      inclinationDeg: -28,
+      orbitalPeriodSec: 2.8,
+      initialPhaseDeg: 180,
+      radius: 1.1,
+      color: '#00ff41',
+      glowColor: '#00ff41',
+      hasTrail: false,
+    },
+  ],
+  mars: [
+    {
+      id: 'phobos',
+      name: 'Phobos (Fear)',
+      parentKey: 'mars',
+      semiMajorAxis: 16,
+      semiMinorAxis: 11,
+      eccentricity: 0.73,
+      inclinationDeg: 24,
+      orbitalPeriodSec: 4.6,
+      initialPhaseDeg: 75,
+      radius: 1.5,
+      color: '#fed7aa',
+      glowColor: '#f97316',
+      hasTrail: true,
+    },
+    {
+      id: 'deimos',
+      name: 'Deimos (Dread)',
+      parentKey: 'mars',
+      semiMajorAxis: 25,
+      semiMinorAxis: 17,
+      eccentricity: 0.74,
+      inclinationDeg: -18,
+      orbitalPeriodSec: 9.4,
+      initialPhaseDeg: 220,
+      radius: 1.2,
+      color: '#fde047',
+      glowColor: '#eab308',
+      hasTrail: true,
+    },
+  ],
+  jupiter: [
+    {
+      id: 'io',
+      name: 'Io (Volcanic)',
+      parentKey: 'jupiter',
+      semiMajorAxis: 20,
+      semiMinorAxis: 14,
+      eccentricity: 0.71,
+      inclinationDeg: 10,
+      orbitalPeriodSec: 4.2,
+      initialPhaseDeg: 15,
+      radius: 1.8,
+      color: '#fef08a',
+      glowColor: '#eab308',
+      hasTrail: true,
+    },
+    {
+      id: 'europa',
+      name: 'Europa (Subsurface Ocean)',
+      parentKey: 'jupiter',
+      semiMajorAxis: 28,
+      semiMinorAxis: 19,
+      eccentricity: 0.73,
+      inclinationDeg: -14,
+      orbitalPeriodSec: 7.0,
+      initialPhaseDeg: 130,
+      radius: 1.6,
+      color: '#e0f2fe',
+      glowColor: '#38bdf8',
+      hasTrail: true,
+    },
+    {
+      id: 'ganymede',
+      name: 'Ganymede (Magnetic Giant)',
+      parentKey: 'jupiter',
+      semiMajorAxis: 37,
+      semiMinorAxis: 24,
+      eccentricity: 0.76,
+      inclinationDeg: 19,
+      orbitalPeriodSec: 11.5,
+      initialPhaseDeg: 255,
+      radius: 2.3,
+      color: '#cbd5e1',
+      glowColor: '#94a3b8',
+      hasTrail: true,
+    },
+    {
+      id: 'callisto',
+      name: 'Callisto (Ancient Crust)',
+      parentKey: 'jupiter',
+      semiMajorAxis: 46,
+      semiMinorAxis: 29,
+      eccentricity: 0.78,
+      inclinationDeg: -7,
+      orbitalPeriodSec: 16.0,
+      initialPhaseDeg: 170,
+      radius: 2.0,
+      color: '#94a3b8',
+      glowColor: '#64748b',
+      hasTrail: true,
+    },
+  ],
+  saturn: [
+    {
+      id: 'titan',
+      name: 'Titan (Methane Seas)',
+      parentKey: 'saturn',
+      semiMajorAxis: 32,
+      semiMinorAxis: 21,
+      eccentricity: 0.75,
+      inclinationDeg: 26,
+      orbitalPeriodSec: 9.8,
+      initialPhaseDeg: 40,
+      radius: 2.3,
+      color: '#fde047',
+      glowColor: '#ca8a04',
+      hasTrail: true,
+    },
+    {
+      id: 'enceladus',
+      name: 'Enceladus (Ice Geysers)',
+      parentKey: 'saturn',
+      semiMajorAxis: 22,
+      semiMinorAxis: 15,
+      eccentricity: 0.73,
+      inclinationDeg: 20,
+      orbitalPeriodSec: 5.6,
+      initialPhaseDeg: 210,
+      radius: 1.4,
+      color: '#ffffff',
+      glowColor: '#bae6fd',
+      hasTrail: true,
+    },
+    {
+      id: 'mimas',
+      name: 'Mimas (Impact Crater)',
+      parentKey: 'saturn',
+      semiMajorAxis: 17,
+      semiMinorAxis: 11,
+      eccentricity: 0.76,
+      inclinationDeg: 16,
+      orbitalPeriodSec: 3.8,
+      initialPhaseDeg: 325,
+      radius: 1.2,
+      color: '#e2e8f0',
+      glowColor: '#94a3b8',
+      hasTrail: true,
+    },
+  ],
+  uranus: [
+    {
+      id: 'titania',
+      name: 'Titania (Fault Canyons)',
+      parentKey: 'uranus',
+      semiMajorAxis: 25,
+      semiMinorAxis: 17,
+      eccentricity: 0.73,
+      inclinationDeg: 35,
+      orbitalPeriodSec: 8.5,
+      initialPhaseDeg: 80,
+      radius: 1.8,
+      color: '#99f6e4',
+      glowColor: '#14b8a6',
+      hasTrail: true,
+    },
+    {
+      id: 'miranda',
+      name: 'Miranda (Chevron Ridges)',
+      parentKey: 'uranus',
+      semiMajorAxis: 17,
+      semiMinorAxis: 11,
+      eccentricity: 0.76,
+      inclinationDeg: -28,
+      orbitalPeriodSec: 4.8,
+      initialPhaseDeg: 240,
+      radius: 1.3,
+      color: '#ccfbf1',
+      glowColor: '#2dd4bf',
+      hasTrail: true,
+    },
+  ],
+  neptune: [
+    {
+      id: 'triton',
+      name: 'Triton (Retrograde Cryo)',
+      parentKey: 'neptune',
+      semiMajorAxis: 26,
+      semiMinorAxis: 18,
+      eccentricity: 0.72,
+      inclinationDeg: 145,
+      orbitalPeriodSec: 7.8,
+      initialPhaseDeg: 160,
+      radius: 2.1,
+      color: '#93c5fd',
+      glowColor: '#3b82f6',
+      hasTrail: true,
+    },
+    {
+      id: 'proteus',
+      name: 'Proteus (Irregular)',
+      parentKey: 'neptune',
+      semiMajorAxis: 17,
+      semiMinorAxis: 12,
+      eccentricity: 0.71,
+      inclinationDeg: 12,
+      orbitalPeriodSec: 4.2,
+      initialPhaseDeg: 20,
+      radius: 1.2,
+      color: '#bfdbfe',
+      glowColor: '#60a5fa',
+      hasTrail: true,
+    },
+  ],
+};
+
+/**
+ * Calculates local (x, y) coordinates of a moon revolving around its parent planet
+ */
+export function calculateMoonPosition(
+  moon: CelestialMoonConfig,
+  timeSeconds: number,
+  speedMultiplier = 1
+): { x: number; y: number; angleRad: number; isForeground: boolean } {
+  const omega = (2 * Math.PI) / moon.orbitalPeriodSec;
+  const currentAngleRad =
+    ((moon.initialPhaseDeg * Math.PI) / 180 + omega * timeSeconds * speedMultiplier) %
+    (2 * Math.PI);
+
+  const unrotatedX = moon.semiMajorAxis * Math.cos(currentAngleRad);
+  const unrotatedY = moon.semiMinorAxis * Math.sin(currentAngleRad);
+
+  const tiltRad = (moon.inclinationDeg * Math.PI) / 180;
+  const cosT = Math.cos(tiltRad);
+  const sinT = Math.sin(tiltRad);
+
+  const x = unrotatedX * cosT - unrotatedY * sinT;
+  const y = unrotatedX * sinT + unrotatedY * cosT;
+
+  // Apparent 3D depth: foreground when sin(currentAngleRad) >= 0
+  const isForeground = Math.sin(currentAngleRad) >= -0.2;
+
+  return { x, y, angleRad: currentAngleRad, isForeground };
+}
+
+/**
+ * Calculates fading trail segments for a moon around its parent
+ */
+export function calculateMoonTrailSegments(
+  moon: CelestialMoonConfig,
+  currentAngleRad: number,
+  trailLengthDeg = 55,
+  numSegments = 8,
+  maxOpacity = 0.75
+): OrbitTrailSegment[] {
+  const trailLengthRad = (trailLengthDeg * Math.PI) / 180;
+  const segments: OrbitTrailSegment[] = [];
+
+  const tiltRad = (moon.inclinationDeg * Math.PI) / 180;
+  const cosT = Math.cos(tiltRad);
+  const sinT = Math.sin(tiltRad);
+
+  for (let i = 0; i < numSegments; i++) {
+    const p1 = i / numSegments;
+    const p2 = (i + 1) / numSegments;
+
+    const angle1 = currentAngleRad - trailLengthRad * (1 - p1);
+    const angle2 = currentAngleRad - trailLengthRad * (1 - p2);
+
+    const uX1 = moon.semiMajorAxis * Math.cos(angle1);
+    const uY1 = moon.semiMinorAxis * Math.sin(angle1);
+    const x1 = uX1 * cosT - uY1 * sinT;
+    const y1 = uX1 * sinT + uY1 * cosT;
+
+    const uX2 = moon.semiMajorAxis * Math.cos(angle2);
+    const uY2 = moon.semiMinorAxis * Math.sin(angle2);
+    const x2 = uX2 * cosT - uY2 * sinT;
+    const y2 = uX2 * sinT + uY2 * cosT;
+
+    const alpha = Math.pow(p2, 1.8) * maxOpacity;
+    const width = (0.2 + 0.8 * p2) * 1.4;
+
+    segments.push({
+      x1,
+      y1,
+      x2,
+      y2,
+      alpha: Math.max(0.01, alpha),
+      width: Math.max(0.4, width),
+      progress: p2,
+    });
+  }
+
+  return segments;
+}
+
+export function getMoonsForPlanet(planetKey: CelestialBodyKey): CelestialMoonConfig[] {
+  return PLANETARY_MOONS[planetKey] || [];
+}
+

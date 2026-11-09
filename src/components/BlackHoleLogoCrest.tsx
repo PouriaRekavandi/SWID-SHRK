@@ -12,7 +12,6 @@ import {
   ChevronRight,
   ChevronLeft,
   ExternalLink,
-  Layers,
   Atom,
 } from 'lucide-react';
 
@@ -45,6 +44,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
     executeCapability,
     orbitTrailsVisible,
     toggleOrbitTrails,
+    lensingVisible,
   } = useCelestial();
 
   const [isHovered, setIsHovered] = useState(false);
@@ -107,7 +107,7 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
         <CelestialOrbitalTrails className="z-0" />
 
         {/* Real-Time Einstein Gravitational Lensing Distortion Overlay */}
-        {activeBodyKey === 'blackhole' && (
+        {activeBodyKey === 'blackhole' && lensingVisible && (
           <GravitationalLensingOverlay isActive={true} intensity={1.1} />
         )}
 
@@ -454,160 +454,6 @@ export const BlackHoleLogoCrest: React.FC<BlackHoleLogoCrestProps> = ({
           >
             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* PLANETARY CAPABILITY HUD CARD                                             */}
-        {/* ========================================================================= */}
-        <div className="w-full rounded-2xl bg-gradient-to-b from-black/80 via-zinc-950/90 to-black/80 border dark:border-zinc-800/90 border-slate-300 p-4 sm:p-5 shadow-2xl backdrop-blur-md space-y-3">
-          {/* Header Row: Symbol, Name, Classification */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b dark:border-zinc-800 border-slate-200 pb-2.5">
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl sm:text-3xl leading-none">
-                {activeInfo.astronomicalSymbol}
-              </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm sm:text-base font-extrabold font-orbitron tracking-wide text-white">
-                    {activeInfo.name}
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Orbit {activeInfo.orderIndex}/9
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-400 font-mono">
-                  {activeInfo.classification}
-                </p>
-              </div>
-            </div>
-
-            {/* Orbit Navigation Shortcut */}
-            <button
-              onClick={advanceToNextBody}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-colors border border-zinc-700/60 cursor-pointer"
-              title="Next planet in orbit"
-            >
-              <span>Next Planet</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Astronomical Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
-            <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
-              <span className="block text-zinc-400 text-[10px] uppercase">Distance</span>
-              <span className="font-semibold text-zinc-200 truncate block">
-                {activeInfo.distanceFromSun}
-              </span>
-            </div>
-            <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
-              <span className="block text-zinc-400 text-[10px] uppercase">Surface Temp</span>
-              <span className="font-semibold text-zinc-200 truncate block">
-                {activeInfo.surfaceTemp}
-              </span>
-            </div>
-            <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
-              <span className="block text-zinc-400 text-[10px] uppercase">Orbital Period</span>
-              <span className="font-semibold text-zinc-200 truncate block">
-                {activeInfo.orbitalPeriod}
-              </span>
-            </div>
-            <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
-              <span className="block text-zinc-400 text-[10px] uppercase">Diameter</span>
-              <span className="font-semibold text-zinc-200 truncate block">
-                {activeInfo.diameter}
-              </span>
-            </div>
-          </div>
-
-          {/* Orbital Ellipse Trajectory Telemetry */}
-          {activeInfo.orbitTrail && (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] font-mono">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full animate-pulse"
-                  style={{
-                    backgroundColor: activeInfo.orbitTrail.glowColor,
-                    boxShadow: `0 0 10px ${activeInfo.orbitTrail.glowColor}`,
-                  }}
-                />
-                <span className="text-zinc-400">Keplerian Orbital Path:</span>
-                <span className="font-bold text-white">{activeInfo.orbitTrail.name}</span>
-              </div>
-
-              <div className="flex items-center gap-2.5 text-[10px] text-zinc-400">
-                <span>
-                  Eccentricity <strong className="text-zinc-200">e={activeInfo.orbitTrail.eccentricity}</strong>
-                </span>
-                <span>·</span>
-                <span>
-                  Inclination <strong className="text-zinc-200">{activeInfo.orbitTrail.inclinationDeg}°</strong>
-                </span>
-                <span>·</span>
-                <span>
-                  Period <strong className="text-zinc-200">{activeInfo.orbitTrail.orbitalPeriodSec}s sim</strong>
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Gravitational Lensing Distortion Active Field Indicator */}
-          {activeBodyKey === 'blackhole' && (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 text-[11px] font-mono text-amber-200">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-pulse" />
-                <span className="font-bold text-amber-300">Gravitational Lensing:</span>
-                <span>Einstein Deflection Field &amp; Caustic Arcs Active</span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] text-amber-300/80">
-                <span>Einstein Radius θ_E ≈ 1.8 r_s</span>
-                <span>·</span>
-                <span>Spacetime Warp α = 4GM / c²r</span>
-              </div>
-            </div>
-          )}
-
-          {/* Engineering Research Domain Linkage */}
-          <div className="text-xs text-zinc-300 font-mono flex items-start gap-2 pt-1">
-            <Layers className="w-4 h-4 text-[#00ff41] flex-none mt-0.5" />
-            <div>
-              <span className="text-zinc-400">Lab Research Domain: </span>
-              <span className="text-white font-semibold">{activeInfo.labDomain}</span>
-            </div>
-          </div>
-
-          {/* Capability Narrative & Action Trigger Button */}
-          <div className="pt-2 border-t dark:border-zinc-800/90 border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="text-xs text-zinc-300 font-mono leading-relaxed max-w-md">
-              <span className="text-amber-300 font-bold block mb-0.5">
-                ⚡ {activeInfo.capability.title}
-              </span>
-              <span>{activeInfo.capability.description}</span>
-            </div>
-
-            {/* Capability Trigger Button */}
-            {activeBodyKey === 'earth' ? (
-              /* EARTH: Programmatically triggers handleSelectTab('research') AND opens that view in a new browser tab */
-              <button
-                onClick={() => handleEarthClick(onSelectTab)}
-                className="flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-black bg-gradient-to-r from-cyan-400 via-sky-300 to-cyan-400 hover:from-cyan-300 hover:to-sky-200 shadow-[0_0_22px_rgba(6,182,212,0.7)] hover:shadow-[0_0_30px_rgba(6,182,212,0.95)] transition-all transform hover:-translate-y-0.5 cursor-pointer text-center"
-                title="Selects Research view and opens in a new browser tab"
-              >
-                <span>{activeInfo.capability.buttonText}</span>
-                <ExternalLink className="w-4 h-4" />
-              </button>
-            ) : (
-              /* OTHER BODIES: Execute Capability */
-              <button
-                onClick={() => executeCapability(onSelectTab)}
-                className="flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-black bg-[#00ff41] hover:bg-[#10b981] shadow-[0_0_20px_rgba(0,255,65,0.45)] hover:shadow-[0_0_28px_rgba(0,255,65,0.7)] transition-all transform hover:-translate-y-0.5 cursor-pointer text-center"
-                title={`Execute ${activeInfo.capability.title}`}
-              >
-                <span>{activeInfo.capability.buttonText}</span>
-                <Sparkles className="w-4 h-4" />
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </div>
